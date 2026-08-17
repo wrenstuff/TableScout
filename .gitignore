@@ -1,0 +1,4 @@
+# Please add any temporary, sensitive, or unnecessary
+# files to be ignored by git here
+
+.env
