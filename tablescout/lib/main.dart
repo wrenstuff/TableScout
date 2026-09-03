@@ -38,11 +38,11 @@ class _NavBarState extends State<NavBar> {
   double _logoSectionHeight = 0;
 
   final List<Widget> _pages = [
-    const Center(child: Text('Home')),
-    const Center(child: Text('Home')),
-    const Center(child: Text('Home')),
-    const Center(child: Text('Home')),
-    const Center(child: Text('Home')),
+    const Center(child: Text('Dashboard')),
+    const Center(child: Text('Floor Allocator')),
+    const Center(child: Text('Floor Designer')),
+    const Center(child: Text('Events')),
+    const Center(child: Text('Contact Us')),
   ];
 
   @override
@@ -190,7 +190,7 @@ class _NavBarState extends State<NavBar> {
       width: _navOpen
           ? _navExpandedWidth
           : _navCollapsedWidth,
-      color: Colors.grey[300],
+      color: const Color.fromARGB(255, 167, 167, 179),
       child: Column(
         children: [
           // logo section
@@ -222,27 +222,27 @@ class _NavBarState extends State<NavBar> {
             _buildNavItem(
               index: 0,
               icon: Icons.home,
-              label: 'Home',
+              label: 'Dashboard',
             ),
             _buildNavItem(
               index: 1,
               icon: Icons.home,
-              label: 'Home',
+              label: 'Floor Allocator',
             ),
             _buildNavItem(
               index: 2,
               icon: Icons.home,
-              label: 'Home',
+              label: 'Floor Designer',
             ),
             _buildNavItem(
               index: 3,
               icon: Icons.home,
-              label: 'Home',
+              label: 'Events',
             ),
             _buildNavItem(
               index: 4,
               icon: Icons.home,
-              label: 'Home',
+              label: 'Contact Us',
             ),
           ],
 
@@ -256,6 +256,7 @@ class _NavBarState extends State<NavBar> {
                 vertical: 16,
               ),
               decoration: const BoxDecoration(
+                color: Color.fromARGB(255, 124, 127, 137),
                 border: Border(
                   top: BorderSide(
                     color: Colors.black26,
@@ -268,6 +269,7 @@ class _NavBarState extends State<NavBar> {
                     child: TextButton(
                       onPressed: () {},
                       child: const Text(
+                        // CHANGE THIS TO USERNAME
                         'Account',
                         style: TextStyle(
                           color: Colors.black87,
@@ -279,18 +281,10 @@ class _NavBarState extends State<NavBar> {
                   const SizedBox(width: 8),
 
                   IconButton(
-                    tooltip: 'Settings',
                     onPressed: () {},
                     icon: const Icon(
                       Icons.settings,
-                    ),
-                  ),
-
-                  IconButton(
-                    tooltip: 'Logout',
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.logout,
+                      color: Colors.black87,
                     ),
                   ),
                 ],
