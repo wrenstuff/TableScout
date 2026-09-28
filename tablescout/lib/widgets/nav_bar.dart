@@ -346,15 +346,18 @@ class _NavBarState extends State<NavBar> {
     required IconData icon,
     required String label,
   }) {
-    return ListTile(
-      selected: _selectedIndex == index,
-      leading: Icon(icon),
-      title: Text(label),
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        selected: _selectedIndex == index,
+        leading: Icon(icon),
+        title: Text(label),
+        onTap: () {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      )
     );
   }
 
