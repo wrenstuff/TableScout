@@ -3,13 +3,14 @@ from datetime import datetime
 
 @dataclass
 class User:
-    userId: int
-    userName: str
+    userid: int
+    username: str
     email: str
     pwhash: str
-    roleId: int
-    accDate: datetime
-    accStatus: str
+    roleid: int
+    role: str
+    createdat: datetime
+    accstatus: str
 
 @dataclass
 class Role:
