@@ -5,7 +5,7 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var padHeight = MediaQuery.sizeOf(context).height * 0.1;
+    var padHeight = (MediaQuery.sizeOf(context).height * 0.2) / 3;
     var padWidth = MediaQuery.sizeOf(context).width * 0.1;
     return Container( // Creates stack for events and floor view containers
 
@@ -14,7 +14,7 @@ class DashboardPage extends StatelessWidget {
           Container( // Ongoing Events
             height: MediaQuery.sizeOf(context).height * 0.4,
             width: double.infinity,
-            margin: EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight),
+            margin: EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2),
             color: Colors.grey[200],
             child: Center(
               child: Text('Ongoing Events'),
@@ -28,7 +28,7 @@ class DashboardPage extends StatelessWidget {
             color: Colors.grey[300],
             height: MediaQuery.sizeOf(context).height * 0.4,
             width: double.infinity,
-            margin: EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight),
+            margin: EdgeInsets.fromLTRB(padWidth, padHeight / 2, padWidth, padHeight),
               child: Center(
                 child: Text('Floor View'),
               ),
