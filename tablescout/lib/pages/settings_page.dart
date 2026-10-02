@@ -10,6 +10,44 @@ class SettingsPage extends StatefulWidget {
 const double size = 200; // how big the boxes are
 
 class _SettingsPageState extends State<SettingsPage> {
+  Widget _settingsBox({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Material(
+        color: const Color(0xFFA8A9B3),
+        borderRadius: BorderRadius.circular(5),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 48,
+                color: Colors.black,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,237 +60,76 @@ class _SettingsPageState extends State<SettingsPage> {
               spacing: 20,
               runSpacing: 20,
               children: [
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                // ACCOUNT
+                _settingsBox(
+                  label: 'Account',
+                  icon: Icons.person,
+                  onTap: () {
+                    // Navigate to Account
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // STAFF MANAGEMENT
+                _settingsBox(
+                  label: 'Staff Management',
+                  icon: Icons.manage_accounts,
+                  onTap: () {
+                    // Navigate to Staff Management
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // PRIVACY
+                _settingsBox(
+                  label: 'Privacy',
+                  icon: Icons.privacy_tip_outlined,
+                  onTap: () {
+                    // Navigate to Privacy
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // PASSWORD MANAGEMENT
+                _settingsBox(
+                  label: 'Password Management',
+                  icon: Icons.vpn_key_outlined,
+                  onTap: () {
+                    // Navigate to Password Management
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // CLOUD
+                _settingsBox(
+                  label: 'Cloud',
+                  icon: Icons.cloud_outlined,
+                  onTap: () {
+                    // Navigate to Cloud
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // CUSTOMISE
+                _settingsBox(
+                  label: 'Customise',
+                  icon: Icons.dashboard_customize_outlined,
+                  onTap: () {
+                    // Navigate to Customise
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // NOTIFICATIONS
+                _settingsBox(
+                  label: 'Notifications',
+                  icon: Icons.notifications_outlined,
+                  onTap: () {
+                    // Navigate to Notifications
+                  },
                 ),
-                SizedBox(
-                  width: size,
-                  height: size,
-                  child: Material(
-                    color: const Color(0xFFA8A9B3),
-                    borderRadius: BorderRadius.circular(5),
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to Account
-                      },
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.account_circle_outlined,
-                            size: 48,
-                            color: Colors.black,
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Account',
-                            style: TextStyle(fontSize: 11, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                // SIGN OUT
+                _settingsBox(
+                  label: 'Sign Out',
+                  icon: Icons.logout,
+                  onTap: () {
+                    // Handle signing out
+                  },
                 ),
               ],
             ),
