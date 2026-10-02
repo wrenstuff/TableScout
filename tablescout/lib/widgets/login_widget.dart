@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:tablescout/pages/signup_page.dart';
+
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
 
@@ -241,7 +243,12 @@ class _LoginWidgetState extends State<LoginWidget> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Signup navigation will be added next.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SignupPage()
+                        ),
+                      );
                   },
                   child: const Text(
                     'Sign up',
