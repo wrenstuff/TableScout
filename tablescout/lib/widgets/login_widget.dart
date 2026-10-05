@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import 'package:tablescout/pages/signup_page.dart';
+import 'package:tablescout/session/session_manager.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -24,11 +26,28 @@ class _LoginWidgetState extends State<LoginWidget> {
     super.dispose();
   }
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      // Auth to be connected here
-      debugPrint('Login submitted');
-      debugPrint('Email: ${_emailController.text}');
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final sessionManager = context.read<SessionManager>();
+
+    final success = await sessionManager.login(
+      _emailController.text.trim(),
+     _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      context.go('/app');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(
+          content: Text('Incorrect email or password'),
+        ),
+      );
     }
   }
 
@@ -119,11 +138,10 @@ class _LoginWidgetState extends State<LoginWidget> {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter your email';
                 }
-
-                if (!value.contains('@')) {
+                //temporary admin value for the test account admin/admin
+                if (value.trim() != 'admin' && !value.contains('@')) {
                   return 'Please enter a valid email';
                 }
-
                 return null;
               },
             ),
@@ -243,12 +261,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SignupPage()
-                        ),
-                      );
+                    context.go('/signup');
                   },
                   child: const Text(
                     'Sign up',

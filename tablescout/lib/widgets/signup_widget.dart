@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SignupWidget extends StatefulWidget {
   const SignupWidget({super.key});
@@ -11,6 +12,7 @@ class _SignupWidgetState extends State<SignupWidget> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
+  final _storeController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -21,6 +23,7 @@ class _SignupWidgetState extends State<SignupWidget> {
   @override
   void dispose() {
     _nameController.dispose();
+    _storeController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -34,6 +37,59 @@ class _SignupWidgetState extends State<SignupWidget> {
       debugPrint('Name: ${_nameController.text}');
       debugPrint('Email: ${_emailController.text}');
     }
+  }
+
+  //details for Text Inputs
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+          width: 1,
+        ),
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+       borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+         width: 1,
+        ),
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+         width: 2,
+       ),
+      ),
+
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.red,
+         width: 1,
+        ),
+      ),
+
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 2,
+        ),
+      ),
+    );
   }
 
   @override
@@ -98,25 +154,9 @@ class _SignupWidgetState extends State<SignupWidget> {
             TextFormField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: InputDecoration(
+              decoration: _inputDecoration(
                 hintText: 'Enter your full name',
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFB5BAD0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF54414E),
-                    width: 2,
-                  ),
-                ),
+                icon: Icons.person_outline,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -141,7 +181,7 @@ class _SignupWidgetState extends State<SignupWidget> {
             const SizedBox(height: 8),
 
             TextFormField(
-              controller: _nameController,
+              controller: _storeController,
               textCapitalization: TextCapitalization.words,
               decoration: InputDecoration(
                 hintText: 'Enter the full name of your Store',

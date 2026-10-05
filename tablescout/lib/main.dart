@@ -1,19 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'package:tablescout/pages/login_page.dart';
+import 'package:tablescout/session/session_manager.dart';
+import 'package:tablescout/router/app_router.dart';
 
 void main() {
-  runApp(const MainApp());
+  final sessionManager = SessionManager();
+  final appRouter = AppRouter(sessionManager);
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: sessionManager,
+      child: MainApp(
+        appRouter: appRouter,
+      ),
+    ),
+  );
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final AppRouter appRouter;
+
+  const MainApp({
+    super.key,
+    required this.appRouter,
+    });
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp.router(
+      title: 'TableScout',
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      routerConfig: appRouter.router,
     );
   }
 }
