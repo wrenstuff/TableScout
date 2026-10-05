@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 
 final GlobalKey _logoSectionKey = GlobalKey();
@@ -31,6 +32,8 @@ class _NavBarState extends State<NavBar> {
     const Center(child: Text('Floor Designer')),
     const Center(child: Text('Events')),
     const Center(child: Text('Contact Us')),
+    //AccountPage(),
+    SettingsPage(),
   ];
 
   @override
@@ -265,7 +268,11 @@ class _NavBarState extends State<NavBar> {
                   const SizedBox(width: 8),
 
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        _selectedIndex = _pages.length - 1;
+                      });
+                    },
                     icon: const Icon(
                       Icons.settings,
                       color: Colors.black87,
