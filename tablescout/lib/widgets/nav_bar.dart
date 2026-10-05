@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tablescout/pages/settings_page.dart';
+import 'package:tablescout/pages/dashboard_page.dart';
+
+final GlobalKey _logoSectionKey = GlobalKey();
+final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
 class NavBar extends StatefulWidget {
   const NavBar({super.key});
@@ -23,7 +27,7 @@ class _NavBarState extends State<NavBar> {
   double _logoSectionHeight = 0;
 
   final List<Widget> _pages = [
-    const Center(child: Text('Dashboard')),
+    DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     const Center(child: Text('Floor Designer')),
     const Center(child: Text('Events')),
@@ -58,20 +62,16 @@ class _NavBarState extends State<NavBar> {
   }
 
   void _measureLogoSection() {
-    final context = _logoSectionKey.currentContext;
+    if (!mounted) return;
 
-    if (context == null) {
-      return;
-    }
+    final BuildContext? logoContext = _navOpen
+        ? _visibleLogoSectionKey.currentContext
+        : _logoSectionKey.currentContext;
 
-    final RenderBox? box =
-        context.findRenderObject() as RenderBox?;
+    final renderObject = logoContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return;
 
-    if (box == null) {
-      return;
-    }
-
-    final double newHeight = box.size.height;
+    final newHeight = renderObject.size.height;
 
     if (newHeight != _logoSectionHeight) {
       setState(() {
@@ -183,7 +183,7 @@ class _NavBarState extends State<NavBar> {
           // logo section
           if (_navOpen)
             _buildLogoSection(
-              key: _logoSectionKey,
+              key: _visibleLogoSectionKey,
             )
           else
             SizedBox(
@@ -373,7 +373,6 @@ class _NavBarState extends State<NavBar> {
   Widget _buildPageContent() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(16),
       child: _pages[_selectedIndex],
     );
   }
