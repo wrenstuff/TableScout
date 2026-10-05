@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:tablescout/session/session_manager.dart';
-import 'package:tablescout/router/app_router.dart';
+import 'session/session_manager.dart';
+import 'router/app_router.dart';
 
 void main() {
+
   final sessionManager = SessionManager();
   final appRouter = AppRouter(sessionManager);
 
@@ -13,18 +14,17 @@ void main() {
       value: sessionManager,
       child: MainApp(
         appRouter: appRouter,
-      ),
+        ),
     ),
-  );
+  );  
 }
 
 class MainApp extends StatelessWidget {
   final AppRouter appRouter;
-
   const MainApp({
     super.key,
     required this.appRouter,
-    });
+  });
 
   @override
   Widget build(BuildContext context) {

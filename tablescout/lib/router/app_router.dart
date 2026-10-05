@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/login_page.dart';
 import 'package:tablescout/pages/signup_page.dart';
-import 'package:tablescout/widgets/nav_bar.dart';
+import 'package:tablescout/pages/dashboard_page.dart';
 
 class AppRouter {
   final SessionManager sessionManager;
@@ -15,7 +15,7 @@ class AppRouter {
     router = GoRouter(
       initialLocation: '/login',
 
-      // Re-evaluate routes when the session changes.
+      //Re-evaluate routes when session changes
       refreshListenable: sessionManager,
 
       redirect: (context, state) {
@@ -25,51 +25,49 @@ class AppRouter {
         final isLoggingIn = location == '/login';
         final isSigningUp = location == '/signup';
 
-        // Logged-out users can only access login and signup.
-        if (!isLoggedIn && !isLoggingIn && !isSigningUp) {
+
+        
+        if(!isLoggedIn && !isLoggingIn && !isSigningUp) {
           return '/login';
         }
 
-        // Logged-in users should not return to login/signup.
         if (isLoggedIn && (isLoggingIn || isSigningUp)) {
           return '/app';
         }
 
-        // No redirect needed.
         return null;
       },
 
       routes: [
         GoRoute(
           path: '/login',
-          builder: (context, state) => const LoginPage(),
+          builder:(context, state) => const LoginPage(),
         ),
 
         GoRoute(
           path: '/signup',
-          builder: (context, state) => const SignupPage(),
+          builder:(context, state) => const SignupPage(),
         ),
 
         GoRoute(
           path: '/app',
-          builder: (context, state) => const NavBar(),
+          builder:(context, state) => const DashboardPage(),
         ),
       ],
 
-      // Fallback for unknown routes.
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(title: const Text('Page not found')),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('The requested page could not be found.'),
+              const Text('The requrested page could not be found'),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => context.go(
-                  sessionManager.isLoggedIn ? '/app' : '/login',
+                  sessionManager.isLoggedIn ? '/app' : '/login', 
                 ),
-                child: const Text('Return to safety'),
+                child: const Text('return to safety'),
               ),
             ],
           ),

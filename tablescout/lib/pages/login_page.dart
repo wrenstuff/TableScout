@@ -4,30 +4,15 @@ import 'package:tablescout/widgets/login_widget.dart';
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
- @override
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/wood.jpg'),
-            fit: BoxFit.cover,
+    return const Scaffold(
+      body: Center(
+        child: SizedBox(
+          width: 400,
+          child: LoginWidget(),
           ),
         ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 450,
-                ),
-                child: const LoginWidget(),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+      );
   }
 }
