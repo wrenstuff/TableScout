@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart';
 
-import 'package:tablescout/session/session_manager.dart';
-import 'package:tablescout/pages/signup_page.dart';
+// import 'package:tablescout/session/session_manager.dart';
+// import 'package:tablescout/pages/signup_page.dart';
 import 'package:tablescout/services/auth_service.dart';
 import 'package:tablescout/widgets/nav_bar.dart';
 
@@ -17,10 +17,10 @@ class LoginWidget extends StatefulWidget {
 class _LoginWidgetState extends State<LoginWidget> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _usernameController =
+  final TextEditingController _passwordController =
       TextEditingController();
 
-  final TextEditingController _passwordController =
+  final TextEditingController _emailController =
       TextEditingController();
 
   bool _obscurePassword = true;
@@ -28,8 +28,8 @@ class _LoginWidgetState extends State<LoginWidget> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _passwordController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -201,9 +201,9 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 40),
 
-            // Username label
+            // Email label
             const Text(
-              'Username',
+              'Email',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -212,16 +212,16 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 8),
 
-            // Username
+            // Email
             TextFormField(
-              controller: _usernameController,
+              controller: _emailController,
               decoration: _inputDecoration(
-                hintText: 'Enter your username',
+                hintText: 'Enter your email',
                 icon: Icons.person_outline,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your username';
+                  return 'Please enter your email';
                 }
 
                 return null;
