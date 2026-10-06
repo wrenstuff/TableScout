@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:tablescout/widgets/signup_widget.dart';
 
 class SignupPage extends StatelessWidget {
@@ -9,9 +8,11 @@ class SignupPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/wood.jpg'),
+            image: AssetImage('assets/images/wood.jpg'),
             fit: BoxFit.cover,
           ),
         ),
@@ -19,11 +20,9 @@ class SignupPage extends StatelessWidget {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 450,
-                ),
-                child: const SignupWidget(),
+              child: SizedBox(
+                width: 400,
+                child: SignupWidget(),
               ),
             ),
           ),

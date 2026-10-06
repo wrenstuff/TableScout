@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/signup_page.dart';
 import 'package:tablescout/services/auth_service.dart';
 import 'package:tablescout/widgets/nav_bar.dart';
@@ -13,20 +17,44 @@ class LoginWidget extends StatefulWidget {
 class _LoginWidgetState extends State<LoginWidget> {
   final _formKey = GlobalKey<FormState>();
 
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _usernameController =
+      TextEditingController();
+
+  final TextEditingController _passwordController =
+      TextEditingController();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
+    //if (!_formKey.currentState!.validate()) {
+    //  return;
+    //}
+    //
+    //final sessionManager = context.read<SessionManager>();
+    //
+    //final success = await sessionManager.login(
+    //  _usernameController.text.trim(),
+    //  _passwordController.text,
+    //);
+    //
+    //if (!mounted) return;
+    //
+    //if (success) {
+    //  context.go('/app');
+    //} else {
+    //  ScaffoldMessenger.of(context).showSnackBar(
+    //    const SnackBar(
+    //      content: Text('Incorrect username or password'),
+    //    ),
+    //  );
     if (_isLoading) return;
     if (!_formKey.currentState!.validate()) return;
 
@@ -66,17 +94,72 @@ class _LoginWidgetState extends State<LoginWidget> {
       }
     }
   }
+  //border styling
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixIcon: Icon(icon),
+      suffixIcon: suffixIcon,
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+          width: 1,
+        ),
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+          width: 1,
+        ),
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Color(0xFF54414E),
+          width: 2,
+        ),
+      ),
+
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 1,
+        ),
+      ),
+
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(
+          color: Colors.red,
+          width: 2,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(32),
+
       decoration: BoxDecoration(
         color: const Color(0xFFB5BAD0),
         borderRadius: BorderRadius.circular(16),
       ),
+
       child: Form(
         key: _formKey,
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -93,6 +176,7 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 8),
 
+            // Welcome message
             const Text(
               'Welcome back',
               textAlign: TextAlign.center,
@@ -105,6 +189,7 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 8),
 
+            // Subtitle
             const Text(
               'Log in to your TableScout account',
               textAlign: TextAlign.center,
@@ -116,9 +201,9 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 40),
 
-            // Email
+            // Username label
             const Text(
-              'Email',
+              'Username',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -127,36 +212,16 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 8),
 
+            // Username
             TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFB5BAD0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF54414E),
-                    width: 2,
-                  ),
-                ),
+              controller: _usernameController,
+              decoration: _inputDecoration(
+                hintText: 'Enter your username',
+                icon: Icons.person_outline,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your email';
-                }
-
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
+                  return 'Please enter your username';
                 }
 
                 return null;
@@ -165,7 +230,7 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 20),
 
-            // Password
+            // Password label
             const Text(
               'Password',
               style: TextStyle(
@@ -176,12 +241,13 @@ class _LoginWidgetState extends State<LoginWidget> {
 
             const SizedBox(height: 8),
 
+            // Password
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              decoration: InputDecoration(
+              decoration: _inputDecoration(
                 hintText: 'Enter your password',
-                prefixIcon: const Icon(Icons.lock_outline),
+                icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
                     _obscurePassword
@@ -193,22 +259,6 @@ class _LoginWidgetState extends State<LoginWidget> {
                       _obscurePassword = !_obscurePassword;
                     });
                   },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFB5BAD0),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF54414E),
-                    width: 2,
-                  ),
                 ),
               ),
               validator: (value) {
@@ -227,7 +277,7 @@ class _LoginWidgetState extends State<LoginWidget> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // Password reset built in Auth
+                  // Password reset to sort out!!
                 },
                 child: const Text(
                   'Forgot password?',
@@ -247,7 +297,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                 onPressed: _isLoading ? null :_login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF54414E),
-                  foregroundColor: Color(0xFFB5BAD0),
+                  foregroundColor: const Color(0xFFB5BAD0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -285,14 +335,10 @@ class _LoginWidgetState extends State<LoginWidget> {
                     color: Colors.grey,
                   ),
                 ),
+
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SignupPage()
-                        ),
-                      );
+                    context.go('/signup');
                   },
                   child: const Text(
                     'Sign up',
