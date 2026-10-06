@@ -1,0 +1,4 @@
+*.pyc
+*.db
+*.cc
+/tablescout/linux

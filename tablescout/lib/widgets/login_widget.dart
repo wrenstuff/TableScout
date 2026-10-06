@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:tablescout/pages/signup_page.dart';
+import 'package:tablescout/services/auth_service.dart';
+import 'package:tablescout/widgets/nav_bar.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -16,6 +17,7 @@ class _LoginWidgetState extends State<LoginWidget> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,11 +26,44 @@ class _LoginWidgetState extends State<LoginWidget> {
     super.dispose();
   }
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      // Auth to be connected here
-      debugPrint('Login submitted');
-      debugPrint('Email: ${_emailController.text}');
+  Future<void> _login() async {
+    if (_isLoading) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await AuthService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const NavBar(),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      final message = error.toString().replaceFirst('Exception: ', '');
+
+      ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -209,7 +244,7 @@ class _LoginWidgetState extends State<LoginWidget> {
             SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: _login,
+                onPressed: _isLoading ? null :_login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF54414E),
                   foregroundColor: Color(0xFFB5BAD0),
@@ -218,12 +253,21 @@ class _LoginWidgetState extends State<LoginWidget> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'LOGIN',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                child: _isLoading
+                  ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.grey,
+                    ),
+                  )
+                  : const Text(
+                    'LOGIN',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                   ),
                 ),
               ),

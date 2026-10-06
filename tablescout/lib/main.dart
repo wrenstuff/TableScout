@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:tablescout/pages/login_page.dart';
+
 import 'package:tablescout/widgets/nav_bar.dart';
 
 void main() {
@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: NavBar(),
+      home: LoginPage(),
     );
   }
 }

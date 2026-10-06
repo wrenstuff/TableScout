@@ -7,7 +7,7 @@ app = Flask(__name__)
 def login():
 
     # get the request data
-    info = request.get_json()
+    info = request.get_json(silent=True) or {}
 
     #get email and password from the request
     email = info.get("email")
@@ -21,7 +21,7 @@ def login():
 
         ), 400
 
-    connection = Dbconnect.connect
+    connection = Dbconnect.connect()
 
     #create a cursor object
     cursor = connection.cursor()
@@ -41,7 +41,7 @@ def login():
              "error": "invalid email or password please try again"
          }),401
 
-    if user["password"] != password:
+    if user["pwhash"] != password:
         return jsonify({
                      "error": "invalid email or password please try again"
                  }),401
@@ -50,9 +50,12 @@ def login():
         "message": "Login successful",
         # returning user data
         "user":{
-            "id": user["id"],
+            "id": user["userid"],
             "email": user["email"],
             "username": user["username"],
             "role": user["role"]
         }
     }), 200
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
