@@ -1,9 +1,5 @@
 from flask import Flask, request, jsonify
-from Dbconnection import db_user_conn
-import sqlite3
-
-conn = sqlite3.connect("users.db")
-cursor = conn.cursor()
+from Dbconnection import Dbconnect
 
 app = Flask(__name__)
 
@@ -25,7 +21,7 @@ def login():
 
         ), 400
 
-    connection = db_user_conn()
+    connection = Dbconnect.connect
 
     #create a cursor object
     cursor = connection.cursor()

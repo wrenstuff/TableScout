@@ -1,6 +1,6 @@
-from connection import dbconnect
+from Dbconnection import Dbconnect
 
-connection = dbconnect()
+connection = Dbconnect.connect()
 
 connection.execute("""
 INSERT INTO users (
@@ -9,17 +9,15 @@ INSERT INTO users (
     pwhash,
     accstatus,
     role,
-    roleid,
     store_id
 )
-VALUES (?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "testuser",
     "test@example.com",
     "testpasswordhash",
     "ACTIVE",
     "EMPLOYEE",
-    101,
     1
 ))
 connection.commit()

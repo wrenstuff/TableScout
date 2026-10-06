@@ -1,6 +1,6 @@
-from connection import dbconnect
+from Dbconnection import Dbconnect
 
-connection = dbconnect()
+connection = Dbconnect.connect()
 
 #users
 connection.execute(
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS stores (
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS events (
-table_id INTEGER PRIMARY KEY AUTOINCREMENT
+event_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
@@ -47,7 +47,7 @@ table_id INTEGER PRIMARY KEY AUTOINCREMENT
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS tables (
-event_id INTEGER PRIMARY KEY AUTOINCREMENT
+table_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
