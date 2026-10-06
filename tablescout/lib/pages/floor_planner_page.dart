@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
-
-class FloorTable {
-  final int id;
-  Offset position;
-
-  FloorTable({
-    required this.id,
-    required this.position,
-  });
-}
+import 'package:tablescout/pages/floor_planner_assets/fpa_table.dart';
 
 class FloorPlanner extends StatefulWidget {
   const FloorPlanner({super.key});
@@ -37,6 +28,23 @@ class _FloorPlannerState extends State<FloorPlanner> {
     });
   }
 
+  void _moveTable(FloorTable table, Offset delta, Size canvasSize) {
+    final newPosition = table.position + delta;
+    final maxX = canvasSize.width > FloorTableWidget.tableWidth
+        ? canvasSize.width - FloorTableWidget.tableWidth
+        : 0.0;
+    final maxY = canvasSize.height > FloorTableWidget.tableHeight
+        ? canvasSize.height - FloorTableWidget.tableHeight
+        : 0.0;
+
+    setState(() {
+      table.position = Offset(
+        newPosition.dx.clamp(0.0, maxX).toDouble(),
+        newPosition.dy.clamp(0.0, maxY).toDouble(),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -45,7 +53,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       color: Colors.grey.shade200,
       child: Stack(
         children: [
-
+          // Canvas
           Positioned(
             left: outerPadding + toolbarWidth + toolbarGap,
             right: outerPadding + toolbarWidth + toolbarGap,
@@ -53,9 +61,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
             bottom: outerPadding + bottomToolbarHeight + toolbarGap,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                const tableWidth = 100.0;
-                const tableHeight = 60.0;
-
                 return Container(
                   color: Colors.grey.shade200,
                   child: Stack(
@@ -67,45 +72,19 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           key: ValueKey(table.id),
                           left: table.position.dx,
                           top: table.position.dy,
-                          child: GestureDetector(
-                            onPanUpdate: (details) {
-                              setState(() {
-                                final newPosition = table.position + details.delta;
-
-                                final maxX =
-                                  constraints.maxWidth > tableWidth
-                                    ? constraints.maxWidth - tableWidth
-                                    : 0.0;
-
-                                final maxY =
-                                  constraints.maxHeight > tableHeight
-                                    ? constraints.maxHeight - tableHeight
-                                    : 0.0;
-
-                                table.position = Offset(
-                                  newPosition.dx.clamp(0.0, maxX).toDouble(),
-                                  newPosition.dy.clamp(0.0, maxY).toDouble(),
-                                );
-                              });
-                            },
-                            child: Container(
-                              width: tableWidth,
-                              height: tableHeight,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.brown.shade300,
-                                border: Border.all(
-                                  color: Colors.brown.shade700,
-                                ),
-                              ),
-                              child: Text('Table ${table.id}'),
+                          child: FloorTableWidget(
+                            table: table,
+                            onDrag: (delta) => _moveTable(
+                              table,
+                              delta,
+                              constraints.biggest,
                             ),
                           ),
-                        )
+                        ),
                     ],
                   ),
                 );
-              }
+              },
             ),
           ),
 
@@ -139,13 +118,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                       icon: const Icon(Icons.add),
                       label: const Text("Add Table"),
                     ),
-                  ]
-                )
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Bottom toolbar: fits between the side toolbars
+          // Bottom toolbar
           Positioned(
             left: outerPadding + toolbarWidth + toolbarGap,
             right: outerPadding + toolbarWidth + toolbarGap,
