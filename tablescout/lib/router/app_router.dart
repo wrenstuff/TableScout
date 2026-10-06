@@ -41,17 +41,23 @@ class AppRouter {
       routes: [
         GoRoute(
           path: '/login',
-          builder:(context, state) => const LoginPage(),
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: LoginPage(),
+          ),
         ),
 
         GoRoute(
           path: '/signup',
-          builder:(context, state) => const SignupPage(),
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: SignupPage(),
+          ),
         ),
 
         GoRoute(
           path: '/app',
-          builder:(context, state) => const DashboardPage(),
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: DashboardPage(),
+          ),
         ),
       ],
 
