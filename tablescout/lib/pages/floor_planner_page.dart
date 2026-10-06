@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
 
+class FloorTable {
+  final int id;
+  Offset position;
+
+  FloorTable({
+    required this.id,
+    required this.position,
+  });
+}
+
 class FloorPlanner extends StatefulWidget {
   const FloorPlanner({super.key});
 
@@ -13,6 +23,20 @@ class _FloorPlannerState extends State<FloorPlanner> {
   static const double bottomToolbarHeight = 100;
   static const double toolbarGap = 20;
 
+  final List<FloorTable> _tables = [];
+  int _nextId = 1;
+
+  void _addTable() {
+    setState(() {
+      _tables.add(
+        FloorTable(
+          id: _nextId++,
+          position: const Offset(100, 100)
+        )
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -21,6 +45,70 @@ class _FloorPlannerState extends State<FloorPlanner> {
       color: Colors.grey.shade200,
       child: Stack(
         children: [
+
+          Positioned(
+            left: outerPadding + toolbarWidth + toolbarGap,
+            right: outerPadding + toolbarWidth + toolbarGap,
+            top: outerPadding,
+            bottom: outerPadding + bottomToolbarHeight + toolbarGap,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const tableWidth = 100.0;
+                const tableHeight = 60.0;
+
+                return Container(
+                  color: Colors.grey.shade200,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    clipBehavior: Clip.hardEdge,
+                    children: [
+                      for (final table in _tables)
+                        Positioned(
+                          key: ValueKey(table.id),
+                          left: table.position.dx,
+                          top: table.position.dy,
+                          child: GestureDetector(
+                            onPanUpdate: (details) {
+                              setState(() {
+                                final newPosition = table.position + details.delta;
+
+                                final maxX =
+                                  constraints.maxWidth > tableWidth
+                                    ? constraints.maxWidth - tableWidth
+                                    : 0.0;
+
+                                final maxY =
+                                  constraints.maxHeight > tableHeight
+                                    ? constraints.maxHeight - tableHeight
+                                    : 0.0;
+
+                                table.position = Offset(
+                                  newPosition.dx.clamp(0.0, maxX).toDouble(),
+                                  newPosition.dy.clamp(0.0, maxY).toDouble(),
+                                );
+                              });
+                            },
+                            child: Container(
+                              width: tableWidth,
+                              height: tableHeight,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Colors.brown.shade300,
+                                border: Border.all(
+                                  color: Colors.brown.shade700,
+                                ),
+                              ),
+                              child: Text('Table ${table.id}'),
+                            ),
+                          ),
+                        )
+                    ],
+                  ),
+                );
+              }
+            ),
+          ),
+
           // Left toolbar
           Positioned(
             left: outerPadding,
@@ -43,8 +131,16 @@ class _FloorPlannerState extends State<FloorPlanner> {
             width: toolbarWidth,
             child: Container(
               color: Colors.grey.shade400,
-              child: const Center(
-                child: Text('Right Toolbar'),
+              child: Center(
+                child: Column(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _addTable,
+                      icon: const Icon(Icons.add),
+                      label: const Text("Add Table"),
+                    ),
+                  ]
+                )
               ),
             ),
           ),
