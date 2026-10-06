@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
+import 'package:tablescout/screen_dimensions.dart';
 
 final GlobalKey _logoSectionKey = GlobalKey();
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
@@ -14,7 +16,6 @@ class NavBar extends StatefulWidget {
 class _NavBarState extends State<NavBar> {
   static const double _navExpandedWidth = 270;
   static const double _navCollapsedWidth = 55;
-  static const double _mobileBreakpoint = 600;
 
   int _selectedIndex = 0;
 
@@ -31,6 +32,8 @@ class _NavBarState extends State<NavBar> {
     const Center(child: Text('Floor Designer')),
     const Center(child: Text('Events')),
     const Center(child: Text('Contact Us')),
+    //AccountPage(),
+    SettingsPage(),
   ];
 
   @override
@@ -38,12 +41,10 @@ class _NavBarState extends State<NavBar> {
     super.didChangeDependencies();
 
     if (!_navInitialised) {
-      final bool isMobile =
-          MediaQuery.sizeOf(context).width < _mobileBreakpoint;
 
       // starts open on desktop
       //starts closed on mobile
-      _navOpen = !isMobile;
+      _navOpen = !ScreenDimensions.isMobile(context);
 
       _navInitialised = true;
     }
@@ -99,11 +100,9 @@ class _NavBarState extends State<NavBar> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile =
-        MediaQuery.sizeOf(context).width < _mobileBreakpoint;
 
     return Scaffold(
-      body: isMobile
+      body: ScreenDimensions.isMobile(context)
           ? _buildMobileLayout()
           : _buildDesktopLayout(),
     );
@@ -265,7 +264,11 @@ class _NavBarState extends State<NavBar> {
                   const SizedBox(width: 8),
 
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      setState(() {
+                        _selectedIndex = _pages.length - 1;
+                      });
+                    },
                     icon: const Icon(
                       Icons.settings,
                       color: Colors.black87,

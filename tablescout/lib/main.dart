@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'session/session_manager.dart';
 import 'router/app_router.dart';
 

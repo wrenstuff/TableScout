@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/screen_dimensions.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -13,19 +14,22 @@ class _DashboardPageState extends State<DashboardPage> {
   void _scrollEvents(int direction) {
     if (!_eventsController.hasClients) return;
 
-    // Move by one card width plus its gap.
-    final distance =
-        (_eventsController.position.viewportDimension + 16) / 3;
+    const gap = 16.0;
+    final viewportWidth = _eventsController.position.viewportDimension;
+    final visibleCards = ScreenDimensions.isMobile(context) ? 1 : 3;
 
-    final target = (_eventsController.offset + distance * direction)
-        .clamp(0.0, _eventsController.position.maxScrollExtent)
-        .toDouble();
+    final cardWidth = (viewportWidth - gap * (visibleCards - 1)) / visibleCards;
+    final distance = cardWidth + gap;
 
-    _eventsController.animateTo(
-      target,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    final target = (_eventsController.offset + direction * distance)
+      .clamp(0.0, _eventsController.position.maxScrollExtent)
+      .toDouble();
+
+      _eventsController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
   }
 
   @override
@@ -37,6 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
+    final screenWidth = screenSize.width;
     final padHeight = (screenSize.height * 0.2) / 3;
     final padWidth = screenSize.width * 0.1;
 
@@ -49,23 +54,39 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Container(
           height: screenSize.height * 0.4,
-          width: double.infinity,
-          margin: EdgeInsets.fromLTRB(
-            padWidth,
-            padHeight,
-            padWidth,
-            padHeight / 2,
-          ),
+          width: !ScreenDimensions.isMobile(context)
+           ? double.infinity 
+           : (screenWidth - 55),
+          margin: !ScreenDimensions.isMobile(context)
+            ? EdgeInsets.fromLTRB(
+                padWidth,
+                padHeight,
+                padWidth,
+                padHeight / 2,
+              )
+            : EdgeInsets.fromLTRB(
+                55,
+                0,
+                0,
+                0,
+              ),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: ScreenDimensions.isMobile(context)
+                ? BorderRadius.zero
+                : BorderRadius.circular(10),
             color: Colors.grey[400],
           ),
           child: Column(
             children: [
-              const Text(
-                'Ongoing Events',
-                style: TextStyle(fontSize: 18),
+              Padding(
+                padding: ScreenDimensions.isMobile(context)
+                  ? EdgeInsets.only(top: 20.0)
+                  : EdgeInsets.zero,
+                child: Text(
+                  'Ongoing Events',
+                  style: TextStyle(fontSize: 18),
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -75,7 +96,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!
                     // CHANGE VARIABLE NAME LATER
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (tempBoxNum > 3)
+                    // CHEVRON LEFT BUTTON
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
+                    if (tempBoxNum > (ScreenDimensions.isMobile(context) ? 1 : 3))
                       IconButton(
                         icon: const Icon(Icons.chevron_left),
                         onPressed: () => _scrollEvents(-1),
@@ -85,8 +108,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           const gap = 16.0;
-                          final cardWidth =
-                              (constraints.maxWidth - gap * 2) / 3;
+                          final visibleCards = ScreenDimensions.isMobile(context) ? 1 : 3;
+                          final cardWidth = (constraints.maxWidth - gap * (visibleCards - 1)) / visibleCards;
 
                           return ListView.separated(
                             controller: _eventsController,
@@ -126,7 +149,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!
                     // CHANGE VARIABLE NAME LATER
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (tempBoxNum > 3)
+                    // CHEVRON RIGHT BUTTON
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
+                    if (tempBoxNum > (ScreenDimensions.isMobile(context) ? 1 : 3))
                       IconButton(
                         icon: const Icon(Icons.chevron_right),
                         onPressed: () => _scrollEvents(1),
@@ -139,16 +164,29 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
 
         Container(
-          height: screenSize.height * 0.4,
-          width: double.infinity,
-          margin: EdgeInsets.fromLTRB(
-            padWidth,
-            padHeight / 2,
-            padWidth,
-            padHeight,
-          ),
+          height: !ScreenDimensions.isMobile(context)
+            ? screenSize.height * 0.4
+            : screenSize.height * 0.6,
+          width: !ScreenDimensions.isMobile(context)
+            ? double.infinity
+            : (screenWidth - 55),
+          margin: !ScreenDimensions.isMobile(context)
+              ? EdgeInsets.fromLTRB(
+                  padWidth,
+                  padHeight / 2,
+                  padWidth,
+                  padHeight,
+                )
+              : EdgeInsets.fromLTRB(
+                  55,
+                  0,
+                  0,
+                  0,
+                ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: ScreenDimensions.isMobile(context)
+                ? BorderRadius.zero
+                : BorderRadius.circular(10),
             color: Colors.grey[300],
           ),
           child: const Center(

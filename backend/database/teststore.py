@@ -1,6 +1,6 @@
-from connection import dbconnect
+from Dbconnection import Dbconnect
 
-connection = dbconnect()
+connection = Dbconnect.connect()
 
 connection.execute("""
     INSERT INTO stores (
