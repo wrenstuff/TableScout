@@ -11,17 +11,7 @@ class SessionManager extends ChangeNotifier {
   String? get role => _role;
 
   Future<bool> login(String username, String password) async {
-    // Temporary test account
-    if (username == 'admin' && password == 'admin') {
-      _isLoggedIn = true;
-      _username = username;
-      _role = 'admin';
-
-      notifyListeners();
-
-      return true;
-    }
-
+    // Authentication connection here
     return false;
   }
 
