@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/login_page.dart';
 import 'package:tablescout/pages/signup_page.dart';
-import 'package:tablescout/pages/dashboard_page.dart';
+import 'package:tablescout/widgets/nav_bar.dart';
 
 class AppRouter {
   final SessionManager sessionManager;
@@ -56,7 +56,7 @@ class AppRouter {
         GoRoute(
           path: '/app',
           pageBuilder:(context, state) => const NoTransitionPage(
-            child: DashboardPage(),
+            child: NavBar(),
           ),
         ),
       ],
