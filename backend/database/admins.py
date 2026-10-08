@@ -1,6 +1,12 @@
 from Dbconnection import Dbconnect
+from argon2 import PasswordHasher
+
+hasher = PasswordHasher()
 
 connection = Dbconnect.connect()
+
+password ="elspeth"
+pwhash =hasher.hash(password)
 
 connection.execute("""
 INSERT INTO users (
@@ -15,13 +21,15 @@ VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "Wren",
     "wren@example.com",
-    "elspeth",
+    pwhash,
     "ACTIVE",
     "ADMIN",
     1
 )
 )
 
+password ="bob"
+pwhash =hasher.hash(password)
 connection.execute("""
 INSERT INTO users (
     username,
@@ -35,13 +43,14 @@ VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "Cody",
     "Cody@example.com",
-    "bob",
+    pwhash,
     "ACTIVE",
     "ADMIN",
     1
 )
 )
-
+password ="mybums"
+pwhash =hasher.hash(password)
 connection.execute("""
 INSERT INTO users (
     username,
@@ -55,7 +64,7 @@ VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "Jack",
     "Jack@example.com",
-    "mybums",
+    pwhash,
     "ACTIVE",
     "ADMIN",
     1

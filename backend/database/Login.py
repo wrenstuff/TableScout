@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
+from argon2 import PasswordHasher
 
 app = Flask(__name__)
+hasher = PasswordHasher()
 
 @app.route("/tablescout/pages/login", methods =["POST"])
 def login():
@@ -12,6 +14,7 @@ def login():
     #get email and password from the request
     email = info.get("email")
     password = info.get("password")
+
 
     #checking if email and password are provided
     if not email or not password:
@@ -41,10 +44,16 @@ def login():
              "error": "invalid email or password please try again"
          }),401
 
-    if user["pwhash"] != password:
-        return jsonify({
-                     "error": "invalid email or password please try again"
-                 }),401
+    try:
+        hasher.verify(user["pwhash"], password)
+
+    except Exception:
+        return jsonify  ({
+        "success": False,
+        "message":"Invalid email or password"
+        }
+        ),401
+
 
     return jsonify({
         "message": "Login successful",
