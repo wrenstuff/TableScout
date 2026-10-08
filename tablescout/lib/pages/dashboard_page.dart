@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
