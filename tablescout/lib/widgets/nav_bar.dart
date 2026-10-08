@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
@@ -169,6 +172,8 @@ class _NavBarState extends State<NavBar> {
 // nav bar
 
   Widget _buildNavBar() {
+    final sessionManager = context.watch<SessionManager>();
+
     return Container(
       width: _navOpen
           ? _navExpandedWidth
@@ -251,9 +256,8 @@ class _NavBarState extends State<NavBar> {
                   Expanded(
                     child: TextButton(
                       onPressed: () {},
-                      child: const Text(
-                        // CHANGE THIS TO USERNAME
-                        'Account',
+                      child: Text(
+                        sessionManager.username ?? 'Account',
                         style: TextStyle(
                           color: Colors.black87,
                         ),
