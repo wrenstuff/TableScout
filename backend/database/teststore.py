@@ -14,7 +14,7 @@ connection.execute("""
     "Test Hobby Store",
     "store@test.com",
     "PENDING",
-    "ACTIVE"
+    "INACTIVE"
 ))
 
 connection.commit()
