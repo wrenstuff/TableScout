@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tablescout/pages/floor_planner_assets/fpa_table.dart';
+import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
 
 class FloorPlanner extends StatefulWidget {
   const FloorPlanner({super.key});
@@ -14,54 +14,69 @@ class _FloorPlannerState extends State<FloorPlanner> {
   static const double bottomToolbarHeight = 100;
   static const double toolbarGap = 20;
 
-  final List<FloorTable> _tables = [];
+  final List<FloorObject> _objects = [];
   int _nextId = 1;
 
-  FloorTable? _selectedTable;
+  FloorObject? _selectedObject;
 
-  void _addTable() {
+  void _addObject(FloorObjectType type) {
+    // Default dimensions for each object type.
+    final size = switch (type) {
+      FloorObjectType.table => const Size(100, 60),
+    };
+
     setState(() {
-      _tables.add(
-        FloorTable(
+      _objects.add(
+        FloorObject(
           id: _nextId++,
-          position: const Offset(100, 100)
-        )
+          type: type,
+          position: const Offset(100, 100),
+          width: size.width,
+          height: size.height,
+        ),
       );
     });
   }
 
-  void _moveTable(FloorTable table, Offset delta, Size canvasSize) {
-    setState(() {
-      _selectedTable = table;
-    });
-    final newPosition = table.position + delta;
-    final maxX = canvasSize.width > FloorTableWidget.tableWidth
-        ? canvasSize.width - FloorTableWidget.tableWidth
+  void _moveObject(
+    FloorObject object,
+    Offset delta,
+    Size canvasSize,
+  ) {
+    final newPosition = object.position + delta;
+
+    final maxX = canvasSize.width > object.width
+        ? canvasSize.width - object.width
         : 0.0;
-    final maxY = canvasSize.height > FloorTableWidget.tableHeight
-        ? canvasSize.height - FloorTableWidget.tableHeight
+
+    final maxY = canvasSize.height > object.height
+        ? canvasSize.height - object.height
         : 0.0;
 
     setState(() {
-      table.position = Offset(
+      _selectedObject = object;
+
+      object.position = Offset(
         newPosition.dx.clamp(0.0, maxX).toDouble(),
         newPosition.dy.clamp(0.0, maxY).toDouble(),
       );
     });
   }
 
-  void _deleteSelectedTable() {
-    final selected = _selectedTable;
+  void _deleteSelectedObject() {
+    final selected = _selectedObject;
     if (selected == null) return;
 
     setState(() {
-      _tables.removeWhere((table) => table.id == selected.id);
-      _selectedTable = null;
+      _objects.removeWhere((object) => object.id == selected.id);
+      _selectedObject = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final selected = _selectedObject;
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -82,22 +97,22 @@ class _FloorPlannerState extends State<FloorPlanner> {
                     fit: StackFit.expand,
                     clipBehavior: Clip.hardEdge,
                     children: [
-                      for (final table in _tables)
+                      for (final object in _objects)
                         Positioned(
-                          key: ValueKey(table.id),
-                          left: table.position.dx,
-                          top: table.position.dy,
-                          child: FloorTableWidget(
-                            table: table,
-                            isSelected: _selectedTable?.id == table.id,
-                            onDrag: (delta) => _moveTable(
-                              table,
+                          key: ValueKey(object.id),
+                          left: object.position.dx,
+                          top: object.position.dy,
+                          child: FloorObjectWidget(
+                            object: object,
+                            isSelected: selected?.id == object.id,
+                            onDrag: (delta) => _moveObject(
+                              object,
                               delta,
                               constraints.biggest,
                             ),
                             onTap: () {
                               setState(() {
-                                _selectedTable = table;
+                                _selectedObject = object;
                               });
                             },
                           ),
@@ -118,44 +133,47 @@ class _FloorPlannerState extends State<FloorPlanner> {
             child: Container(
               color: Colors.grey.shade400,
               padding: const EdgeInsets.all(16),
-              child: _selectedTable == null
-                ? const Center(
-                  child: Text('Select an object'),)
-                : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Properties',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Table ${_selectedTable!.id}'),
-                    const SizedBox(height: 8),
-                    Text(
-                      'X: ${_selectedTable!.position.dx.toStringAsFixed(0)}',
-                    ),
-                    Text(
-                      'Y: ${_selectedTable!.position.dy.toStringAsFixed(0)}'
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Width: ${FloorTableWidget.tableWidth}'),
-                    Text('Height: ${FloorTableWidget.tableHeight}'),
-
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _deleteSelectedTable, 
-                      icon: const Icon(Icons.delete),
-                      label: const Text('Delete Table'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
+              child: selected == null
+                  ? const Center(
+                      child: Text('Select an object'),
                     )
-                  ],
-                )
+                  : SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Properties',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text('Object ${selected.id}'),
+                          Text('Type: ${selected.type.name}'),
+                          const SizedBox(height: 8),
+                          Text(
+                            'X: ${selected.position.dx.toStringAsFixed(0)}',
+                          ),
+                          Text(
+                            'Y: ${selected.position.dy.toStringAsFixed(0)}',
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Width: ${selected.width}'),
+                          Text('Height: ${selected.height}'),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _deleteSelectedObject,
+                            icon: const Icon(Icons.delete),
+                            label: const Text('Delete Object'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
           ),
 
@@ -167,14 +185,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
             width: toolbarWidth,
             child: Container(
               color: Colors.grey.shade400,
-              child: Center(
+              child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: _addTable,
-                      icon: const Icon(Icons.add),
-                      label: const Text("Add Table"),
-                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _addObject(FloorObjectType.table),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Table'),
+                      ),
+                    )
                   ],
                 ),
               ),

@@ -1,25 +1,36 @@
 import 'package:flutter/material.dart';
 
-class FloorTable {
-  final int id;
-  Offset position;
-
-  FloorTable({required this.id, required this.position});
+enum FloorObjectType{
+  table,
 }
 
-// A table component placed on the floor planner canvas.
-class FloorTableWidget extends StatelessWidget {
-  static const double tableWidth = 100;
-  static const double tableHeight = 60;
+class FloorObject {
+  final int id;
+  final FloorObjectType type;
+  Offset position;
+  double width;
+  double height;
 
-  final FloorTable table;
+  FloorObject({
+    required this.id, 
+    required this.position,
+    this.type = FloorObjectType.table,
+    this.width = 50,
+    this.height = 50,
+  });
+}
+
+// A object component placed on the floor planner canvas.
+class FloorObjectWidget extends StatelessWidget {
+
+  final FloorObject object;
   final bool isSelected;
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
 
-  const FloorTableWidget({
+  const FloorObjectWidget({
     super.key,
-    required this.table,
+    required this.object,
     required this.onDrag,
     required this.onTap,
     this.isSelected = false,
@@ -33,8 +44,8 @@ class FloorTableWidget extends StatelessWidget {
       onPanUpdate: (details) => onDrag(details.delta),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: tableWidth,
-        height: tableHeight,
+        width: object.width,
+        height: object.height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
@@ -48,7 +59,7 @@ class FloorTableWidget extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(8)
         ),
-        child: Text('Table ${table.id}'),
+        child: Text('Object ${object.id}'),
       ),
     );
   }
