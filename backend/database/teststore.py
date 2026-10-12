@@ -6,12 +6,14 @@ connection.execute("""
     INSERT INTO stores (
         store_name,
         email,
+        emailver,
         accstatus
     )
-    VALUES (?, ?, ?)
+    VALUES (?, ?, ?, ?)
 """, (
     "Test Hobby Store",
     "store@test.com",
+    "PENDING",
     "ACTIVE"
 ))
 
