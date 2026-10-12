@@ -17,6 +17,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
   final List<FloorTable> _tables = [];
   int _nextId = 1;
 
+  FloorTable? _selectedTable;
+
   void _addTable() {
     setState(() {
       _tables.add(
@@ -29,6 +31,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
   }
 
   void _moveTable(FloorTable table, Offset delta, Size canvasSize) {
+    setState(() {
+      _selectedTable = table;
+    });
     final newPosition = table.position + delta;
     final maxX = canvasSize.width > FloorTableWidget.tableWidth
         ? canvasSize.width - FloorTableWidget.tableWidth
@@ -42,6 +47,16 @@ class _FloorPlannerState extends State<FloorPlanner> {
         newPosition.dx.clamp(0.0, maxX).toDouble(),
         newPosition.dy.clamp(0.0, maxY).toDouble(),
       );
+    });
+  }
+
+  void _deleteSelectedTable() {
+    final selected = _selectedTable;
+    if (selected == null) return;
+
+    setState(() {
+      _tables.removeWhere((table) => table.id == selected.id);
+      _selectedTable = null;
     });
   }
 
@@ -74,11 +89,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           top: table.position.dy,
                           child: FloorTableWidget(
                             table: table,
+                            isSelected: _selectedTable?.id == table.id,
                             onDrag: (delta) => _moveTable(
                               table,
                               delta,
                               constraints.biggest,
                             ),
+                            onTap: () {
+                              setState(() {
+                                _selectedTable = table;
+                              });
+                            },
                           ),
                         ),
                     ],
@@ -96,9 +117,45 @@ class _FloorPlannerState extends State<FloorPlanner> {
             width: toolbarWidth,
             child: Container(
               color: Colors.grey.shade400,
-              child: const Center(
-                child: Text('Left Toolbar'),
-              ),
+              padding: const EdgeInsets.all(16),
+              child: _selectedTable == null
+                ? const Center(
+                  child: Text('Select an object'),)
+                : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Properties',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Table ${_selectedTable!.id}'),
+                    const SizedBox(height: 8),
+                    Text(
+                      'X: ${_selectedTable!.position.dx.toStringAsFixed(0)}',
+                    ),
+                    Text(
+                      'Y: ${_selectedTable!.position.dy.toStringAsFixed(0)}'
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Width: ${FloorTableWidget.tableWidth}'),
+                    Text('Height: ${FloorTableWidget.tableHeight}'),
+
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _deleteSelectedTable, 
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Delete Table'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    )
+                  ],
+                )
             ),
           ),
 
