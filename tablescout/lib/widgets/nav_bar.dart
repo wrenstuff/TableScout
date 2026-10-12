@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
+import 'package:tablescout/pages/floor_planner_page.dart';
+
 import 'package:tablescout/screen_dimensions.dart';
 
 final GlobalKey _logoSectionKey = GlobalKey();
@@ -29,7 +32,7 @@ class _NavBarState extends State<NavBar> {
   final List<Widget> _pages = [
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
-    const Center(child: Text('Floor Designer')),
+    FloorPlanner(),
     const Center(child: Text('Events')),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
