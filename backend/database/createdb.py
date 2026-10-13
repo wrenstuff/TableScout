@@ -33,11 +33,32 @@ CREATE TABLE IF NOT EXISTS stores (
 """
 )
 
+connection.execute(
+    """
+CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL COLLATE NOCASE UNIQUE
+);
+"""
+)
+
+connection.execute(
+    """
+CREATE TABLE IF NOT EXISTS formats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    name TEXT NOT NULL COLLATE NOCASE,
+    FOREIGN KEY (game_id) REFERENCES games(id),
+    UNIQUE (game_id, name)
+);
+"""
+)
+
 #events
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS events (
-event_id INTEGER PRIMARY KEY AUTOINCREMENT
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
@@ -47,7 +68,7 @@ event_id INTEGER PRIMARY KEY AUTOINCREMENT
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS tables (
-table_id INTEGER PRIMARY KEY AUTOINCREMENT
+    table_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
