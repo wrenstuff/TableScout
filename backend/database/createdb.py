@@ -35,11 +35,44 @@ CREATE TABLE IF NOT EXISTS users (
 """
 )
 
+#stores
+connection.execute(
+    """
+CREATE TABLE IF NOT EXISTS stores (
+    store_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_name TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT  NULL,
+    accstatus TEXT NOT NULL DEFAULT 'ACTIVE'
+)
+"""
+)
+
+connection.execute(
+    """
+CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL COLLATE NOCASE UNIQUE
+);
+"""
+)
+
+connection.execute(
+    """
+CREATE TABLE IF NOT EXISTS formats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    name TEXT NOT NULL COLLATE NOCASE,
+    FOREIGN KEY (game_id) REFERENCES games(id),
+    UNIQUE (game_id, name)
+);
+"""
+)
+
 #events
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS events (
-event_id INTEGER PRIMARY KEY AUTOINCREMENT
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
@@ -49,7 +82,7 @@ event_id INTEGER PRIMARY KEY AUTOINCREMENT
 connection.execute(
     """
 CREATE TABLE IF NOT EXISTS tables (
-table_id INTEGER PRIMARY KEY AUTOINCREMENT
+    table_id INTEGER PRIMARY KEY AUTOINCREMENT
 )
 """
 )
