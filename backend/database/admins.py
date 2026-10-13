@@ -42,7 +42,7 @@ INSERT INTO users (
 VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "Cody",
-    "Cody@example.com",
+    "cody@example.com",
     pwhash,
     "ACTIVE",
     "ADMIN",
@@ -63,7 +63,7 @@ INSERT INTO users (
 VALUES (?, ?, ?, ?, ?, ?)
 """, (
     "Jack",
-    "Jack@example.com",
+    "jack@example.com",
     pwhash,
     "ACTIVE",
     "ADMIN",
