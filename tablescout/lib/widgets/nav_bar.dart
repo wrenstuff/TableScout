@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
+import 'package:tablescout/pages/events_page.dart';
 
 import 'package:tablescout/screen_dimensions.dart';
 
@@ -33,7 +34,7 @@ class _NavBarState extends State<NavBar> {
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
-    const Center(child: Text('Events')),
+    EventsOverviewPage(),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
     SettingsPage(),
