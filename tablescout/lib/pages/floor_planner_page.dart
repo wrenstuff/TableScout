@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
 
 class FloorPlanner extends StatefulWidget {
@@ -18,6 +23,149 @@ class _FloorPlannerState extends State<FloorPlanner> {
   int _nextId = 1;
 
   FloorObject? _selectedObject;
+
+  bool _fileBusy = false;
+
+  final File _layoutFile = File('floor_layout.json');
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _saveLayout() async {
+    if (_fileBusy) return;
+
+    setState(() => _fileBusy = true);
+
+    try {
+      final data = {
+        'version': 1,
+        'objects': [
+          for (final object in _objects)
+            {
+              'id': object.id,
+              'type': object.type.name,
+              'x': object.position.dx,
+              'y': object.position.dy,
+              'width': object.width,
+              'height': object.height,
+            },
+        ],
+      };
+
+      final json = const JsonEncoder.withIndent('  ').convert(data);
+
+      await _layoutFile.writeAsString(json, flush: true);
+
+      _showMessage('Layout saved to ${_layoutFile.absolute.path}');
+    } catch (error) {
+      _showMessage('Could not save layout: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _fileBusy = false);
+      }
+    }
+  }
+
+  Future<void> _loadLayout() async {
+    if (_fileBusy) return;
+
+    setState(() => _fileBusy = true);
+
+    try {
+      if (!await _layoutFile.exists()) {
+        _showMessage('No saved layout found. Save a layout first.');
+        return;
+      }
+
+      final decoded = jsonDecode(await _layoutFile.readAsString());
+
+      if (decoded is! Map<String, dynamic> ||
+          decoded['version'] != 1 ||
+          decoded['objects'] is! List) {
+        throw const FormatException('Invalid layout file.');
+      }
+
+      final loadedObjects = <FloorObject>[];
+      final ids = <int>{};
+      var nextId = 1;
+
+      double readNumber(Map<String, dynamic> object, String key) {
+        final value = object[key];
+
+        if (value is! num || !value.isFinite) {
+          throw FormatException('Invalid value for "$key".');
+        }
+
+        return value.toDouble();
+      }
+
+      // Validate everything before replacing the current layout.
+      for (final entry in decoded['objects'] as List) {
+        if (entry is! Map<String, dynamic>) {
+          throw const FormatException('Invalid object.');
+        }
+
+        final id = entry['id'];
+
+        if (id is! int || id < 1 || !ids.add(id)) {
+          throw const FormatException('Invalid or duplicate object ID.');
+        }
+
+        final matchingTypes = FloorObjectType.values.where(
+          (type) => type.name == entry['type'],
+        );
+
+        if (matchingTypes.isEmpty) {
+          throw FormatException('Unknown object type: ${entry['type']}');
+        }
+
+        final x = readNumber(entry, 'x');
+        final y = readNumber(entry, 'y');
+        final width = readNumber(entry, 'width');
+        final height = readNumber(entry, 'height');
+
+        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+          throw const FormatException('Invalid position or size.');
+        }
+
+        loadedObjects.add(
+          FloorObject(
+            id: id,
+            type: matchingTypes.first,
+            position: Offset(x, y),
+            width: width,
+            height: height,
+          ),
+        );
+
+        if (id >= nextId) nextId = id + 1;
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _objects
+          ..clear()
+          ..addAll(loadedObjects);
+
+        _nextId = nextId;
+        _selectedObject = null;
+      });
+
+      _showMessage('Layout loaded.');
+    } catch (error) {
+      _showMessage('Could not load layout: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _fileBusy = false);
+      }
+    }
+  }
 
   void _addObject(FloorObjectType type) {
     // Default dimensions for each object type.
@@ -210,8 +358,24 @@ class _FloorPlannerState extends State<FloorPlanner> {
             height: bottomToolbarHeight,
             child: Container(
               color: Colors.grey.shade400,
-              child: const Center(
-                child: Text('Bottom Toolbar'),
+              child: Center(
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _fileBusy ? null : _saveLayout,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save Layout'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _fileBusy ? null : _loadLayout,
+                      icon: const Icon(Icons.folder_open),
+                      label: const Text('Load Layout'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
