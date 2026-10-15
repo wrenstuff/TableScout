@@ -1,4 +1,4 @@
-from Dbconnection import Dbconnect
+from .Dbconnection import Dbconnect
 from argon2 import PasswordHasher
 
 hasher = PasswordHasher()
