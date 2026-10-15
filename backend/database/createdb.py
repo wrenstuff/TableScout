@@ -35,18 +35,6 @@ CREATE TABLE IF NOT EXISTS users (
 """
 )
 
-#stores
-connection.execute(
-    """
-CREATE TABLE IF NOT EXISTS stores (
-    store_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_name TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT  NULL,
-    accstatus TEXT NOT NULL DEFAULT 'ACTIVE'
-)
-"""
-)
-
 #events
 connection.execute(
     """
