@@ -130,6 +130,46 @@ class _SignupWidgetState extends State<SignupWidget> {
             ),
           ),
         );
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text(
+              'Signup successful',
+              textAlign: TextAlign.center,
+            ),
+            content: const Text(
+             'Your signup has been received!\n\n'
+              'The team at Platform B will assess your '
+              'application and may approve your account '
+              'within 72 hours.\n\n'
+              'Please acknowledge this message to return '
+              'to the login page.',
+              textAlign: TextAlign.center,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  context.go('/login');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF54414E),
+                  foregroundColor: const Color(0xFFB5BAD0),
+                ),
+                child: const Text('ACKNOWLEDGE'),
+              ),
+            ],
+          );
+        },
+      );
+
     } catch (error) {
       if (!mounted) return;
 
@@ -280,11 +320,21 @@ class _SignupWidgetState extends State<SignupWidget> {
                 icon: Icons.email_outlined,
               ),
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
+                final email = value?.trim() ?? '';
+
+                if (email.isEmpty) {
                   return 'Please enter your email';
                 }
 
-                if (!value.contains('@')) {
+                if (email.length < 8) {
+                  return 'Email must be at least 8 characters';
+                }
+
+                final emailPattern = RegExp(
+                  r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                );
+
+                if (!emailPattern.hasMatch(email)) {
                   return 'Please enter a valid email';
                 }
 
@@ -325,12 +375,18 @@ class _SignupWidgetState extends State<SignupWidget> {
                 ),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                final password = value ?? '';
+
+                if (password.isEmpty) {
                   return 'Please enter a password';
+                }             
+
+                if (password.length < 8) {
+                  return 'Password must be at least 8 characters';
                 }
 
-                if (value.length < 8) {
-                  return 'Password must be at least 8 characters';
+                if (!RegExp(r'[^A-Za-z0-9\s]').hasMatch(password)) {
+                  return 'Password must contain at least one symbol';
                 }
 
                 return null;
