@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/screen_dimensions.dart';
 
 class Game {
   final int id;
@@ -50,6 +51,13 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   final List<Format> _formats = [];
   final List<StoreEvent> _events = [];
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!
+  // TEMP VALUES. CHANGE LATER
+  // !!!!!!!!!!!!!!!!!!!!!!!!!
+  final int _gameCount = 4;
+  final int _formatCount = 3;
+  final int _eventCount = 5;
+
   int? _selectedGameId;
   int? _SelectedFormatId;
 
@@ -84,8 +92,70 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.sizeOf(context);
+    final padWidth = screenSize.width * 0.1;
+    final padHeight = screenSize.height * 0.05;
+
     return Container(
-      child: Text('Hello'),
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16)
+      ),
+      margin: !ScreenDimensions.isMobile(context)
+            ? EdgeInsets.fromLTRB(
+                padWidth,
+                padHeight,
+                padWidth,
+                padHeight / 2,
+              )
+            : EdgeInsets.fromLTRB(
+                55,
+                0,
+                0,
+                0,
+              ),
+          padding: const EdgeInsets.all(12),
+      
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Select Game',
+            style: TextStyle(fontSize: 16),
+          ),
+          Row(
+            // select game
+            children: [
+              const SizedBox(height: 80),
+
+              // game/format selection
+              SizedBox(
+                height: 80,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (int i = 0; i < _gameCount; i++)
+                      Container(
+                        width: 80,
+                        height: 80,
+                        margin: const EdgeInsets.only(right: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child:  Text('Game ${i + 1}'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            ]
+          )
+        ],
+      ),
     );
   }
 }
