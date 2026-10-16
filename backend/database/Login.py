@@ -1,8 +1,15 @@
 from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
+from flask_cors import CORS
 from argon2 import PasswordHasher
 
 app = Flask(__name__)
+
+CORS (app, resources= {
+     r"/tablescout/*": {
+        "origins": ["http://localhost:55031"]
+     }
+})
 hasher = PasswordHasher()
 
 @app.route("/tablescout/pages/login", methods =["POST"])

@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:tablescout/app_config.dart';
 
 class SignupService {
-  static const String serverUrl = 'ws://127.0.0.1:8765';
+  static const String serverUrl = AppConfig.webSocketUrl;
 
   static Future<Map<String, dynamic>> signup({
     required String username,
