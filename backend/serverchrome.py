@@ -13,6 +13,7 @@ async def handle_connection(websocket):
 async def main():
     async with serve(
         handle_connection,
+          "127.0.0.1",
              8765
         ) as server:
         print("Server running as ws://127.0.0.1:8765")
