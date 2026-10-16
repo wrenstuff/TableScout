@@ -7,7 +7,10 @@ app = Flask(__name__)
 
 CORS (app, resources= {
      r"/tablescout/*": {
-        "origins": ["http://localhost:55031"]
+        "origins": [
+            r"^http://localhost:\d+$",
+            r"^http://127\.0\.0\.1:\d+$"
+        ]
      }
 })
 hasher = PasswordHasher()
