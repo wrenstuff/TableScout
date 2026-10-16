@@ -33,17 +33,12 @@ CREATE TABLE IF NOT EXISTS stores (
 """
 )
 
-connection.execute(
-    """
+connection.executescript("""
 CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL COLLATE NOCASE UNIQUE
 );
-"""
-)
 
-connection.execute(
-    """
 CREATE TABLE IF NOT EXISTS formats (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id INTEGER NOT NULL,
@@ -51,18 +46,11 @@ CREATE TABLE IF NOT EXISTS formats (
     FOREIGN KEY (game_id) REFERENCES games(id),
     UNIQUE (game_id, name)
 );
-"""
-)
 
-#events
-connection.execute(
-    """
 CREATE TABLE IF NOT EXISTS events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT
-)
-"""
-)
-
+);
+    """)
 
 #tables
 connection.execute(
