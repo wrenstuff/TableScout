@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:tablescout/session/session_manager.dart';
+import 'package:go_router/go_router.dart';
+import 'package:tablescout/session/session_manager.dart';
+
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
+import 'package:tablescout/pages/floor_planner_page.dart';
+
 import 'package:tablescout/screen_dimensions.dart';
 
 final GlobalKey _logoSectionKey = GlobalKey();
@@ -32,7 +37,7 @@ class _NavBarState extends State<NavBar> {
   final List<Widget> _pages = [
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
-    const Center(child: Text('Floor Designer')),
+    FloorPlanner(),
     const Center(child: Text('Events')),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
@@ -99,6 +104,13 @@ class _NavBarState extends State<NavBar> {
         _navOpen = false;
       });
     }
+  }
+
+  void _signOut() {
+    context.read<SessionManager>().logout();
+
+    //Return to login using app routing
+    context.go('/login');
   }
 
   @override
@@ -255,19 +267,27 @@ class _NavBarState extends State<NavBar> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        setState(() {
+                          _selectedIndex = _pages.length -1;
+                        });
+                      },
                       child: Text(
-                        sessionManager.username ?? 'Account',
-                        style: TextStyle(
+                        context.watch<SessionManager>().username?.isNotEmpty == true
+                          ? context.watch<SessionManager>().username!
+                          : 'Account',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: Colors.black87,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
 
                   IconButton(
+                    tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
                         _selectedIndex = _pages.length - 1;
@@ -275,6 +295,15 @@ class _NavBarState extends State<NavBar> {
                     },
                     icon: const Icon(
                       Icons.settings,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Sign out',
+                    onPressed: _signOut,
+                    icon: const Icon(
+                      Icons.logout,
                       color: Colors.black87,
                     ),
                   ),

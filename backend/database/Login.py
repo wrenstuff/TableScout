@@ -1,7 +1,19 @@
 from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
+from flask_cors import CORS
+from argon2 import PasswordHasher
 
 app = Flask(__name__)
+
+CORS (app, resources= {
+     r"/tablescout/*": {
+        "origins": [
+            r"^http://localhost:\d+$",
+            r"^http://127\.0\.0\.1:\d+$"
+        ]
+     }
+})
+hasher = PasswordHasher()
 
 @app.route("/tablescout/pages/login", methods =["POST"])
 def login():
@@ -10,8 +22,9 @@ def login():
     info = request.get_json(silent=True) or {}
 
     #get email and password from the request
-    email = info.get("email")
+    email = info.get("email").lower()
     password = info.get("password")
+
 
     #checking if email and password are provided
     if not email or not password:
@@ -41,10 +54,16 @@ def login():
              "error": "invalid email or password please try again"
          }),401
 
-    if user["pwhash"] != password:
-        return jsonify({
-                     "error": "invalid email or password please try again"
-                 }),401
+    try:
+        hasher.verify(user["pwhash"], password)
+
+    except Exception:
+        return jsonify  ({
+        "success": False,
+        "message":"Invalid email or password"
+        }
+        ),401
+
 
     return jsonify({
         "message": "Login successful",
