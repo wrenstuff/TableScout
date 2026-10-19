@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:tablescout/session/session_manager.dart';
 
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
@@ -99,6 +102,13 @@ class _NavBarState extends State<NavBar> {
         _navOpen = false;
       });
     }
+  }
+
+  void _signOut() {
+    context.read<SessionManager>().logout();
+
+    //Return to login using app routing
+    context.go('/login');
   }
 
   @override
@@ -253,20 +263,27 @@ class _NavBarState extends State<NavBar> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        // CHANGE THIS TO USERNAME
-                        'Account',
-                        style: TextStyle(
+                      onPressed: () {
+                        setState(() {
+                          _selectedIndex = _pages.length -1;
+                        });
+                      },
+                      child: Text(
+                        context.watch<SessionManager>().username?.isNotEmpty == true
+                          ? context.watch<SessionManager>().username!
+                          : 'Account',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: Colors.black87,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
 
                   IconButton(
+                    tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
                         _selectedIndex = _pages.length - 1;
@@ -274,6 +291,15 @@ class _NavBarState extends State<NavBar> {
                     },
                     icon: const Icon(
                       Icons.settings,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Sign out',
+                    onPressed: _signOut,
+                    icon: const Icon(
+                      Icons.logout,
                       color: Colors.black87,
                     ),
                   ),
