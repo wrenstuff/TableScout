@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:tablescout/session/session_manager.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -129,6 +131,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   icon: Icons.logout,
                   onTap: () {
                     // Handle signing out
+                    context.read<SessionManager>().logout();
                   },
                 ),
               ],
