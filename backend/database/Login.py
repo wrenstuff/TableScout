@@ -22,7 +22,7 @@ def login():
     info = request.get_json(silent=True) or {}
 
     #get email and password from the request
-    email = info.get("email")
+    email = info.get("email").lower()
     password = info.get("password")
 
 
