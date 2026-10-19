@@ -1,9 +1,11 @@
 import asyncio
+import json
 
 from websockets.exceptions import ConnectionClosed
 from websockets.asyncio.server import serve
 
 from message_handler import handle_message
+from request_handler import handle_request
 
 
 async def handle_connection(websocket):
@@ -11,8 +13,8 @@ async def handle_connection(websocket):
 
     try:
         async for message in websocket:
-            print(f"Received: {message}")
-            await websocket.send(f"Server Recieved: {message}")
+            response = await handle_request(message)
+            await websocket.send(json.dumps(response))
     
     except ConnectionClosed:
         pass

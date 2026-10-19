@@ -1,7 +1,7 @@
 import json
 
 from contextlib import closing
-from database.Dbconnection import Dbconnect as dcon
+from database.Dbconnection import Dbconnect
 
 def create_game(name):
     name = name.strip()
@@ -9,9 +9,9 @@ def create_game(name):
     if not name:
         raise ValueError("Game name is required.")
 
-    with closing(dcon.connect()) as connection:
+    with closing(Dbconnect.connect()) as connection:
         with connection:
-            cursor = connection.excecute(
+            cursor = connection.execute(
                 "INSERT INTO games (name) VALUES (?)",
                 (name,),
             )
@@ -27,12 +27,12 @@ def create_format(game_id, name):
     if not name:
         raise ValueError("Format name is required.")
 
-    with closing(dcon.connect()) as connection:
+    with closing(Dbconnect.connect()) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
 
         with connection:
             cursor = connection.execute(
-                "INSERT INTO formats (game_id, name) VALUES (?, ?)"
+                "INSERT INTO formats (game_id, name) VALUES (?, ?)",
                 (game_id, name),
             )
 
@@ -43,7 +43,9 @@ def create_format(game_id, name):
             }
 
 def get_events_data():
-    with closing(dcon.connect()) as connection:
+    with closing(Dbconnect.connect()) as connection:
+        for row in connection.execute("PRAGMA database_list"):
+            print("Database path:", row["file"])
         games = connection.execute(
 """
 SELECT id, name

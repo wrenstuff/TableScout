@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
 import 'package:tablescout/screen_dimensions.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 class Game {
   final int id;
@@ -9,6 +14,13 @@ class Game {
     required this.id,
     required this.name,
   });
+
+  factory Game.fromJson(Map<String, dynamic> json) {
+    return Game(
+      id: json['id'] as int, 
+      name: json['name'] as String,
+    );
+  }
 }
 
 class Format {
@@ -21,11 +33,20 @@ class Format {
     required this.gameId,
     required this.name,
   });
+
+  factory Format.fromJson(Map<String, dynamic> json) {
+    return Format(
+      id: json['id'] as int, 
+      gameId: json['game_id'] as int, 
+      name: json['name'] as String,
+    );
+  }
 }
 
 class StoreEvent {
   final int id;
   final int formatId;
+  final int gameId;
   final String name;
   final List<int> tables;
   final String time;
@@ -33,10 +54,22 @@ class StoreEvent {
   const StoreEvent({
     required this.id,
     required this.formatId,
+    required this.gameId,
     required this.name,
     required this.tables,
     required this.time,
   });
+
+  factory StoreEvent.fromJson(Map<String, dynamic> json) {
+    return StoreEvent(
+      id: json['event_id'] as int, 
+      gameId: json['game_id'] as int,
+      formatId: json['format_id'] as int, 
+      name: json['name'] as String, 
+      tables: List<int>.from(json['tables'] as List), 
+      time: json['time'] as String? ?? 'Not Scheduled',
+    );
+  }
 }
 
 class EventsOverviewPage extends StatefulWidget {
@@ -63,6 +96,97 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   int? _selectedGameId;
   int? _SelectedFormatId;
+
+  final _socket = WebSocketService.instance;
+  StreamSubscription<dynamic>? _messageSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEventsData();
+  }
+
+  Future<void> _loadEventsData() async {
+    try {
+      await _socket.connect();
+
+      if (!mounted) return;
+
+      _messageSubscription = _socket.messages.listen(
+        _handleMessage,
+        onError: (Object error) {
+          debugPrint('WebSocket error: $error');
+        },
+      );
+
+      _socket.send({
+        'type': 'get_events_data',
+      });
+    } catch (error) {
+      debugPrint('Unable to load events: $error');
+    }
+  }
+
+  void _handleMessage(dynamic message) {
+    try {
+      final data = Map<String, dynamic>.from(
+        jsonDecode(message as String) as Map,
+      );
+
+      if (data['type'] == 'error') {
+        debugPrint('Server error: ${data['message']}');
+        return;
+      }
+
+      if (data['type'] != 'events_data') return;
+
+      final games = (data['games'] as List)
+        .map((item) => Game.fromJson(
+          Map<String, dynamic>.from(item as Map),
+        )).toList();
+
+      final formats = (data['formats'] as List)
+        .map((item) => Format.fromJson(
+          Map<String, dynamic>.from(item as Map),
+        )).toList();
+
+      final events = (data['events'] as List)
+        .map((item) => StoreEvent.fromJson(
+          Map<String, dynamic>.from(item as Map),
+        )).toList();
+      
+      if (!mounted) return;
+
+      setState(() {
+        _games
+          ..clear()
+          ..addAll(games);
+
+        _formats
+          ..clear()
+          ..addAll(formats);
+
+        _events
+          ..clear()
+          ..addAll(events);
+      });
+
+      debugPrint(
+        'Loaded ${_games.length} games, '
+        '${_formats.length} formats, '
+        '${_events.length} events'
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Unable to read server response: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
+    super.dispose();
+  }
 
   void _addGame(Game game) {
     setState(() {
@@ -128,7 +252,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (int i = 0; i < _gameCount; i++)
+                  for (final game in _games)
                     Container(
                       width: 80,
                       height: 80,
@@ -138,7 +262,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('Game ${i + 1}'),
+                      child: Text(game.name),
                     ),
                 ],
               ),
@@ -159,7 +283,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (int i = 0; i < _formatCount; i++)
+                  for (final format in _formats)
                     Container(
                       width: 80,
                       height: 80,
@@ -169,7 +293,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('Format ${i + 1}'),
+                      child: Text(format.name),
                     ),
                 ],
               ),
@@ -196,7 +320,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               ),
               child: ListView(
                 children: [
-                  for (int i = 0; i < _eventCount; i++)
+                  for (int i = 0; i < _events.length; i++)
                     Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(16),
@@ -206,7 +330,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                             : Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('Event ${i + 1}'),
+                      child: Text(_events[i].name),
                     ),
                 ],
               ),
