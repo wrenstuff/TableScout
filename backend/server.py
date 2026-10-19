@@ -1,8 +1,11 @@
 import asyncio
 import json
 
-from websockets.exceptions import ConnectionClosed
 from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
+
+from request_handler import handle_request
+
 
 from message_handler import handle_message
 from request_handler import handle_request
