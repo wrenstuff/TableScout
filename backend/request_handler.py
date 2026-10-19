@@ -28,6 +28,11 @@ async def handle_request(message):
         except sqlite3.Error as error:
             print(f"Failed to read event data: {error}")
 
+            return {
+                "type": "error",
+                "message": "Unable to load event data"
+            }
+
     return {
         "type": "error",
         "message": f"Unknown request type: {request_type}"

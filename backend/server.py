@@ -4,13 +4,16 @@ import json
 from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
 
+from request_handler import handle_request
+
+
 async def handle_connection(websocket):
     print("Flutter Connected")
 
     try:
         async for message in websocket:
-            print(f"Received: {message}")
-            await websocket.send(f"Server Recieved: {message}")
+            response = await handle_request(message)
+            await websocket.send(json.dumps(response))
     
     except ConnectionClosed:
         pass
