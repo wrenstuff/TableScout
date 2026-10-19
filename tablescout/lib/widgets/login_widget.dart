@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 
-// import 'package:tablescout/session/session_manager.dart';
-// import 'package:tablescout/pages/signup_page.dart';
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/services/auth_service.dart';
-import 'package:tablescout/widgets/nav_bar.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -34,61 +32,65 @@ class _LoginWidgetState extends State<LoginWidget> {
   }
 
   Future<void> _login() async {
-    //if (!_formKey.currentState!.validate()) {
-    //  return;
-    //}
-    //
-    //final sessionManager = context.read<SessionManager>();
-    //
-    //final success = await sessionManager.login(
-    //  _usernameController.text.trim(),
-    //  _passwordController.text,
-    //);
-    //
-    //if (!mounted) return;
-    //
-    //if (success) {
-    //  context.go('/app');
-    //} else {
-    //  ScaffoldMessenger.of(context).showSnackBar(
-    //    const SnackBar(
-    //      content: Text('Incorrect username or password'),
-    //    ),
-    //  );
     if (_isLoading) return;
-    if (!_formKey.currentState!.validate()) return;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await AuthService.login(
+      //asking backend to auth user
+      final data = await AuthService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      
+
       if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const NavBar(),
-        ),
+      //get user data returned by backend
+      final user = data['user'];
+
+      //Ensure backend returned user data
+      if (user==null) {
+        throw Exception('Login Succeed but no user data returned');
+      }
+
+      //Get app SessionManager
+      final sessionManager = context.read<SessionManager>();
+
+      //Store the logged in users data in session
+      sessionManager.setSession(
+        userId: user['id'],
+        email: user['email'],
+        username: user['username'],
+        role: user['role'],
       );
+
+      //SessionManager calls notifyListeners()
+      //GoRouter listens to SessionManager
+      //auto redirect to /app
     } catch (error) {
       if (!mounted) return;
 
-      final message = error.toString().replaceFirst('Exception: ', '');
+      final message = error
+        .toString()
+        .replaceFirst('Exception: ', '');
 
-      ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
+        ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
     } finally {
       if (mounted) {
-        setState(() {
+        setState((){
           _isLoading = false;
         });
       }

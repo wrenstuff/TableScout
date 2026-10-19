@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:tablescout/session/session_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tablescout/session/session_manager.dart';
 
@@ -182,6 +184,8 @@ class _NavBarState extends State<NavBar> {
 // nav bar
 
   Widget _buildNavBar() {
+    final sessionManager = context.watch<SessionManager>();
+
     return Container(
       width: _navOpen
           ? _navExpandedWidth
