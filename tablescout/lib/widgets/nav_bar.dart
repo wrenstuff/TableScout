@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import 'package:tablescout/session/session_manager.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tablescout/session/session_manager.dart';
 
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
@@ -108,9 +106,6 @@ class _NavBarState extends State<NavBar> {
 
   void _signOut() {
     context.read<SessionManager>().logout();
-
-    //Return to login using app routing
-    context.go('/login');
   }
 
   @override
@@ -273,8 +268,8 @@ class _NavBarState extends State<NavBar> {
                         });
                       },
                       child: Text(
-                        context.watch<SessionManager>().username?.isNotEmpty == true
-                          ? context.watch<SessionManager>().username!
+                        sessionManager.username?.isNotEmpty == true
+                          ? sessionManager.username!
                           : 'Account',
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(

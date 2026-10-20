@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:tablescout/session/session_manager.dart';
-import 'package:tablescout/services/auth_service.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -44,43 +43,24 @@ class _LoginWidgetState extends State<LoginWidget> {
 
     try {
       //asking backend to auth user
-      final data = await AuthService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-
-      if (!mounted) return;
-
-      //get user data returned by backend
-      final user = data['user'];
-
-      //Ensure backend returned user data
-      if (user==null) {
-        throw Exception('Login Succeed but no user data returned');
-      }
-
-      //Get app SessionManager
       final sessionManager = context.read<SessionManager>();
 
-      //Store the logged in users data in session
-      sessionManager.setSession(
-        userId: user['id'],
-        email: user['email'],
-        username: user['username'],
-        role: user['role'],
+      final success = await sessionManager.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
       );
 
-      //SessionManager calls notifyListeners()
-      //GoRouter listens to SessionManager
-      //auto redirect to /app
-    } catch (error) {
       if (!mounted) return;
 
-      final message = error
-        .toString()
-        .replaceFirst('Exception: ', '');
+      if (success) {
+        //SessionManager notifies GoROuter
+        //The router redirects to /app
+        return;
+      }
 
-        ScaffoldMessenger.of(context)
+      final message = sessionManager.lastError ?? 'Login failed.';
+
+      ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
@@ -88,9 +68,20 @@ class _LoginWidgetState extends State<LoginWidget> {
             backgroundColor: Colors.red,
           ),
         );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
     } finally {
       if (mounted) {
-        setState((){
+        setState(() {
           _isLoading = false;
         });
       }
