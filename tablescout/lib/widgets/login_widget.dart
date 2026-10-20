@@ -20,6 +20,11 @@ class _LoginWidgetState extends State<LoginWidget> {
   final TextEditingController _emailController =
       TextEditingController();
 
+  final FocusNode _emailFocusNode = 
+      FocusNode();
+  final FocusNode _passwordFocusNode = 
+      FocusNode();
+
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -27,6 +32,8 @@ class _LoginWidgetState extends State<LoginWidget> {
   void dispose() {
     _passwordController.dispose();
     _emailController.dispose();
+    _passwordFocusNode.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
@@ -208,6 +215,12 @@ class _LoginWidgetState extends State<LoginWidget> {
             // Email
             TextFormField(
               controller: _emailController,
+              focusNode: _emailFocusNode,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                _passwordFocusNode.requestFocus();
+              },
               decoration: _inputDecoration(
                 hintText: 'Enter your email',
                 icon: Icons.person_outline,
@@ -238,6 +251,9 @@ class _LoginWidgetState extends State<LoginWidget> {
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
+              focusNode: _passwordFocusNode,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _login(),
               decoration: _inputDecoration(
                 hintText: 'Enter your password',
                 icon: Icons.lock_outline,
