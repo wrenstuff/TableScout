@@ -17,7 +17,6 @@ class SessionManager extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isLoading => _isLoading;
   int? get userid => _userId;
-  int? get userID => _userId;
   String? get email => _email;
   String? get username => _username;
   String? get role => _role;
