@@ -6,7 +6,13 @@ import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
-
+import 'package:tablescout/pages/account_page.dart';
+import 'package:tablescout/pages/staff_manage.dart';
+import 'package:tablescout/pages/privacy_page.dart';
+import 'package:tablescout/pages/passwordmanage_page.dart';
+import 'package:tablescout/pages/cloud_page.dart';
+import 'package:tablescout/pages/customise_page.dart';
+import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
 
 final GlobalKey _logoSectionKey = GlobalKey();
@@ -32,14 +38,30 @@ class _NavBarState extends State<NavBar> {
 
   double _logoSectionHeight = 0;
 
-  final List<Widget> _pages = [
+  late final List<Widget> _pages = [
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
     const Center(child: Text('Events')),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
-    SettingsPage(),
+    SettingsPage(onNavigate: (index) {
+      setState(() {
+        _selectedIndex = index;
+        
+      });
+    }),
+    
+    const AccountPage(),
+    const StaffManagementPage(),
+    const PrivacyPage(),
+    const PasswordManagementPage(),
+    const CloudPage(),
+    const CustomisePage(),
+    const NotificationsPage(),
+
+
+  
   ];
 
   @override
@@ -132,6 +154,7 @@ class _NavBarState extends State<NavBar> {
     );
   }
 
+ 
 //mobile specific
 
   Widget _buildMobileLayout() {
@@ -285,7 +308,7 @@ class _NavBarState extends State<NavBar> {
                     tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
-                        _selectedIndex = _pages.length - 1;
+                        _selectedIndex = _selectedIndex == 5 ? -1 : 5;
                       });
                     },
                     icon: const Icon(

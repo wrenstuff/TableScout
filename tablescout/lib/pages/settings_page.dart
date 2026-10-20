@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/screen_dimensions.dart';
 import 'package:provider/provider.dart';
 import 'package:tablescout/session/session_manager.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final Function(int) onNavigate;
+
+  const SettingsPage({super.key, required this.onNavigate});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -67,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Account',
                   icon: Icons.person,
                   onTap: () {
-                    // Navigate to Account
+                    widget.onNavigate(6);
                   },
                 ),
 
@@ -75,9 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 _settingsBox(
                   label: 'Staff Management',
                   icon: Icons.manage_accounts,
-                  onTap: () {
-                    // Navigate to Staff Management
-                  },
+                  onTap: () { widget.onNavigate(7); }
                 ),
 
                 // PRIVACY
@@ -85,7 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Privacy',
                   icon: Icons.privacy_tip_outlined,
                   onTap: () {
-                    // Navigate to Privacy
+                    widget.onNavigate(8);
                   },
                 ),
 
@@ -94,7 +95,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Password Management',
                   icon: Icons.vpn_key_outlined,
                   onTap: () {
-                    // Navigate to Password Management
+                    widget.onNavigate(9);
                   },
                 ),
 
@@ -103,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Cloud',
                   icon: Icons.cloud_outlined,
                   onTap: () {
-                    // Navigate to Cloud
+                    widget.onNavigate(10);
                   },
                 ),
 
@@ -112,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Customise',
                   icon: Icons.dashboard_customize_outlined,
                   onTap: () {
-                    // Navigate to Customise
+                    widget.onNavigate(11);
                   },
                 ),
 
@@ -121,7 +122,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: 'Notifications',
                   icon: Icons.notifications_outlined,
                   onTap: () {
-                    // Navigate to Notifications
+                    widget.onNavigate(12);
                   },
                 ),
 
