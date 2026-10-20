@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
@@ -124,6 +126,10 @@ class _NavBarState extends State<NavBar> {
     }
   }
 
+  void _signOut() {
+    context.read<SessionManager>().logout();
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -196,6 +202,8 @@ class _NavBarState extends State<NavBar> {
 // nav bar
 
   Widget _buildNavBar() {
+    final sessionManager = context.watch<SessionManager>();
+
     return Container(
       width: _navOpen
           ? _navExpandedWidth
@@ -277,20 +285,27 @@ class _NavBarState extends State<NavBar> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        // CHANGE THIS TO USERNAME
-                        'Account',
-                        style: TextStyle(
+                      onPressed: () {
+                        setState(() {
+                          _selectedIndex = _pages.length -1;
+                        });
+                      },
+                      child: Text(
+                        sessionManager.username?.isNotEmpty == true
+                          ? sessionManager.username!
+                          : 'Account',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
                           color: Colors.black87,
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
 
                   IconButton(
+                    tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
                         _selectedIndex = _selectedIndex == 5 ? -1 : 5;
@@ -298,6 +313,15 @@ class _NavBarState extends State<NavBar> {
                     },
                     icon: const Icon(
                       Icons.settings,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Sign out',
+                    onPressed: _signOut,
+                    icon: const Icon(
+                      Icons.logout,
                       color: Colors.black87,
                     ),
                   ),
