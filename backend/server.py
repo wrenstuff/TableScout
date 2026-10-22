@@ -15,7 +15,7 @@ updates = EventsUpdates()
 
 
 async def handle_connection(websocket):
-    print("Flutter Connected")
+    print(f"Flutter Connected — running {__file__}", flush=True)
     updates.add_client(websocket)
 
     try:

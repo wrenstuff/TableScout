@@ -16,3 +16,11 @@ class Dbconnect:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
+
+# if __name__ == "__main__":
+#     connection = Dbconnect.connect()
+#     try:
+#         print(f"Database path: {Dbconnect.DATABASE}")
+#         print(f"File exists: {Dbconnect.DATABASE.is_file()}")
+#     finally:
+#         connection.close()

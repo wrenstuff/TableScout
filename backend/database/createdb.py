@@ -62,7 +62,22 @@ CREATE TABLE IF NOT EXISTS formats (
 );
 
 CREATE TABLE IF NOT EXISTS events (
-    event_id INTEGER PRIMARY KEY AUTOINCREMENT
+    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER REFERENCES games(id),
+    format_id INTEGER REFERENCES formats(id),
+    name TEXT,
+    description TEXT,
+    date TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    rounds INTEGER DEFAULT 0,
+    current_round INTEGER DEFAULT 0,
+    current_round_end_time TEXT,
+    participants TEXT DEFAULT '[]',
+    tables TEXT DEFAULT '[]',
+    status TEXT DEFAULT 'not_started',
+    standings TEXT DEFAULT '[]',
+    bracket TEXT DEFAULT '[]'
 );
     """)
 

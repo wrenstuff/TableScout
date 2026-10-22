@@ -16,7 +16,7 @@ class EventsUpdates:
         self._clients.add(websocket)
 
     def remove_client(self, websocket):
-        self.discard(websocket)
+        self._clients.discard(websocket)
 
     async def _send(self, websocket, message):
         try:
