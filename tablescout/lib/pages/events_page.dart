@@ -9,16 +9,19 @@ import 'package:tablescout/services/websocket_service.dart';
 class Game {
   final int id;
   final String name;
+  final String name_short;
 
   const Game({
     required this.id,
     required this.name,
+    required this.name_short,
   });
 
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
       id: json['id'] as int, 
       name: json['name'] as String,
+      name_short: json['name_short'] as String,
     );
   }
 }
@@ -27,11 +30,13 @@ class Format {
   final int id;
   final int gameId;
   final String name;
+  final String name_short;
 
   const Format({
     required this.id,
     required this.gameId,
     required this.name,
+    required this.name_short,
   });
 
   factory Format.fromJson(Map<String, dynamic> json) {
@@ -39,6 +44,7 @@ class Format {
       id: json['id'] as int, 
       gameId: json['game_id'] as int, 
       name: json['name'] as String,
+      name_short: json['name_short'] as String,
     );
   }
 }
@@ -83,19 +89,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   final List<Game> _games = [];
   final List<Format> _formats = [];
   final List<StoreEvent> _events = [];
-  //final visibleFormats = _formats
-  //  .where((format) => format.gameId == _selectedGameId)
-  //  .toList();
-
-  // !!!!!!!!!!!!!!!!!!!!!!!!!
-  // TEMP VALUES. CHANGE LATER
-  // !!!!!!!!!!!!!!!!!!!!!!!!!
-  final int _gameCount = 4;
-  final int _formatCount = 3;
-  final int _eventCount = 5;
 
   int? _selectedGameId;
-  int? _SelectedFormatId;
+  int? _selectedFormatId;
 
   final _socket = WebSocketService.instance;
   StreamSubscription<dynamic>? _messageSubscription;
@@ -223,6 +219,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     final padWidth = screenSize.width * 0.1;
     final padHeight = screenSize.height * 0.05;
 
+    final visibleFormats = _formats
+      .where((format) => format.gameId == _selectedGameId)
+      .toList();
+
     return Container(
       margin: !ScreenDimensions.isMobile(context)
           ? EdgeInsets.fromLTRB(
@@ -239,8 +239,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Select Game',
+          Text(
+            _selectedGameId == null
+              ? 'Select Game'
+              : 'Selected Game: ${_games.firstWhere(
+                (game) => game.id == _selectedGameId,
+              ).name}',
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -253,25 +257,66 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               child: Row(
                 children: [
                   for (final game in _games)
-                    Container(
-                      width: 80,
-                      height: 80,
-                      margin: const EdgeInsets.only(right: 12),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedGameId = 
+                            _selectedGameId == game.id ? null : game.id;
+                          _selectedFormatId = null;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        margin: const EdgeInsets.only(right: 12),
+                        padding: const EdgeInsets.all(10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _selectedGameId == game.id
+                            ? Colors.blue.shade200
+                            : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          game.name_short,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+
+
+                    
+
+                  // add game
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(80, 80),
+                      padding: EdgeInsets.zero,
+                      backgroundColor: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(game.name),
                     ),
+                    onPressed: _openAddGameDialog, 
+                    child: const Icon(
+                      Icons.add,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  )
                 ],
               ),
             ),
           ),
 
           const SizedBox(height: 16),
-          const Text(
-            'Select Format',
+          Text(
+            _selectedFormatId == null
+              ? 'Select Format'
+              : 'Selected Format: ${_formats.firstWhere(
+                (format) => format.id == _selectedFormatId,
+              ).name}',
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -283,18 +328,55 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final format in _formats)
-                    Container(
+                  for (final format in visibleFormats)
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedFormatId = 
+                          _selectedFormatId == format.id ? null : format.id;
+                        
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
                       width: 80,
                       height: 80,
                       margin: const EdgeInsets.only(right: 12),
                       alignment: Alignment.center,
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
+                        color: _selectedFormatId == format.id 
+                          ? Colors.blue.shade200
+                          : Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(format.name),
+                      child: Text(
+                        format.name_short,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
+                  ),
+                    
+
+                    // add format
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(80, 80),
+                      padding: EdgeInsets.zero,
+                      backgroundColor: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: _selectedGameId == null
+                      ? null
+                      : _openAddFormatDialog, 
+                    child: const Icon(
+                      Icons.add,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  )
                 ],
               ),
             ),

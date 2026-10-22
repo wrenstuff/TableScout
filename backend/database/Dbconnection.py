@@ -7,20 +7,15 @@ class Dbconnect:
 
     @staticmethod
     def connect():
-        if not Dbconnect.DATABASE.is_file():
-            raise FileNotFoundError(
-                f"Database not found: {Dbconnect.DATABASE}"
-            )
-        
         connection = sqlite3.connect(Dbconnect.DATABASE)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
 
-# if __name__ == "__main__":
-#     connection = Dbconnect.connect()
-#     try:
-#         print(f"Database path: {Dbconnect.DATABASE}")
-#         print(f"File exists: {Dbconnect.DATABASE.is_file()}")
-#     finally:
-#         connection.close()
+if __name__ == "__main__":
+    connection = Dbconnect.connect()
+    try:
+        print(f"Database path: {Dbconnect.DATABASE}")
+        print(f"File exists: {Dbconnect.DATABASE.is_file()}")
+    finally:
+        connection.close()

@@ -3,43 +3,53 @@ import json
 from contextlib import closing
 from database.Dbconnection import Dbconnect
 
-def create_game(name):
+def create_game(name, name_short):
     name = name.strip()
+    name_short = name_short.strip()
 
     if not name:
         raise ValueError("Game name is required.")
 
+    if not name_short:
+        raise ValueError("Game short name is required.")
+
     with closing(Dbconnect.connect()) as connection:
         with connection:
             cursor = connection.execute(
-                "INSERT INTO games (name) VALUES (?)",
-                (name,),
+                "INSERT INTO games (name, name_short) VALUES (?, ?)",
+                (name, name_short),
             )
 
             return {
                 "id": cursor.lastrowid,
                 "name": name,
+                "name_short": name_short,
             }
 
-def create_format(game_id, name):
+def create_format(game_id, name, name_short):
     name = name.strip()
+    name_short = name_short.strip()
 
     if not name:
         raise ValueError("Format name is required.")
+
+    if not name_short:
+        raise ValueError("Format short name is required.")
 
     with closing(Dbconnect.connect()) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
 
         with connection:
             cursor = connection.execute(
-                "INSERT INTO formats (game_id, name) VALUES (?, ?)",
-                (game_id, name),
+                "INSERT INTO formats (game_id, name, name_short) VALUES (?, ?, ?)",
+                (game_id, name, name_short),
             )
 
             return {
                 "id": cursor.lastrowid,
                 "game_id": game_id,
                 "name": name,
+                "name_short": name_short
             }
 
 def get_events_data():
@@ -48,7 +58,7 @@ def get_events_data():
             print("Database path:", row["file"])
         games = connection.execute(
 """
-SELECT id, name
+SELECT id, name, name_short
 FROM games
 ORDER BY name
 """
@@ -56,7 +66,7 @@ ORDER BY name
 
         formats = connection.execute(
 """
-SELECT id, game_id, name
+SELECT id, game_id, name, name_short
 FROM formats
 ORDER BY name
 """
