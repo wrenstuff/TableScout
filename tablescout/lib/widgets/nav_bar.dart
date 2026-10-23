@@ -50,9 +50,16 @@ class _NavBarState extends State<NavBar> {
         _selectedIndex = index;
         
       });
-    }),
+    },
+  ),
     
-    const AccountPage(),
+    AccountPage(
+      onNavigateToPassword: () {
+        setState(() {
+          _selectedIndex =9;
+        });
+      },
+    ),
     const StaffManagementPage(),
     const PrivacyPage(),
     const PasswordManagementPage(),

@@ -1,17 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:tablescout/session/session_manager.dart';
+import 'package:tablescout/pages/passwordmanage_page.dart';
 
 class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
+  final VoidCallback onNavigateToPassword;
+
+  const AccountPage({
+    super.key,
+    required this.onNavigateToPassword,
+    });
 
   @override
   Widget build(BuildContext context) {
-    //Temporary Data while stateless
-    //will update for logged in user data
-    const username = 'Username';
-    const email = 'user@example.com';
-    const phone = 'Not added';
-    const role = 'Store Manager';
-    const store = 'Your Store';
+    final sessionManager = context.watch<SessionManager>();
+
+    final username = sessionManager.username?.trim() ?? '';
+    final email = sessionManager.email?.trim() ?? '';
+    final role = sessionManager.role?.trim() ?? '';
+
+    final displayUsername = 
+      username.isNotEmpty ? username : 'User';
+
+    final displayEmail = 
+      email.isNotEmpty ? email : 'No email available';
+
+    final displayRole = 
+      role.isNotEmpty ? _formatRole(role) : 'Not available';
+
+    final initials = _getInitials(displayUsername);
 
     final theme = Theme.of(context);
     final colours = theme.colorScheme;
@@ -45,10 +63,12 @@ class AccountPage extends StatelessWidget {
                   CircleAvatar(
                     radius: 32,
                     backgroundColor: colours.primaryContainer,
-                    child: Icon(
-                      Icons.person_outline,
-                      size: 36,
-                      color: colours.onPrimaryContainer,
+                    child: Text(
+                      initials,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colours.onPrimaryContainer,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -97,7 +117,7 @@ class AccountPage extends StatelessWidget {
                   context,
                   icon: Icons.person_outline,
                   label: 'Username',
-                  value: username,
+                  value: displayUsername,
                   onEdit: () => _showNotImplemented(context),
                 ),
                 const Divider(height: 1),
@@ -105,7 +125,7 @@ class AccountPage extends StatelessWidget {
                   context,
                   icon: Icons.email_outlined,
                   label: 'Email address',
-                  value: email,
+                  value: displayEmail,
                   onEdit: () => _showNotImplemented(context),
                 ),
                 const Divider(height: 1),
@@ -113,7 +133,7 @@ class AccountPage extends StatelessWidget {
                   context,
                   icon: Icons.phone_outlined,
                   label: 'Phone number',
-                  value: phone,
+                  value: 'Not yet Added',
                   onEdit: () => _showNotImplemented(context),
                 ),
               ],
@@ -136,21 +156,21 @@ class AccountPage extends StatelessWidget {
                   context,
                   icon: Icons.badge_outlined,
                   label: 'Role',
-                  value: role,
+                  value: displayRole,
                 ),
                 const Divider(height: 1),
                 _detailRow(
                   context,
                   icon: Icons.store_outlined,
                   label: 'Store',
-                  value: store,
+                  value: 'Not avaiable yet',
                 ),
                 const Divider(height: 1),
                 _detailRow(
                   context,
                   icon: Icons.shield_outlined,
                   label: 'Account status',
-                  value: 'Active',
+                  value: 'Not available yet',
                 ),
               ],
             ),
@@ -204,7 +224,7 @@ class AccountPage extends StatelessWidget {
                 'Update the password used to sign in.',
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showNotImplemented(context),
+              onTap: onNavigateToPassword,
             ),
           ),
         ],
@@ -332,5 +352,44 @@ class AccountPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static String _getInitials(String username) {
+    final nameParts = username
+    .trim()
+    .split(RegExp(r'\s+'))
+    .where((part) => part.isNotEmpty)
+    .toList();
+
+    if (nameParts.isEmpty) return '?';
+
+    if (nameParts.length >= 2) {
+      return '${nameParts.first[0]}${nameParts.last[0]}'
+        .toUpperCase();
+    }
+
+    final name = nameParts.first;
+
+    return name.length >= 2
+      ? name.substring(0,2).toUpperCase()
+      : name.toUpperCase();
+  }
+
+  static String _formatRole(String role) {
+    final formatted = role
+      .replaceAll('_', ' ')
+      .toLowerCase()
+      .trim();
+
+    if (formatted.isEmpty) return 'Not Avaiable';
+
+    return formatted
+      .split(' ')
+      .map(
+        (word) => word.isEmpty
+          ? word
+          : '${word[0].toUpperCase()}${word.substring(1)}',
+      )
+      .join(' ');
   }
 }

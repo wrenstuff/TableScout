@@ -24,7 +24,7 @@ class AuthService {
           uri,
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'applciation/json',
+            'Accept': 'application/json',
           },
           body: jsonEncode({
             'email': email.trim(),
