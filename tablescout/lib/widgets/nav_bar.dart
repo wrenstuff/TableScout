@@ -43,7 +43,7 @@ class _NavBarState extends State<NavBar> {
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
-    const Center(child: Text('Events')),
+    EventsOverviewPage(),
     ContactUsPage(),
     //AccountPage(),
     SettingsPage(onNavigate: (index) {
