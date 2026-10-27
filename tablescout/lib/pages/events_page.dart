@@ -130,7 +130,15 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       );
 
       if (data['type'] == 'error') {
-        debugPrint('Server error: ${data['message']}');
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              data['message'] as String? ?? 'Unable to complete request'
+            ),
+          ),
+        );
         return;
       }
 
@@ -200,12 +208,120 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     });
   }
 
-  void _openAddGameDialog() {
-    // enter code here
+  Future<void> _openAddGameDialog() async {
+    await _openNameDialog(
+      title: 'Create Game',
+      onCreate: (name, shortName) {
+        _socket.send({
+          'type': 'create_game',
+          'name': name,
+          'name_short': shortName,
+        });
+      },
+    );
   }
 
-  void _openAddFormatDialog() {
-    // enter code here
+  Future<void> _openAddFormatDialog() async {
+    final gameId = _selectedGameId;
+    if (gameId == null) return;
+
+    await _openNameDialog(
+      title: 'Create Format',
+      onCreate: (name, shortName) {
+        _socket.send({
+          'type': 'create_format',
+          'game_id': gameId,
+          'name': name,
+          'name_short': shortName,
+        });
+      },
+    );
+  }
+
+  Future<void> _openNameDialog({
+    required String title,
+    required void Function(String name, String shortName) onCreate,
+  }) async {
+    final formKey = GlobalKey<FormState>();
+    var name = '';
+    var shortName = '';
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(title),
+          content: SizedBox(
+            width: 360,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Enter a name';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => name = value!.trim(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Short name',
+                      hintText: 'MTG',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Enter a short name.';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) => shortName = value!.trim(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+
+                formKey.currentState!.save();
+
+                try {
+                  onCreate(name, shortName);
+                  Navigator.of(dialogContext).pop();
+                } catch (error) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Unable to send request. Check your connection.',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _openCreateEventDialog() {
