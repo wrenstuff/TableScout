@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
+import 'package:tablescout/pages/events_page.dart';
+
 import 'package:tablescout/pages/account_page.dart';
 import 'package:tablescout/pages/staff_manage.dart';
 import 'package:tablescout/pages/privacy_page.dart';
@@ -15,7 +16,6 @@ import 'package:tablescout/pages/customise_page.dart';
 import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
 
-final GlobalKey _logoSectionKey = GlobalKey();
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
 class NavBar extends StatefulWidget {
@@ -42,7 +42,7 @@ class _NavBarState extends State<NavBar> {
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
-    const Center(child: Text('Events')),
+    EventsOverviewPage(),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
     SettingsPage(onNavigate: (index) {
