@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/passwordmanage_page.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   final VoidCallback onNavigateToPassword;
 
   const AccountPage({
@@ -13,11 +13,36 @@ class AccountPage extends StatelessWidget {
     });
 
   @override
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage>{
+  String _currentUsername = '';
+  String _currentEmail = '';
+  String _currentPhone = '';
+  bool _initialised = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_initialised) {
+      final session = context.read<SessionManager>();
+
+      _currentUsername = session.username ?? '';
+      _currentEmail = session.email ?? '';
+
+      _initialised = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final sessionManager = context.watch<SessionManager>();
 
-    final username = sessionManager.username?.trim() ?? '';
-    final email = sessionManager.email?.trim() ?? '';
+    final username = _currentUsername.trim();
+    final email = _currentEmail.trim();
+    final phone = _currentPhone.trim();
     final role = sessionManager.role?.trim() ?? '';
     final storeName = sessionManager.storeName?.trim() ?? '';
     final accountStatus = sessionManager.accountStatus?.trim() ?? '';
@@ -126,7 +151,7 @@ class AccountPage extends StatelessWidget {
                   icon: Icons.person_outline,
                   label: 'Username',
                   value: displayUsername,
-                  onEdit: () => _showNotImplemented(context),
+                  onEdit: _editPersonalInformation,
                 ),
                 const Divider(height: 1),
                 _detailRow(
@@ -134,15 +159,15 @@ class AccountPage extends StatelessWidget {
                   icon: Icons.email_outlined,
                   label: 'Email address',
                   value: displayEmail,
-                  onEdit: () => _showNotImplemented(context),
+                  onEdit: _editPersonalInformation,
                 ),
                 const Divider(height: 1),
                 _detailRow(
                   context,
                   icon: Icons.phone_outlined,
                   label: 'Phone number',
-                  value: 'Not yet Added',
-                  onEdit: () => _showNotImplemented(context),
+                  value: phone.isNotEmpty? phone : 'Not Added',
+                  onEdit: _editPersonalInformation,
                 ),
               ],
             ),
@@ -232,7 +257,7 @@ class AccountPage extends StatelessWidget {
                 'Update the password used to sign in.',
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: onNavigateToPassword,
+              onTap: widget.onNavigateToPassword,
             ),
           ),
         ],
@@ -399,5 +424,157 @@ class AccountPage extends StatelessWidget {
           : '${word[0].toUpperCase()}${word.substring(1)}',
       )
       .join(' ');
+  }
+
+  Future<void> _editPersonalInformation() async {
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => _EditPersonalInformationDialog(
+        username: _currentUsername,
+        email: _currentEmail,
+        phone: _currentPhone,
+      ),
+    );
+
+    if (!mounted || result == null) return;
+
+    setState(() {
+      _currentUsername = result['username']!;
+      _currentEmail = result['email']!;
+      _currentPhone = result['phone']!;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Details updated on this page. Database saving is not connected yet.',
+        ),
+      ),
+    );
+  }
+}
+class _EditPersonalInformationDialog extends StatefulWidget {
+  final String username;
+  final String email;
+  final String phone;
+
+  const _EditPersonalInformationDialog({
+    required this.username,
+    required this.email,
+    required this.phone,
+  });
+
+  @override
+  State<_EditPersonalInformationDialog> createState() =>
+      _EditPersonalInformationDialogState();
+}
+
+class _EditPersonalInformationDialogState
+    extends State<_EditPersonalInformationDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _usernameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _usernameController =
+        TextEditingController(text: widget.username);
+    _emailController =
+        TextEditingController(text: widget.email);
+    _phoneController =
+        TextEditingController(text: widget.phone);
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (!_formKey.currentState!.validate()) return;
+
+    Navigator.of(context).pop({
+      'username': _usernameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit personal information'),
+      content: SizedBox(
+        width: 420,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a username';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email address',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  validator: (value) {
+                    final email = value?.trim() ?? '';
+
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                        .hasMatch(email)) {
+                      return 'Please enter a valid email address';
+                    }
+
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone number (optional)',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
   }
 }
