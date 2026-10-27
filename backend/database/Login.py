@@ -47,8 +47,22 @@ def login():
         #create a cursor object
         cursor = connection.cursor()
         cursor.execute(
-            """SELECT * FROM USERS
-            WHERE email = ?""",(email,))
+            """SELECT 
+                    users.userid,
+                    users.email,
+                    users.username,
+                    users.pwhash,
+                    users.role,
+                    users.accstatus,
+                    users.store_id,
+                    stores.store_name
+            FROM users
+            LEFT JOIN stores
+                ON users.store_id = stores.store_id
+            WHERE users.email = ?
+            """,
+            (email,)
+        )
 
         #user data from the database
         user = cursor.fetchone()
@@ -82,7 +96,10 @@ def login():
             "id": user["userid"],
             "email": user["email"],
             "username": user["username"],
-            "role": user["role"]
+            "role": user["role"],
+            "accountStatus": user["accstatus"],
+            "storeId": user["store_id"],
+            "storeName": user["store_name"]
         }
     }), 200
 

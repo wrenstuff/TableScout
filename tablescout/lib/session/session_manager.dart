@@ -11,6 +11,9 @@ class SessionManager extends ChangeNotifier {
   String? _email;
   String? _username;
   String? _role;
+  String? _accountStatus;
+  int? _storeId;
+  String? _storeName;
   String? _lastError;
 
   //Getters
@@ -20,6 +23,9 @@ class SessionManager extends ChangeNotifier {
   String? get email => _email;
   String? get username => _username;
   String? get role => _role;
+  String? get accountStatus => _accountStatus;
+  int? get storeId => _storeId;
+  String? get storeName => _storeName;
   String? get lastError => _lastError;
 
   //Authenticate through the backend and create a session
@@ -60,6 +66,9 @@ class SessionManager extends ChangeNotifier {
       _email = (user['email'] as String).trim();
       _username = (user['username'] as String).trim();
       _role = (user['role'] as String).trim();
+      _accountStatus = user['accountStatus'] as String;
+      _storeId = user['storeId'] as int?;
+      _storeName = user['storeName'] as String?;
       _isLoggedIn = true;
 
       return true;
@@ -81,6 +90,9 @@ class SessionManager extends ChangeNotifier {
     _email = null;
     _username = null;
     _role = null;
+    _accountStatus = null;
+    _storeId = null;
+    _storeName = null;
     _lastError = null;
 
     notifyListeners();

@@ -293,8 +293,15 @@ class _NavBarState extends State<NavBar> {
                   Expanded(
                     child: TextButton(
                       onPressed: () {
+                        final accountIndex = _pages.indexWhere(
+                          (page) => page is AccountPage,
+                        );
+
+                        if (accountIndex == -1) {
+                          debugPrint('AccountPage not found in _pages');
+                        }
                         setState(() {
-                          _selectedIndex = _pages.length -1;
+                          _selectedIndex = accountIndex;
                         });
                       },
                       child: Text(
@@ -315,7 +322,7 @@ class _NavBarState extends State<NavBar> {
                     tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
-                        _selectedIndex = _selectedIndex == 5 ? -1 : 5;
+                        _selectedIndex = 5;
                       });
                     },
                     icon: const Icon(

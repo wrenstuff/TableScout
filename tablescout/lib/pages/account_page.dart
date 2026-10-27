@@ -19,6 +19,8 @@ class AccountPage extends StatelessWidget {
     final username = sessionManager.username?.trim() ?? '';
     final email = sessionManager.email?.trim() ?? '';
     final role = sessionManager.role?.trim() ?? '';
+    final storeName = sessionManager.storeName?.trim() ?? '';
+    final accountStatus = sessionManager.accountStatus?.trim() ?? '';
 
     final displayUsername = 
       username.isNotEmpty ? username : 'User';
@@ -28,6 +30,12 @@ class AccountPage extends StatelessWidget {
 
     final displayRole = 
       role.isNotEmpty ? _formatRole(role) : 'Not available';
+
+    final displayStore =
+      storeName.isNotEmpty ? storeName : 'No store associated';
+
+    final displayAccountStatus =
+      accountStatus.isNotEmpty ? _formatRole(accountStatus) : 'Not available';
 
     final initials = _getInitials(displayUsername);
 
@@ -77,13 +85,13 @@ class AccountPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          username,
+                          displayUsername,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(email),
+                        Text(displayEmail),
                         const SizedBox(height: 8),
                         Chip(
                           avatar: const Icon(
@@ -163,14 +171,14 @@ class AccountPage extends StatelessWidget {
                   context,
                   icon: Icons.store_outlined,
                   label: 'Store',
-                  value: 'Not avaiable yet',
+                  value: displayStore,
                 ),
                 const Divider(height: 1),
                 _detailRow(
                   context,
                   icon: Icons.shield_outlined,
                   label: 'Account status',
-                  value: 'Not available yet',
+                  value: displayAccountStatus,
                 ),
               ],
             ),
