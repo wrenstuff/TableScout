@@ -15,6 +15,7 @@ import 'package:tablescout/pages/cloud_page.dart';
 import 'package:tablescout/pages/customise_page.dart';
 import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
+import 'package:tablescout/pages/contactus_page.dart';
 
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
@@ -43,7 +44,7 @@ class _NavBarState extends State<NavBar> {
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
     EventsOverviewPage(),
-    const Center(child: Text('Contact Us')),
+    ContactUsPage(),
     //AccountPage(),
     SettingsPage(onNavigate: (index) {
       setState(() {
