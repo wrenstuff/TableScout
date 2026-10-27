@@ -21,7 +21,12 @@ class WebSocketService {
   }
 
   Future<void> connect() async {
-    if(_channel != null) return;
+    if(_channel != null) {
+      debugPrint('Reusing existing WebSocket channel.');
+      return;
+    } 
+
+    debugPrint('Opening WebSocket: ws://127.0.0.1:8765');
 
     final channel = WebSocketChannel.connect(
       Uri.parse('ws://127.0.0.1:8765'),
@@ -32,6 +37,7 @@ class WebSocketService {
 
     try {
       await channel.ready;
+      debugPrint('WebSocket handshake completed');
     } catch (_) {
       _channel = null;
       _messages = null;
