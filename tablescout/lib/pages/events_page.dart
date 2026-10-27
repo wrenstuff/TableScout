@@ -277,7 +277,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Short name',
-                      hintText: 'MTG',
+                      hintText: 'E.g. MTG',
                       border: OutlineInputBorder(),
                     ),
                     validator: (value) {
