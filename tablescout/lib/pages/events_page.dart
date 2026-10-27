@@ -192,12 +192,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     super.dispose();
   }
 
-  void _addGame(Game game) {
-    setState(() {
-      _games.add(game);
-    });
-  }
-
   void _removeGame(int gameId) {
     setState(() {
       _games.removeWhere((game) => game.id == gameId);
