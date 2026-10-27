@@ -27,6 +27,12 @@ class _SignupWidgetState extends State<SignupWidget> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  final FocusNode _usernameFocusNode = FocusNode();
+  final FocusNode _storeFocusNode = FocusNode();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+  final FocusNode _confirmPasswordFocusNode = FocusNode();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -38,6 +44,11 @@ class _SignupWidgetState extends State<SignupWidget> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _usernameFocusNode.dispose();
+    _storeFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
@@ -258,6 +269,11 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _usernameController,
+              focusNode: _usernameFocusNode,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                _storeFocusNode.requestFocus();
+              },
               decoration: _inputDecoration(
                 hintText: 'Enter your username',
                 icon: Icons.person_outline,
@@ -286,6 +302,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _storeController,
+              focusNode: _storeFocusNode,
+              onFieldSubmitted: (_) {
+                _emailFocusNode.requestFocus();
+              },
               decoration: _inputDecoration(
                 hintText: 'Enter your store name',
                 icon: Icons.person_outline,
@@ -314,6 +334,11 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _emailController,
+              focusNode: _emailFocusNode,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                _passwordFocusNode.requestFocus();
+              },
               keyboardType: TextInputType.emailAddress,
               decoration: _inputDecoration(
                 hintText: 'Enter your email',
@@ -357,6 +382,11 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _passwordController,
+              focusNode: _passwordFocusNode,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                _confirmPasswordFocusNode.requestFocus();
+              },
               obscureText: _obscurePassword,
               decoration: _inputDecoration(
                 hintText: 'Enter your password',
@@ -408,6 +438,9 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _confirmPasswordController,
+              focusNode: _confirmPasswordFocusNode,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _signup(),
               obscureText: _obscureConfirmPassword,
               decoration: _inputDecoration(
                 hintText: 'Confirm your password',

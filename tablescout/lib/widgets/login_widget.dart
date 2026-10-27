@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
 
-// import 'package:tablescout/session/session_manager.dart';
-// import 'package:tablescout/pages/signup_page.dart';
-import 'package:tablescout/services/auth_service.dart';
-import 'package:tablescout/widgets/nav_bar.dart';
+import 'package:tablescout/session/session_manager.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -23,6 +20,11 @@ class _LoginWidgetState extends State<LoginWidget> {
   final TextEditingController _emailController =
       TextEditingController();
 
+  final FocusNode _emailFocusNode = 
+      FocusNode();
+  final FocusNode _passwordFocusNode = 
+      FocusNode();
+
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -30,62 +32,60 @@ class _LoginWidgetState extends State<LoginWidget> {
   void dispose() {
     _passwordController.dispose();
     _emailController.dispose();
+    _passwordFocusNode.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    //if (!_formKey.currentState!.validate()) {
-    //  return;
-    //}
-    //
-    //final sessionManager = context.read<SessionManager>();
-    //
-    //final success = await sessionManager.login(
-    //  _usernameController.text.trim(),
-    //  _passwordController.text,
-    //);
-    //
-    //if (!mounted) return;
-    //
-    //if (success) {
-    //  context.go('/app');
-    //} else {
-    //  ScaffoldMessenger.of(context).showSnackBar(
-    //    const SnackBar(
-    //      content: Text('Incorrect username or password'),
-    //    ),
-    //  );
     if (_isLoading) return;
-    if (!_formKey.currentState!.validate()) return;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await AuthService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      //asking backend to auth user
+      final sessionManager = context.read<SessionManager>();
+
+      final success = await sessionManager.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
       );
-      
+
       if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const NavBar(),
-        ),
-      );
-    } catch (error) {
+      if (success) {
+        //SessionManager notifies GoROuter
+        //The router redirects to /app
+        return;
+      }
+
+      final message = sessionManager.lastError ?? 'Login failed.';
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+    } catch (_) {
       if (!mounted) return;
 
-      final message = error.toString().replaceFirst('Exception: ', '');
-
-      ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
     } finally {
       if (mounted) {
         setState(() {
@@ -215,6 +215,12 @@ class _LoginWidgetState extends State<LoginWidget> {
             // Email
             TextFormField(
               controller: _emailController,
+              focusNode: _emailFocusNode,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                _passwordFocusNode.requestFocus();
+              },
               decoration: _inputDecoration(
                 hintText: 'Enter your email',
                 icon: Icons.person_outline,
@@ -245,6 +251,9 @@ class _LoginWidgetState extends State<LoginWidget> {
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
+              focusNode: _passwordFocusNode,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _login(),
               decoration: _inputDecoration(
                 hintText: 'Enter your password',
                 icon: Icons.lock_outline,

@@ -1,31 +1,77 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class AuthService {
+  //Local Dev Address
   // CHANGE TO SERVER ADDRESS
   static const String baseURL = 'http://localhost:5000';
+
+  static const Duration requestTimeout = Duration(seconds: 15);
 
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseURL/tablescout/pages/login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email.trim(),
-        'password': password,
-      }),
-    ).timeout(const Duration(seconds: 15));
+    final Uri uri = Uri.parse(
+      '$baseURL/tablescout/pages/login',
+    );
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    try {
+      final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'applciation/json',
+          },
+          body: jsonEncode({
+            'email': email.trim(),
+            'password': password,
+          }),
+        )
+        .timeout(requestTimeout);
 
-    if (response.statusCode == 200) {
-      return data;
+      //Deconde the response defensively
+      dynamic decoded;
+
+      try {
+        decoded = jsonDecode(response.body);
+      } on FormatException {
+        throw Exception(
+          "The server returned an invalid response",
+        );
+      }
+
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception(
+          'The server has returned an unexpected response format',
+        );
+      }
+
+      final data = decoded;
+
+      if (response.statusCode == 200) {
+        return data;
+      }
+
+      //Keep the status code available for debugging
+      throw Exception(
+        'Login request failed (${response.statusCode}).',
+      );
+    } on TimeoutException {
+      throw Exception(
+        'The server took too long to respond.',
+      );
+    } on SocketException {
+      throw Exception(
+        'Could not connect to server. Chek it is running'
+      );
+    } on FormatException {
+      throw Exception(
+        'The server returned an invalid response.',
+      );
     }
-
-    throw Exception(data['error'] ?? 'Login failed');
   }
 }

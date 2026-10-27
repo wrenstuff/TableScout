@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-import 'package:tablescout/session/session_manager.dart';
 
+import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
 import 'package:tablescout/pages/dashboard_page.dart';
 import 'package:tablescout/pages/floor_planner_page.dart';
 import 'package:tablescout/pages/events_page.dart';
 
+import 'package:tablescout/pages/account_page.dart';
+import 'package:tablescout/pages/staff_manage.dart';
+import 'package:tablescout/pages/privacy_page.dart';
+import 'package:tablescout/pages/passwordmanage_page.dart';
+import 'package:tablescout/pages/cloud_page.dart';
+import 'package:tablescout/pages/customise_page.dart';
+import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
 
-final GlobalKey _logoSectionKey = GlobalKey();
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
 class NavBar extends StatefulWidget {
@@ -33,14 +38,30 @@ class _NavBarState extends State<NavBar> {
 
   double _logoSectionHeight = 0;
 
-  final List<Widget> _pages = [
+  late final List<Widget> _pages = [
     DashboardPage(),
     const Center(child: Text('Floor Allocator')),
     FloorPlanner(),
     EventsOverviewPage(),
     const Center(child: Text('Contact Us')),
     //AccountPage(),
-    SettingsPage(),
+    SettingsPage(onNavigate: (index) {
+      setState(() {
+        _selectedIndex = index;
+        
+      });
+    }),
+    
+    const AccountPage(),
+    const StaffManagementPage(),
+    const PrivacyPage(),
+    const PasswordManagementPage(),
+    const CloudPage(),
+    const CustomisePage(),
+    const NotificationsPage(),
+
+
+  
   ];
 
   @override
@@ -107,9 +128,6 @@ class _NavBarState extends State<NavBar> {
 
   void _signOut() {
     context.read<SessionManager>().logout();
-
-    //Return to login using app routing
-    context.go('/login');
   }
 
   @override
@@ -136,6 +154,7 @@ class _NavBarState extends State<NavBar> {
     );
   }
 
+ 
 //mobile specific
 
   Widget _buildMobileLayout() {
@@ -183,6 +202,8 @@ class _NavBarState extends State<NavBar> {
 // nav bar
 
   Widget _buildNavBar() {
+    final sessionManager = context.watch<SessionManager>();
+
     return Container(
       width: _navOpen
           ? _navExpandedWidth
@@ -270,8 +291,8 @@ class _NavBarState extends State<NavBar> {
                         });
                       },
                       child: Text(
-                        context.watch<SessionManager>().username?.isNotEmpty == true
-                          ? context.watch<SessionManager>().username!
+                        sessionManager.username?.isNotEmpty == true
+                          ? sessionManager.username!
                           : 'Account',
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -287,7 +308,7 @@ class _NavBarState extends State<NavBar> {
                     tooltip: 'Settings',
                     onPressed: () {
                       setState(() {
-                        _selectedIndex = _pages.length - 1;
+                        _selectedIndex = _selectedIndex == 5 ? -1 : 5;
                       });
                     },
                     icon: const Icon(
