@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     userid INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    phone_number TEXT,
     pwhash TEXT NOT NULL,
     role TEXT NOT NULL,
     accstatus TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """
 )
+#events
 
 #stores
 connection.execute(
