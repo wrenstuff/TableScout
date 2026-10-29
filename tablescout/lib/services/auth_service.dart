@@ -74,4 +74,79 @@ class AuthService {
       );
     }
   }
+
+  static Future<Map<String, dynamic>> updateAccount({
+    required int userId,
+    required String currentPassword,
+    required String username,
+    required String email,
+    required String phoneNumber,
+  }) async {
+    final Uri uri = Uri.parse(
+      '$baseURL/tablescout/pages/update-account',
+    );
+
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'userId': userId,
+              'currentPassword': currentPassword,
+              'username': username.trim(),
+              'email': email.trim(),
+              'phoneNumber': phoneNumber.trim(),
+            }),
+          )
+          .timeout(requestTimeout);
+
+      // Decode the response defensively.
+      dynamic decoded;
+
+      try {
+        decoded = jsonDecode(response.body);
+      } on FormatException {
+        throw Exception(
+          'The server returned an invalid response.',
+        );
+      }
+
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception(
+          'The server returned an unexpected response format.',
+        );
+      }
+
+      if (response.statusCode == 200) {
+        return decoded;
+      }
+
+      // Use the error message supplied by Flask, if available.
+      final message = decoded['error'];
+
+      if (message is String && message.isNotEmpty) {
+        throw Exception(message);
+      }
+
+      throw Exception(
+        'Account update failed (${response.statusCode}).',
+      );
+    } on TimeoutException {
+      throw Exception(
+        'The server took too long to respond.',
+      );
+    } on SocketException {
+      throw Exception(
+        'Could not connect to the server. Check that it is running.',
+      );
+    } on FormatException {
+      throw Exception(
+        'The server returned an invalid response.',
+      );
+    }
+  }
 }

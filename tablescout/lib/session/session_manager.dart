@@ -5,6 +5,7 @@ class SessionManager extends ChangeNotifier {
   //Whether or not user is logged in
   bool _isLoggedIn = false;
   bool _isLoading = false;
+  bool _isUpdatingAccount = false;
 
   //Info related to currently logged-in user
   int? _userId;
@@ -19,6 +20,7 @@ class SessionManager extends ChangeNotifier {
   //Getters
   bool get isLoggedIn => _isLoggedIn;
   bool get isLoading => _isLoading;
+  bool get isUpdatingAccount => _isUpdatingAccount;
   int? get userid => _userId;
   String? get email => _email;
   String? get username => _username;
@@ -83,6 +85,62 @@ class SessionManager extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateAccount({
+    required String currentPassword,
+    required String username,
+    required String email,
+    required String phoneNumber,
+  }) async {
+    // Make sure there is an active login session.
+    if (!_isLoggedIn || _userId == null) {
+      _lastError = 'You must be logged in to update your account.';
+      return false;
+    }
+
+    // Prevent loverlapping account updates.
+    if (_isUpdatingAccount) return false;
+
+    _isUpdatingAccount = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      final data = await AuthService.updateAccount(
+        userId: _userId!,
+        currentPassword: currentPassword,
+        username: username,
+        email: email,
+        phoneNumber: phoneNumber,
+      );
+
+      final user = data['user'];
+
+      //checking that the backend returned the expected details.
+      if (user is! Map ||
+          user['id'] != _userId ||
+          user['username'] is! String  ||
+          user['email'] is! String  ||
+          user['phneNumber'] is! String) {
+        _lastError =
+          'The server returend incomplete account details.';
+        return false;
+      }
+
+      //Update the local session only after the backend succeeds.
+      _username = (user['username'] as String).trim();
+      _email = (user['email'] as String).trim();
+
+      return true;
+    } catch (error) {
+      //Show a userful error without changing the login session.
+      _lastError = error.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isUpdatingAccount = false;
       notifyListeners();
     }
   }

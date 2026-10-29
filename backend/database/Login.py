@@ -3,8 +3,10 @@ from Dbconnection import Dbconnect
 from flask_cors import CORS
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
+from backend.database.update_details import updatedetails_bp
 
 app = Flask(__name__)
+app.register_blueprint(updatedetails_bp)
 
 CORS (app, resources={
     r"/tablescout/*": {
