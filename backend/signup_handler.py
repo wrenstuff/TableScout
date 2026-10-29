@@ -4,10 +4,8 @@ import sqlite3
 
 from database.Signup import create_store_owner
 
-async def send_response(websocket, **response):
-    await websocket.send(json.dumps(response))
 
-async def handle_signup(websocket, data):
+async def handle_signup(data):
     username = data.get("username")
     store_name = data.get("store_name")
     email = data.get("email")
@@ -15,13 +13,11 @@ async def handle_signup(websocket, data):
 
     fields = [username, store_name, email, password]
 
-    if not all(isinstance(field,str) for field in fields):
-        await send_response(
-            websocket,
-            success=False,
-            error="Signup fields cannot be empty."
-        )
-        return
+    if not all(isinstance(field, str) and field.strip() for field in fields):
+        return {
+            "type": "error",
+            "message": "All fields (username, store_name, email, password) are required."
+        }
     
     try:
         result = await asyncio.to_thread(
@@ -33,25 +29,22 @@ async def handle_signup(websocket, data):
             password
         )
 
-        await send_response(
-            websocket,
-            success=True,
-            message="Signup successful.",
-            store_id=result["store_id"]
-        )
+        return {
+            "type": "signup_response",
+            "success": result["success"],
+            "store_id": result.get("store_id")
+        }
 
     except sqlite3.IntegrityError:
-        await send_response(
-            websocket,
-            success=False,
-            error="That username, email, or store name may already be in use."
-        )
+        return {
+            "type": "error",
+            "message": "Username or email already exists."
+        }
 
     except Exception:
         print("Signup failed due to an internal server error.")
 
-        await send_response(
-            websocket,
-            success=False,
-            error="Signup could not be completed. Please try again."
-        )
+        return {
+            "type": "error",
+            "message": "Signup could not be completed. Please try again."
+        }

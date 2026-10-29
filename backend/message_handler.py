@@ -1,38 +1,36 @@
+
 import json
 
-from signup_handler import handle_signup, send_response
+from signup_handler import handle_signup
 
 
 async def handle_message(websocket, message):
+    # Convert the incoming JSON message into a Python dictionary.
     try:
-        # Converting incoming JSON into a Python dictionary
         data = json.loads(message)
 
-        if not isinstance(data, dict):
-            await send_response(
-                websocket,
-                success=False,
-                error="Message must be a JSON object."
-            )
-            return
-        
-        # Identifing what client will be doing
-        request_type = data.get("type")
+    except (json.JSONDecodeError, TypeError):
+        return {
+            "type": "error",
+            "message": "Invalid JSON message."
+        }
 
-        # - Signup
-        if request_type == "signup":
-            await handle_signup(websocket, data)
+    # Check that the incoming data is a dictionary.
+    if not isinstance(data, dict):
+        return {
+            "type": "error",
+            "message": "Message must be a JSON object."
+        }
 
-        else:
-            await send_response(
-                websocket,
-                success=False,
-                error="Unknown request type."
-            )
+    # Identify what the client is requesting.
+    request_type = data.get("type")
 
-    except json.JSONDecodeError:
-        await send_response(
-            websocket,
-            success=False,
-            error="Invalid JSON message."
-        )
+    # Handle signup requests.
+    if request_type == "signup":
+        return await handle_signup(data)
+
+    # Handle unknown requests.
+    return {
+        "type": "error",
+        "message": "Unknown request type."
+    }

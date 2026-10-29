@@ -1,12 +1,16 @@
+
 import asyncio
 import json
 import sqlite3
+
+from signup_handler import handle_signup
 
 from event_page_handler import (
     create_game,
     create_format,
     get_events_data,
 )
+
 
 async def handle_request(message):
     try:
@@ -20,7 +24,7 @@ async def handle_request(message):
     if not isinstance(data, dict):
         return {
             "type": "error",
-            "message": "Request mst be a JSON object."
+            "message": "Request must be a JSON object."
         }
 
     request_type = data.get("type")
@@ -29,6 +33,7 @@ async def handle_request(message):
         "get_events_data",
         "create_game",
         "create_format",
+        "signup",
     ):
         return {
             "type": "error",
@@ -36,6 +41,11 @@ async def handle_request(message):
         }
 
     try:
+        # Handle signup requests
+        if request_type == "signup":
+            return await handle_signup(data)
+
+        # Handle game and format creation
         if request_type in ("create_game", "create_format"):
             name = data.get("name")
             name_short = data.get("name_short")
@@ -44,7 +54,7 @@ async def handle_request(message):
                 raise ValueError("Name is required.")
 
             if not isinstance(name_short, str) or not name_short.strip():
-                raise ValueError("Short name is required")
+                raise ValueError("Short name is required.")
 
             if request_type == "create_game":
                 await asyncio.to_thread(
@@ -66,6 +76,7 @@ async def handle_request(message):
                     name_short,
                 )
 
+        # Return event data for event-related requests
         return await asyncio.to_thread(get_events_data)
 
     except ValueError as error:
