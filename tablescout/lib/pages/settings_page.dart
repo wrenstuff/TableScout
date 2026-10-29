@@ -75,11 +75,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
 
                 // STAFF MANAGEMENT
-                _settingsBox(
-                  label: 'Staff Management',
-                  icon: Icons.manage_accounts,
-                  onTap: () { widget.onNavigate(7); }
-                ),
+                if (context.read<SessionManager>().isAdmin ||
+                    context.read<SessionManager>().isManager)
+                  _settingsBox(
+                    label: 'Staff Management',
+                    icon: Icons.group,
+                    onTap: () {
+                      widget.onNavigate(7);
+                    },
+                  ),
 
                 // PRIVACY
                 _settingsBox(
