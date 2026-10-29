@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/services/websocket_service.dart';
+import 'package:tablescout/pages/event_creation_page.dart';
 
 class Game {
   final int id;
@@ -95,6 +96,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   final _socket = WebSocketService.instance;
   StreamSubscription<dynamic>? _messageSubscription;
+
+  bool _isCreatingEvent = false;
 
   @override
   void initState() {
@@ -319,12 +322,24 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   }
 
   void _openCreateEventDialog() {
-    // enter code here
+    setState(() {
+      _isCreatingEvent = true;
+    });
   }
 
 
  @override
   Widget build(BuildContext context) {
+    if (_isCreatingEvent) {
+      return EventCreationPage(
+        onBack: () {
+          setState(() {
+            _isCreatingEvent = false;
+          });
+        },
+      );
+    }
+
     final screenSize = MediaQuery.sizeOf(context);
     final padWidth = screenSize.width * 0.1;
     final padHeight = screenSize.height * 0.05;
@@ -510,20 +525,44 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                 color: Colors.grey.shade400,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: ListView(
+              child: Column(
                 children: [
-                  for (int i = 0; i < _events.length; i++)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: i % 2 == 0
-                            ? Colors.grey.shade300
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(_events[i].name),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        for (int i = 0; i < _events.length; i++)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: i % 2 == 0
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(_events[i].name),
+                          ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(height: 12,),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: ElevatedButton.icon(
+                      onPressed: _openCreateEventDialog,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Event'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadiusGeometry.circular(10)
+                        )
+                      ),
+                    ),
+                  )
                 ],
               ),
             ),
