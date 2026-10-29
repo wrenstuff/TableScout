@@ -22,6 +22,10 @@ class SessionManager extends ChangeNotifier {
   String? get role => _role;
   String? get lastError => _lastError;
 
+  bool get isAdmin => isLoggedIn && _role?.toUpperCase() == 'ADMIN';
+  bool get isManager => isLoggedIn && _role?.toUpperCase() == 'MANAGER';
+  bool get isUser => isLoggedIn && _role?.toUpperCase() == 'STAFF';
+
   //Authenticate through the backend and create a session
   Future<bool> login({
     required String email,
