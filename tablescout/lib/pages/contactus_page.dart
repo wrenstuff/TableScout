@@ -41,9 +41,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
       final response = await ContactService.sendContactMessage(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        message:
-            'Name: ${_nameController.text.trim()}\n\n'
-            '${_messageController.text.trim()}',
+        message:_messageController.text.trim(),
       );
 
       if (!mounted) return;

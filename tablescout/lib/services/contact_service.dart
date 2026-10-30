@@ -1,51 +1,45 @@
-import 'dart:async';
-import 'dart:convert';
 
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:tablescout/app_config.dart';
 
 class ContactService {
-  static const String serverUrl =AppConfig.webSocketUrl;
+  static const String serverUrl =AppConfig.httpBaseUrl;
 
   static Future<Map<String, dynamic>> sendContactMessage({
     required String name,
     required String email,
     required String message,
   }) async {
-    final channel = WebSocketChannel.connect(
-      Uri.parse(serverUrl),
+    final url = Uri.parse('$serverUrl/tablescout/pages/contact'
+     
     );
-
-    try {
-      await channel.ready.timeout(
-        const Duration(seconds: 10),
-      );
-
-      channel.sink.add(
-        jsonEncode({
-          'type': 'contact',
+      final response = await http.post (
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
           'name': name.trim(),
           'email': email.trim(),
           'message': message.trim(),
         }),
-      );
+      ).timeout(const Duration(seconds:15));
   
-      final response = await channel.stream.first.timeout(const Duration(seconds: 15));
-
-      final data = jsonDecode(response as String); 
+      final data = jsonDecode(response.body);
 
       if (data is! Map<String, dynamic>) {
         throw Exception("Invalid response format.");
       }
-      if (data['success'] == true) {
+      if (response.statusCode >= 200 &&
+      response.statusCode <300  &&
+      data['success'] == true) {
         return data;
-      }
-      throw Exception(
-        data['error'] ?? "Message could not be sent.",
-      );
-    } finally {
-      await channel.sink.close();
-    }
+    } 
+    throw Exception(
+      data['message'] ?? "message could not be sent."
+    );
+    
 
   }  
 }
