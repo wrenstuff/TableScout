@@ -3,14 +3,10 @@ import re
 import sqlite3
 
 from flask import Blueprint, jsonify, request
-from argon2 import PasswordHasher
-from argon2.exceptions import VerificationError, InvalidHashError
 
 from Dbconnection import Dbconnect
 
 updatedetails_bp = Blueprint("updatedetails", __name__)
-
-hasher = PasswordHasher()
 
 @updatedetails_bp.route(
     "/tablescout/pages/update-account",
@@ -26,7 +22,6 @@ def update_account():
         }), 400
 
     user_id = info.get("userId")
-    current_password = info.get("currentPassword")
     username = info.get("username")
     email = info.get("email")
     phone_number = info.get("phoneNumber", "")
@@ -40,7 +35,6 @@ def update_account():
     if not all(
         isinstance(value, str)
         for value in [
-            current_password,
             username,
             email,
             phone_number
@@ -96,24 +90,13 @@ def update_account():
                 "error": "Account not found."
             }), 404
 
-        #8. Verify the users current password
-        try:
-            hasher.verify(
-                user["pwhash"],
-                current_password
-            )
-        except (VerificationError, InvalidHashError):
-            return jsonify({
-                "error": "Current password is incorrect."
-            }), 401
-
-        #9. Only allow active accounts to be updated.
+        #8. Only allow active accounts to be updated.
         if user["accstatus"] != "ACTIVE":
             return jsonify({
                 "error": "This account cannot be updated."
             }), 403
 
-        #10. Update the account inside the database.
+        #9. Update the account inside the database.
         connection.execute(
             """
             UPDATE users
@@ -132,7 +115,7 @@ def update_account():
 
         connection.commit()
 
-        #11. Tell Flutter that the update succeeded.
+        #10. Tell Flutter that the update succeeded.
         return jsonify({
             "message": "Account updated successfully.",
             "user": {

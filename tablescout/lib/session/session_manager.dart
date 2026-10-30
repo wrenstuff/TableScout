@@ -90,7 +90,6 @@ class SessionManager extends ChangeNotifier {
   }
 
   Future<bool> updateAccount({
-    required String currentPassword,
     required String username,
     required String email,
     required String phoneNumber,
@@ -111,7 +110,6 @@ class SessionManager extends ChangeNotifier {
     try {
       final data = await AuthService.updateAccount(
         userId: _userId!,
-        currentPassword: currentPassword,
         username: username,
         email: email,
         phoneNumber: phoneNumber,
@@ -124,9 +122,9 @@ class SessionManager extends ChangeNotifier {
           user['id'] != _userId ||
           user['username'] is! String  ||
           user['email'] is! String  ||
-          user['phneNumber'] is! String) {
+          user['phoneNumber'] is! String) {
         _lastError =
-          'The server returend incomplete account details.';
+          'The server returned incomplete account details.';
         return false;
       }
 

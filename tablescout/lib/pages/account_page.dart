@@ -377,16 +377,6 @@ class _AccountPageState extends State<AccountPage>{
     );
   }
 
-  static void _showNotImplemented(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Account editing will be implemented next',
-        ),
-      ),
-    );
-  }
-
   static String _getInitials(String username) {
     final nameParts = username
     .trim()
@@ -427,31 +417,59 @@ class _AccountPageState extends State<AccountPage>{
   }
 
   Future<void> _editPersonalInformation() async {
+    final sessionManager = context.read<SessionManager>();
+
+    // Open the existing edit dialog.
     final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (dialogContext) => _EditPersonalInformationDialog(
+      builder: (dialogContext) =>
+          _EditPersonalInformationDialog(
         username: _currentUsername,
         email: _currentEmail,
         phone: _currentPhone,
       ),
     );
 
+    // The user cancelled the dialog.
     if (!mounted || result == null) return;
 
-    setState(() {
-      _currentUsername = result['username']!;
-      _currentEmail = result['email']!;
-      _currentPhone = result['phone']!;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Details updated on this page. Database saving is not connected yet.',
-        ),
-      ),
+    // Sending changes to the backend
+    final success = await sessionManager.updateAccount(
+      username: result['username']!,
+      email: result['email']!,
+      phoneNumber: result['phone']!,
     );
+
+    if (!mounted) return;
+
+    if (success) {
+      //Refreshes screen details displayed on page.
+      setState(() {
+        _currentUsername = result['username']!;
+        _currentEmail = result['email']!;
+        _currentPhone = result['phone']!;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account details updated successfully.'),
+        ),
+      );
+    } else {
+      //Displaying the error returned by SessionManager/backend.
+      final error = sessionManager.lastError ??
+        'Unable to update account details.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+        ),
+      );
+    } 
+
   }
+
+  
 }
 class _EditPersonalInformationDialog extends StatefulWidget {
   final String username;
@@ -498,13 +516,13 @@ class _EditPersonalInformationDialogState
   }
 
   void _save() {
-    if (!_formKey.currentState!.validate()) return;
-
-    Navigator.of(context).pop({
-      'username': _usernameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'phone': _phoneController.text.trim(),
-    });
+    if (_formKey.currentState!.validate()) {
+      Navigator.of(context).pop({
+        'username': _usernameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+      });
+    }  
   }
 
   @override

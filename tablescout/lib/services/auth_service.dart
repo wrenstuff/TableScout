@@ -77,7 +77,6 @@ class AuthService {
 
   static Future<Map<String, dynamic>> updateAccount({
     required int userId,
-    required String currentPassword,
     required String username,
     required String email,
     required String phoneNumber,
@@ -96,7 +95,6 @@ class AuthService {
             },
             body: jsonEncode({
               'userId': userId,
-              'currentPassword': currentPassword,
               'username': username.trim(),
               'email': email.trim(),
               'phoneNumber': phoneNumber.trim(),
