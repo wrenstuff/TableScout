@@ -53,6 +53,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
               'y': object.position.dy,
               'width': object.width,
               'height': object.height,
+              'text': object.text,
             },
         ],
       };
@@ -140,6 +141,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
             position: Offset(x, y),
             width: width,
             height: height,
+            text: entry['text'] is String ? entry['text'] as String: null,
           ),
         );
 
@@ -168,10 +170,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
   }
 
   void _addObject(FloorObjectType type) {
-    // Default dimensions for each object type.
-    final size = switch (type) {
-      FloorObjectType.table => const Size(100, 60),
-    };
+    final size = type.defaultSize;
 
     setState(() {
       _objects.add(
