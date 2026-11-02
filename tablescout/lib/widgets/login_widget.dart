@@ -286,7 +286,8 @@ class _LoginWidgetState extends State<LoginWidget> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                  // Password reset to sort out!!
+
+                  context.go('/password-recovery');
                 },
                 child: const Text(
                   'Forgot password?',
@@ -335,8 +336,11 @@ class _LoginWidgetState extends State<LoginWidget> {
             const SizedBox(height: 28),
 
             // Sign up
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 4,
+              runSpacing: 12,
               children: [
                 const Text(
                   "Don't have an account?",

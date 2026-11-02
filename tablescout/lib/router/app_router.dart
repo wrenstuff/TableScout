@@ -5,6 +5,8 @@ import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/login_page.dart';
 import 'package:tablescout/pages/signup_page.dart';
 import 'package:tablescout/widgets/nav_bar.dart';
+import 'package:tablescout/pages/password_recovery_page.dart';
+import 'package:tablescout/pages/recover_code_page.dart';
 
 class AppRouter {
   final SessionManager sessionManager;
@@ -24,14 +26,16 @@ class AppRouter {
 
         final isLoggingIn = location == '/login';
         final isSigningUp = location == '/signup';
+        final isPasswordRecovery = location == '/password-recovery';
+        final isRecoverCode = location == '/recover-code';
 
 
         
-        if(!isLoggedIn && !isLoggingIn && !isSigningUp) {
+        if(!isLoggedIn && !isLoggingIn && !isSigningUp && !isPasswordRecovery && !isRecoverCode) {
           return '/login';
         }
 
-        if (isLoggedIn && (isLoggingIn || isSigningUp)) {
+        if (isLoggedIn && (isLoggingIn || isSigningUp || isPasswordRecovery || isRecoverCode)) {
           return '/app';
         }
 
@@ -59,6 +63,18 @@ class AppRouter {
             child: NavBar(),
           ),
         ),
+        GoRoute(
+          path: '/password-recovery',
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: PasswordRecoveryPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/recover-code',
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: RecoverCodePage(),
+          ),
+        )
       ],
 
       errorBuilder: (context, state) => Scaffold(
