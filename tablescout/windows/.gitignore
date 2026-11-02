@@ -6,6 +6,11 @@ flutter/ephemeral/
 *.userosscache
 *.sln.docstates
 
+#environment vairables
+.env
+.env.*
+!.env.example
+
 # Visual Studio build-related files.
 x64/
 x86/

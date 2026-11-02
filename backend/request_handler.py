@@ -4,6 +4,7 @@ import json
 import sqlite3
 
 from signup_handler import handle_signup
+from contact_handler import handle_contact
 
 from event_page_handler import (
     create_game,
@@ -34,6 +35,7 @@ async def handle_request(message):
         "create_game",
         "create_format",
         "signup",
+        "contact",
     ):
         return {
             "type": "error",
@@ -44,7 +46,17 @@ async def handle_request(message):
         # Handle signup requests
         if request_type == "signup":
             return await handle_signup(data)
-
+        if request_type == "contact":
+            try:
+                return await handle_contact(data)
+            except Exception as error:
+                print(f"Error handling contact request: {error}")
+                return {
+                    "type": "error",
+                    "success": False,
+                    "message": "An error occurred while processing the contact request."
+                }
+        
         # Handle game and format creation
         if request_type in ("create_game", "create_format"):
             name = data.get("name")
