@@ -24,7 +24,7 @@ class _EventCreationPageState extends State<EventCreationPage> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _capacityController = TextEditingController();
-  final _roundsController = TextEditingController(text: 3);
+  final _roundsController = TextEditingController(text: '3');
 
   int? _gameId;
   int? _formatId;
@@ -152,7 +152,7 @@ class _EventCreationPageState extends State<EventCreationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf();
+    final screenSize = MediaQuery.sizeOf(context);
     final padWidth = screenSize.width * 0.1;
     final padHeight = screenSize.height * 0.05;
 
@@ -172,50 +172,173 @@ class _EventCreationPageState extends State<EventCreationPage> {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          IconButton(
-            onPressed: widget.onBack,
-            icon: const Icon(Icons.arrow_back),
-            tooltip: 'Back to events',
+          Row(
+            children: [
+              IconButton(
+                onPressed: widget.onBack,
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back to events',
+              ),
+              const SizedBox(width: 8,),
+              const Text(
+                'Create Event',
+                style: TextStyle(fontSize: 20),
+              ),
+            ],
           ),
-          const SizedBox(width: 8,),
-          const Text(
-            'Create Event',
-            style: TextStyle(fontSize: 20),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16,),
-      Expanded(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade400,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: _decoration('Event Name'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Enter an event name';
-                      }
-                      return null;
-                    },
+          const SizedBox(height: 16,),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: _decoration('Event Name'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter an event name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16,),
+                      TextFormField(
+                        controller: _descriptionController,
+                        decoration: _decoration('Description (Optional)'),
+                        minLines: 3,
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16,),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final fieldWidth = constraints.maxWidth >= 600
+                              ? (constraints.maxWidth - 32) / 3
+                              : constraints.maxWidth;
+
+                          return Wrap(
+                            spacing: 16,
+                            runSpacing: 16,
+                            children: [
+                              SizedBox(
+                                width: fieldWidth,
+                                child: _pickerField(
+                                  label: 'Date',
+                                  value: _date == null
+                                      ? null
+                                      : MaterialLocalizations.of(context).formatMediumDate(_date!),
+                                  icon: Icons.calendar_today,
+                                  onTap: _pickDate,
+                                  validator: () => _date == null ? 'Select a date' : null
+                                ),
+                              ),
+                              SizedBox(
+                                width: fieldWidth,
+                                child: _pickerField(
+                                  label: 'Start Time',
+                                  value: _startTime?.format(context),
+                                  icon: Icons.access_time,
+                                  onTap: () => _pickTime(isStart: true),
+                                  validator: () => _startTime == null ? 'Select a start time' : null,
+                                ),
+                              ),
+                              SizedBox(
+                                width: fieldWidth,
+                                child: _pickerField(
+                                  label: 'End Time',
+                                  value: _endTime?.format(context),
+                                  icon: Icons.access_time,
+                                  onTap: () => _pickTime(isStart: false),
+                                  validator: _validatedEndTime,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16,),
+                      TextFormField(
+                        controller: _capacityController,
+                        decoration: _decoration(
+                          'Maximum capacity',
+                          hint: 'Leave blank for unlimited'
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => _positiveInteger(value, optional: true),
+                      ),
+                      const SizedBox(height: 16,),
+                      TextFormField(
+                        controller: _roundsController,
+                        decoration: _decoration('Number of rounds'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => _positiveInteger(value),
+                      ),
+                      const SizedBox(height: 16,),
+                      DropdownButtonFormField<int>(
+                        initialValue: _gameId,
+                        isExpanded: true,
+                        decoration: _decoration('Game'),
+                        items: [
+                          for (final game in widget.games)
+                            DropdownMenuItem(
+                              value: game.id,
+                              child: Text(game.name),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _gameId = value;
+                            _formatId = null;
+                          });
+                        },
+                        validator: (value) => value == null ? 'Select a game' : null,
+                      ),
+                      const SizedBox(height: 16,),
+                      DropdownButtonFormField<int>(
+                        key: ValueKey(_gameId),
+                        initialValue: _formatId,
+                        isExpanded: true,
+                        decoration: _decoration('Format'),
+                        items: [
+                          for (final format in visibleFormats)
+                            DropdownMenuItem(
+                              value: format.id,
+                              child: Text(format.name),
+                            )
+                        ],
+                        onChanged: _gameId == null
+                            ? null
+                            : (value) {
+                              setState(() => _formatId = value);
+                            },
+                        validator: (value) => value == null ? 'Select a format' : null,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16,),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      )
-    )
+          const SizedBox(height: 16,),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _saveEvent,
+              icon: const Icon(Icons.save),
+              label: const Text('Save Event'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

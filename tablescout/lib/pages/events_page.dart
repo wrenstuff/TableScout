@@ -332,6 +332,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   Widget build(BuildContext context) {
     if (_isCreatingEvent) {
       return EventCreationPage(
+        games: _games,
+        formats: _formats,
         onBack: () {
           setState(() {
             _isCreatingEvent = false;
