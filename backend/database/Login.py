@@ -112,11 +112,13 @@ def contact():
 
     name = info.get("name")
     email = info.get("email")
+    subject = info.get("subject")
     message = info.get("message")
 
     if(
         not isinstance(name,str) or not name.strip()
         or not isinstance(email, str) or not email.strip()
+        or not isinstance(subject, str) or not subject.strip()
         or not isinstance(message, str) or not message.strip()
         
 
@@ -129,7 +131,8 @@ def contact():
     success = contact_email(
         name.strip(),
         email.strip(),
-        message.strip()
+        subject.strip(),
+        message.strip(),
     )
 
     if success: 
@@ -140,7 +143,7 @@ def contact():
 
     return jsonify({
                 "success": False,
-                "message": "Message has been sent."
+                "message": "unable to send message, please try again later."
             }), 500
         
 if __name__ == '__main__':

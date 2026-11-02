@@ -9,6 +9,7 @@ class ContactService {
   static Future<Map<String, dynamic>> sendContactMessage({
     required String name,
     required String email,
+    required String subject,
     required String message,
   }) async {
     final url = Uri.parse('$serverUrl/tablescout/pages/contact'
@@ -22,6 +23,7 @@ class ContactService {
         body: jsonEncode({
           'name': name.trim(),
           'email': email.trim(),
+          'subject': subject.trim(),
           'message': message.trim(),
         }),
       ).timeout(const Duration(seconds:15));

@@ -1,13 +1,14 @@
 async def handle_contact(data):
+    name = data.get("name")
     email = data.get("email")
     subject = data.get("subject")
     message = data.get("message")
 
-    if not all(isinstance(value, str) and value.strip() for value in [email, subject, message]):
+    if not all(isinstance(value, str) and value.strip() for value in [name, email, subject, message]):
         return {
             "type": "error",
             "success": False,
-            "message": "All fields (email, subject, message) are required."
+            "message": "All fields (name, email, subject, message) are required."
         }
 
     if len(email)> 254:

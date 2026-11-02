@@ -9,7 +9,7 @@ load_dotenv(dotenv_path=env_path, override=True)
 print("TABLESCOUT_EMAIL loaded:", repr(os.getenv("TABLESCOUT_EMAIL")))
 
 
-def contact_email(name: str, email: str, message: str):
+def contact_email(name: str, email: str, subject: str,  message: str):
 
     gmail_address =os.getenv("TBS_EMAIL")
     gmail_password = os.getenv("TBS_EMAIL_API")
@@ -30,11 +30,12 @@ def contact_email(name: str, email: str, message: str):
        msg["From"] = gmail_address
        msg["To"] = support_email
        msg["Reply-To"] = email
-       msg ["Subject"] = f"TableScout Contact Form - {name}"
+       msg ["Subject"] = f"TableScout Contact Form - {subject}"
 
        msg.set_content(
             f"Name: {name}\n"
             f"Email: {email}\n\n"
+            f"Subject: {subject}\n\n"
             f"Message: \n{message}"
 
        )
