@@ -2,3 +2,4 @@
 *.db
 *.cc
 /tablescout/linux
+backend/api.env

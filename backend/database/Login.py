@@ -2,8 +2,12 @@ from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
 from flask_cors import CORS
 from argon2 import PasswordHasher
+from pathlib import Path
+import sys
 from argon2.exceptions import VerificationError, InvalidHashError
 from update_details import updatedetails_bp
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from email_service import contact_email
 
 app = Flask(__name__)
 app.register_blueprint(updatedetails_bp)
@@ -104,6 +108,45 @@ def login():
             "storeName": user["store_name"]
         }
     }), 200
+@app.route("/tablescout/pages/contact", methods=["POST"])
+def contact():
+    info = request.get_json(silent=True) or {}
 
+    name = info.get("name")
+    email = info.get("email")
+    subject = info.get("subject")
+    message = info.get("message")
+
+    if(
+        not isinstance(name,str) or not name.strip()
+        or not isinstance(email, str) or not email.strip()
+        or not isinstance(subject, str) or not subject.strip()
+        or not isinstance(message, str) or not message.strip()
+        
+
+    ):
+        return jsonify({
+            "success": False,
+            "message": "Please complete all fields"
+        }), 400
+
+    success = contact_email(
+        name.strip(),
+        email.strip(),
+        subject.strip(),
+        message.strip(),
+    )
+
+    if success: 
+        return jsonify({
+            "success": True,
+            "message": "Message has been sent."
+        }), 200
+
+    return jsonify({
+                "success": False,
+                "message": "unable to send message, please try again later."
+            }), 500
+        
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
