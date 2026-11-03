@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/pages/events_page.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 class EventCreationPage extends StatefulWidget {
   final VoidCallback onBack;
@@ -140,14 +144,115 @@ class _EventCreationPageState extends State<EventCreationPage> {
     );
   }
 
-  void _saveEvent() {
-    if (!_formKey.currentState!.validate()) return;
+  bool _isSaving = false;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Form is valid. Saving is not yet connected.'),
-      ),
-    );
+  String _formatTime(TimeOfDay time) {
+    return 
+      '${time.hour.toString().padLeft(2, '0')}:'
+      '${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDate(DateTime date) {
+    return
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _saveEvent() async {
+    if (_isSaving || !_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    StreamSubscription<dynamic>? subscription;
+
+    try {
+      final service = WebSocketService.instance;
+      await service.connect();
+
+      if (!mounted) return;
+
+      final requestId = 'create_event_${DateTime.now().microsecondsSinceEpoch}';
+
+      final completer = Completer<Map<String, dynamic>>();
+
+      subscription = service.messages.listen(
+        (message) {
+          try {
+            final decoded = jsonDecode(message as String);
+
+            if (decoded is! Map<String, dynamic>) return;
+            if (decoded['request_id'] != requestId) return;
+            if (completer.isCompleted) return;
+
+            completer.complete(decoded);
+          } catch (_) {
+            // ignore messages that aren't valid JSON
+          }
+        },
+        onError: (Object error) {
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
+        },
+        onDone: () {
+          if (!completer.isCompleted) {
+            completer.completeError(
+              StateError('Connection closed befpre the server responded.'),
+            );
+          }
+        },
+      );
+
+      service.send({
+        'type': "create_event",
+        'request_id': requestId,
+        'name': _nameController.text.trim(),
+        'game_id': _gameId,
+        'format_id': _formatId,
+        'date': _formatDate(_date!),
+        'start_time': _formatTime(_startTime!),
+        'end_time': _formatTime(_endTime!),
+        'capacity': int.tryParse(_capacityController.text.trim()),
+        'rounds': int.parse(_roundsController.text.trim()),
+      });
+
+      final response = await completer.future.timeout(
+        const Duration(seconds: 15)
+      );
+
+      if (!mounted) return;
+
+      if (response['type'] == 'event_created') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Event saved successfully.')),
+        );
+
+        service.send({'type': 'get_events_data'});
+
+        widget.onBack();
+      } else {
+        final message = response['message'] as String? ?? 'Unable to save the event.';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+    } on TimeoutException {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No fonfirmation recieved. Check the events list before retrying.'),
+        ),
+      );
+    } finally {
+      await subscription?.cancel();
+
+      if (mounted) {
+        setState(() => _isSaving = false,);
+      }
+    }
   }
 
   @override
@@ -175,7 +280,7 @@ class _EventCreationPageState extends State<EventCreationPage> {
           Row(
             children: [
               IconButton(
-                onPressed: widget.onBack,
+                onPressed: _isSaving ? null : widget.onBack,
                 icon: const Icon(Icons.arrow_back),
                 tooltip: 'Back to events',
               ),
@@ -332,9 +437,15 @@ class _EventCreationPageState extends State<EventCreationPage> {
           Align(
             alignment: Alignment.centerRight,
             child: ElevatedButton.icon(
-              onPressed: _saveEvent,
-              icon: const Icon(Icons.save),
-              label: const Text('Save Event'),
+              onPressed: _isSaving ? null : _saveEvent,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2,),
+                    )
+                  : const Icon(Icons.save),
+              label: Text(_isSaving ? 'Saving...' : 'Save Event'),
             ),
           ),
         ],

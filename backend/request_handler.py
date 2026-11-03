@@ -3,6 +3,7 @@ import json
 import sqlite3
 
 from event_page_handler import (
+    create_event,
     create_game,
     create_format,
     get_events_data,
@@ -24,11 +25,20 @@ async def handle_request(message):
         }
 
     request_type = data.get("type")
+    request_id = data.get("request_id")
+
+    def error_response(message):
+        return {
+            "type": "error",
+            "request_id": request_id,
+            "message": message,
+        }
 
     if request_type not in (
         "get_events_data",
         "create_game",
         "create_format",
+        "create_event",
     ):
         return {
             "type": "error",
@@ -36,6 +46,18 @@ async def handle_request(message):
         }
 
     try:
+        if request_type == "create_event":
+            event_id = await asyncio.to_thread(
+                create_event,
+                data,
+            )
+
+            return {
+                "type": "event_created",
+                "request_id": request_id,
+                "event_id": event_id
+            }
+
         if request_type in ("create_game", "create_format"):
             name = data.get("name")
             name_short = data.get("name_short")
@@ -69,26 +91,23 @@ async def handle_request(message):
         return await asyncio.to_thread(get_events_data)
 
     except ValueError as error:
-        return {
-            "type": "error",
-            "message": str(error),
-        }
+        return error_response(str(error))
 
     except sqlite3.IntegrityError as error:
-        print(f"Database constraint error: {error}")
+        print(f"Database constraint error during {request_type}: {error}")
 
-        return {
-            "type": "error",
-            "message": (
-                "Unable to create item. A name or short name may "
-                "already exist, or the selected game no longer exists."
-            ),
-        }
+        if request_type == "create_event":
+            return error_response(
+                "Unable to save the event. Check selected game and format, then try again."
+            )
+
+        return error_response(
+            "Unable to create item. A name or short name may already exist, or the selected game no longer exists"
+        )
 
     except sqlite3.Error as error:
         print(f"Database error during {request_type}: {error}")
 
-        return {
-            "type": "error",
-            "message": "Unable to complete the database request."
-        }
+        return error_response(
+            "Unable to complete the database request"
+        )
