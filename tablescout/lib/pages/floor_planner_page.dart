@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 
 import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
 
@@ -29,6 +30,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
   static const double toolbarWidth = 200;
   static const double bottomToolbarHeight = 130;
   static const double toolbarGap = 20;
+
+  final TransformationController _transformationController =
+    TransformationController();
 
   final List<FloorObject> _objects = [];
   int _nextId = 1;
@@ -208,7 +212,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
     // Only allows object movement when cursor is active.
     if (_activeTool != FloorPlannerTool.cursor) return;
 
-    final newPosition = object.position + delta;
+    final scale =
+      _transformationController.value.getMaxScaleOnAxis();
+
+    final newPosition = object.position + (delta/scale);
 
     final maxX = canvasSize.width > object.width
         ? canvasSize.width - object.width
@@ -236,6 +243,31 @@ class _FloorPlannerState extends State<FloorPlanner> {
       _objects.removeWhere((object) => object.id == selected.id);
       _selectedObject = null;
     });
+  }
+
+  void _handleCanvasPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+
+    final currentScale =
+      _transformationController.value.getMaxScaleOnAxis();
+
+    //Scroll up to zoom in, scroll down to zoom out
+    final zoomFactor = event.scrollDelta.dy < 0 ? 1.1 : 0.9;
+
+    //Keep zoom between 20 and 400%
+    final newScale  =(currentScale * zoomFactor).clamp(0.2, 4.0);
+
+    final scaleFactor = newScale / currentScale;
+
+    //Zoom towards the mouse cursor postition.
+    final focalPoint = event.localPosition;
+
+    final matrix = _transformationController.value.clone()
+      ..translate(focalPoint.dx, focalPoint.dy)
+      ..scale(scaleFactor)
+      ..translate(-focalPoint.dx, -focalPoint.dy);
+      
+    _transformationController.value = matrix;
   }
 
   Widget _buildToolButton(
@@ -302,6 +334,12 @@ class _FloorPlannerState extends State<FloorPlanner> {
   }
 
   @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final selected = _selectedObject;
 
@@ -312,43 +350,70 @@ class _FloorPlannerState extends State<FloorPlanner> {
       child: Stack(
         children: [
           // Canvas
-          Positioned(
-            left: outerPadding + toolbarWidth + toolbarGap,
-            right: outerPadding + toolbarWidth + toolbarGap,
-            top: outerPadding,
-            bottom: outerPadding + bottomToolbarHeight + toolbarGap,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Container(
-                  color: Colors.grey.shade200,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    clipBehavior: Clip.hardEdge,
-                    children: [
-                      for (final object in _objects)
-                        Positioned(
-                          key: ValueKey(object.id),
-                          left: object.position.dx,
-                          top: object.position.dy,
-                          child: FloorObjectWidget(
-                            object: object,
-                            isSelected: selected?.id == object.id,
-                            onDrag: (delta) => _moveObject(
-                              object,
-                              delta,
-                              constraints.biggest,
+          Positioned.fill(
+            child: Listener(
+              onPointerSignal: _handleCanvasPointerSignal,
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+
+                // Hand tool controls panning
+                panEnabled: _activeTool == FloorPlannerTool.hand,
+
+                // Zoomm is handled by our mouse-wheel method
+                scaleEnabled: false,
+
+                // Allow the plan to move beyond the visible screen
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+
+                // Allow the workspace to be larger than the screen
+                constrained: false,
+
+                alignment: Alignment.topLeft,
+                clipBehavior: Clip.hardEdge,
+
+                child: SizedBox(
+                  width: 3000,
+                  height: 3000,
+                  child: Container(
+                    color: Colors.grey.shade200,
+
+                    child: IgnorePointer(
+                      //Disable individual object interaction while panning
+                      ignoring: _activeTool == FloorPlannerTool.hand,
+
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          for (final object in _objects)
+                            Positioned(
+                              key: ValueKey(object.id),
+                              left: object.position.dx,
+                              top: object.position.dy,
+                              child: FloorObjectWidget(
+                                object: object,
+                                isSelected: selected?.id == object.id,
+
+
+                                onDrag: (delta) => _moveObject(
+                                  object,
+                                  delta,
+                                  const Size(3000, 3000),
+                                ),
+
+
+                                onTap: () {
+                                  setState(() {
+                                    _selectedObject = object;
+                                  });
+                                },
+                              ),
                             ),
-                            onTap: () {
-                              setState(() {
-                                _selectedObject = object;
-                              });
-                            },
-                          ),
-                        ),
-                    ],
+                        ],
+                      ),
+                    ),  
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
 
@@ -506,7 +571,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             Icons.credit_card,
                           ),
                           _buildLibraryItem(
-                            'Drinks & Snakcs',
+                            'Drinks Vending',
                             FloorObjectType.vendingDrinks,
                             Icons.local_drink,
                           ),

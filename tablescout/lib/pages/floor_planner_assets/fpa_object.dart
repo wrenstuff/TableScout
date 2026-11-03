@@ -70,9 +70,9 @@ extension FloorObjectTypeDetails on FloorObjectType {
       case FloorObjectType.shelfTwoSide:
         return '2-Sided Shelves';
       case FloorObjectType.vendingCard:
-        return 'Card Vending Machine';
+        return 'Card Vending';
       case FloorObjectType.vendingDrinks:
-        return 'Drinks & Snacks Vending Machine';
+        return 'Drinks Vending';
       case FloorObjectType.textbox:
         return 'Textbox';
     }
