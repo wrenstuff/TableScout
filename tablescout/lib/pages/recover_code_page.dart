@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tablescout/widgets/recover_code.dart';
+import 'package:tablescout/widgets/recover_code_widget.dart';
 
 class RecoverCodePage extends StatefulWidget {
   const RecoverCodePage({super.key});

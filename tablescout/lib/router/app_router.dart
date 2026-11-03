@@ -7,6 +7,7 @@ import 'package:tablescout/pages/signup_page.dart';
 import 'package:tablescout/widgets/nav_bar.dart';
 import 'package:tablescout/pages/password_recovery_page.dart';
 import 'package:tablescout/pages/recover_code_page.dart';
+import 'package:tablescout/pages/new_password.dart';
 
 class AppRouter {
   final SessionManager sessionManager;
@@ -28,14 +29,15 @@ class AppRouter {
         final isSigningUp = location == '/signup';
         final isPasswordRecovery = location == '/password-recovery';
         final isRecoverCode = location == '/recover-code';
+        final isNewPassword = location == '/new-password';
 
 
         
-        if(!isLoggedIn && !isLoggingIn && !isSigningUp && !isPasswordRecovery && !isRecoverCode) {
+        if(!isLoggedIn && !isLoggingIn && !isSigningUp && !isPasswordRecovery && !isRecoverCode && !isNewPassword) {
           return '/login';
         }
 
-        if (isLoggedIn && (isLoggingIn || isSigningUp || isPasswordRecovery || isRecoverCode)) {
+        if (isLoggedIn && (isLoggingIn || isSigningUp || isPasswordRecovery || isRecoverCode || isNewPassword)) {
           return '/app';
         }
 
@@ -74,8 +76,16 @@ class AppRouter {
           pageBuilder:(context, state) => const NoTransitionPage(
             child: RecoverCodePage(),
           ),
+        ),
+        GoRoute(
+          path: '/new-password',
+          pageBuilder:(context, state) => const NoTransitionPage(
+            child: NewPasswordPage(),
+          ),
         )
       ],
+      
+
 
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(title: const Text('Page not found')),

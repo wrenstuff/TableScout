@@ -39,7 +39,7 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
             'Password Recovery',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Color(0xFF3A3A3A),
             ),
@@ -71,7 +71,7 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
             child: ElevatedButton(
               onPressed: () {
                 // Handle password recovery logic here
-                context.go('/login');
+                context.go('/new-password');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF54414E),

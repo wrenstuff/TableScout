@@ -33,7 +33,7 @@ class PasswordRecoveryWidget extends StatelessWidget {
             'Password Recovery',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Color(0xFF3A3A3A),
             ),

@@ -250,7 +250,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey,
+                color: Colors.black,
               ),
             ),
 
@@ -270,6 +270,7 @@ class _SignupWidgetState extends State<SignupWidget> {
             TextFormField(
               controller: _usernameController,
               focusNode: _usernameFocusNode,
+              
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
                 _storeFocusNode.requestFocus();
@@ -277,6 +278,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               decoration: _inputDecoration(
                 hintText: 'Enter your username',
                 icon: Icons.person_outline,
+            
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -287,7 +289,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
             // Store
             const Text(
@@ -308,7 +310,8 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
               decoration: _inputDecoration(
                 hintText: 'Enter your store name',
-                icon: Icons.person_outline,
+                icon: Icons.store_outlined,
+               
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -319,7 +322,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
             // Email
             const Text(
@@ -343,6 +346,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               decoration: _inputDecoration(
                 hintText: 'Enter your email',
                 icon: Icons.email_outlined,
+                
               ),
               validator: (value) {
                 final email = value?.trim() ?? '';
@@ -367,7 +371,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
             // Password
             const Text(
@@ -423,7 +427,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
 
             // Confirm Password
             const Text(
