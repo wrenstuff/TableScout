@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tablescout/widgets/auth_container.dart';
 
 class PasswordRecoveryWidget extends StatelessWidget {
   const PasswordRecoveryWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB5BAD0),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return AuthContainer(
+      boxHeight: 450,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
+
         children: [
 
           const Text(
@@ -38,8 +35,8 @@ class PasswordRecoveryWidget extends StatelessWidget {
               color: Color(0xFF3A3A3A),
             ),
           ),
-
-          const SizedBox(height: 32),
+          const SizedBox(height: 65,),
+          
 
           const Text(
             'Email',
@@ -58,7 +55,7 @@ class PasswordRecoveryWidget extends StatelessWidget {
 
             ),
           ),
-
+          
           const SizedBox(height: 24),
 
           SizedBox(

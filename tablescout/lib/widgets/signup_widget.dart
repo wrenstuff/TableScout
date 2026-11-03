@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tablescout/services/signup_service.dart';
+import 'package:tablescout/widgets/auth_container.dart';
 
 class SignupWidget extends StatefulWidget {
   const SignupWidget({super.key});
@@ -27,6 +28,8 @@ class _SignupWidgetState extends State<SignupWidget> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
+  final ScrollController _scrollController = ScrollController();
+
   final FocusNode _usernameFocusNode = FocusNode();
   final FocusNode _storeFocusNode = FocusNode();
   final FocusNode _emailFocusNode = FocusNode();
@@ -49,6 +52,7 @@ class _SignupWidgetState extends State<SignupWidget> {
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _confirmPasswordFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -207,17 +211,18 @@ class _SignupWidgetState extends State<SignupWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB5BAD0),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return AuthContainer(
+      rightPadding: 12,
+      child:Scrollbar(
+        thumbVisibility: true,
+        controller: _scrollController,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          child:Padding(
+            padding:const EdgeInsets.only(right: 20),
+            child:Form(child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
 
             // Header
@@ -250,7 +255,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black,
+                color: Colors.grey,
               ),
             ),
 
@@ -270,7 +275,6 @@ class _SignupWidgetState extends State<SignupWidget> {
             TextFormField(
               controller: _usernameController,
               focusNode: _usernameFocusNode,
-              
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
                 _storeFocusNode.requestFocus();
@@ -278,7 +282,6 @@ class _SignupWidgetState extends State<SignupWidget> {
               decoration: _inputDecoration(
                 hintText: 'Enter your username',
                 icon: Icons.person_outline,
-            
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -289,7 +292,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // Store
             const Text(
@@ -310,8 +313,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
               decoration: _inputDecoration(
                 hintText: 'Enter your store name',
-                icon: Icons.store_outlined,
-               
+                icon: Icons.person_outline,
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
@@ -322,7 +324,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // Email
             const Text(
@@ -346,7 +348,6 @@ class _SignupWidgetState extends State<SignupWidget> {
               decoration: _inputDecoration(
                 hintText: 'Enter your email',
                 icon: Icons.email_outlined,
-                
               ),
               validator: (value) {
                 final email = value?.trim() ?? '';
@@ -371,7 +372,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // Password
             const Text(
@@ -427,7 +428,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
 
             // Confirm Password
             const Text(
@@ -539,8 +540,11 @@ class _SignupWidgetState extends State<SignupWidget> {
               ],
             ),
           ],
+         ),
         ),
-      ),
+       ),
+      )
+     )
     );
   }
 }
