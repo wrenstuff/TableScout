@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
 
@@ -13,16 +14,28 @@ class FloorPlanner extends StatefulWidget {
   State<FloorPlanner> createState() => _FloorPlannerState();
 }
 
+enum FloorPlannerTool {
+  cursor,
+  hand,
+  wall,
+  door,
+  exit,
+  window,
+  texbox,
+}
+
 class _FloorPlannerState extends State<FloorPlanner> {
   static const double outerPadding = 20;
   static const double toolbarWidth = 200;
-  static const double bottomToolbarHeight = 100;
+  static const double bottomToolbarHeight = 130;
   static const double toolbarGap = 20;
 
   final List<FloorObject> _objects = [];
   int _nextId = 1;
 
   FloorObject? _selectedObject;
+
+  FloorPlannerTool _activeTool = FloorPlannerTool.cursor;
 
   bool _fileBusy = false;
 
@@ -173,15 +186,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final size = type.defaultSize;
 
     setState(() {
-      _objects.add(
-        FloorObject(
-          id: _nextId++,
-          type: type,
-          position: const Offset(100, 100),
-          width: size.width,
-          height: size.height,
-        ),
-      );
+      final newObject = FloorObject(
+        id: _nextId++,
+        type: type,
+        position: const Offset(100,100),
+        width: size.width,
+        height: size.height,
+        );
+
+        _objects.add(newObject);
+        _selectedObject = newObject;
+        _activeTool = FloorPlannerTool.cursor;
     });
   }
 
@@ -190,6 +205,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
     Offset delta,
     Size canvasSize,
   ) {
+    // Only allows object movement when cursor is active.
+    if (_activeTool != FloorPlannerTool.cursor) return;
+
     final newPosition = object.position + delta;
 
     final maxX = canvasSize.width > object.width
@@ -218,6 +236,69 @@ class _FloorPlannerState extends State<FloorPlanner> {
       _objects.removeWhere((object) => object.id == selected.id);
       _selectedObject = null;
     });
+  }
+
+  Widget _buildToolButton(
+    FloorPlannerTool tool,
+    String tooltip,
+    IconData icon,
+  ) {
+    final isActive = _activeTool == tool;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: (){
+          setState(() {
+            _activeTool = tool;
+          });
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: isActive
+              ? Colors.blue.withValues(alpha: 0.2)
+              : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isActive
+                ? Colors.blue
+                : Colors.grey.shade400,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 22,
+            color: isActive
+              ? Colors.blue
+              : Colors.grey.shade800,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLibraryItem(
+    String label,
+    FloorObjectType type,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical:3,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => _addObject(type),
+          icon: Icon(icon),
+          label: Text(label),
+        ),
+      ),
+    );
   }
 
   @override
@@ -297,7 +378,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           ),
                           const SizedBox(height: 16),
                           Text('Object ${selected.id}'),
-                          Text('Type: ${selected.type.name}'),
+                          Text('Type: ${selected.type.label}'),
                           const SizedBox(height: 8),
                           Text(
                             'X: ${selected.position.dx.toStringAsFixed(0)}',
@@ -332,20 +413,109 @@ class _FloorPlannerState extends State<FloorPlanner> {
             width: toolbarWidth,
             child: Container(
               color: Colors.grey.shade400,
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: ElevatedButton.icon(
-                        onPressed: () => _addObject(FloorObjectType.table),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Table'),
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text(
+                      'Object Library',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                    )
-                  ],
-                ),
-              ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          //Tables
+                          const _LibraryHeading(title: 'Tables'),
+
+                          _buildLibraryItem(
+                            'Standard Table',
+                            FloorObjectType.table,
+                            Icons.table_restaurant,
+                          ),
+                          _buildLibraryItem(
+                            'Long Table',
+                            FloorObjectType.tableLong,
+                            Icons.table_restaurant,
+                          ),
+                          _buildLibraryItem(
+                            'Square Table',
+                            FloorObjectType.tableSquare,
+                            Icons.table_restaurant,
+                          ),
+
+                          //Seating
+                          const _LibraryHeading(title: 'Seating'),
+
+                          _buildLibraryItem(
+                            'Chair',
+                            FloorObjectType.chair,
+                            Icons.chair,
+                          ),
+                          _buildLibraryItem(
+                            'Couch',
+                            FloorObjectType.couch,
+                            Icons.weekend,
+                          ),
+                          _buildLibraryItem(
+                            'Corner Couch',
+                            FloorObjectType.cornerCouch,
+                            Icons.weekend,
+                          ),
+
+                          //Desks
+                          const _LibraryHeading(title: 'Desks'),
+
+                          _buildLibraryItem(
+                            'Straight Desk',
+                            FloorObjectType.deskStraight,
+                            Icons.desk,
+                          ),
+                          _buildLibraryItem(
+                            'Corner Desk',
+                            FloorObjectType.deskCorner,
+                            Icons.desk,
+                          ),
+
+                          //Shelving
+                          const _LibraryHeading(title: 'Shelving'),
+
+                          _buildLibraryItem(
+                            '1-Sided Shelves',
+                            FloorObjectType.shelfOneSide,
+                            Icons.view_agenda,
+                          ),
+                          _buildLibraryItem(
+                            '2-Sided Shelves',
+                            FloorObjectType.shelfTwoSide,
+                            Icons.view_agenda,
+                          ),
+
+                          //Vending Machines
+                          const _LibraryHeading(title: 'Vending Machines'),
+
+                          _buildLibraryItem(
+                            'Card Vending',
+                            FloorObjectType.vendingCard,
+                            Icons.credit_card,
+                          ),
+                          _buildLibraryItem(
+                            'Drinks & Snakcs',
+                            FloorObjectType.vendingDrinks,
+                            Icons.local_drink,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
             ),
           ),
 
@@ -357,28 +527,141 @@ class _FloorPlannerState extends State<FloorPlanner> {
             height: bottomToolbarHeight,
             child: Container(
               color: Colors.grey.shade400,
+              padding: const EdgeInsets.all(10),
               child: Center(
                 child: Wrap(
-                  spacing: 16,
+                  spacing: 10,
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: _fileBusy ? null : _saveLayout,
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Layout'),
+                    //Naviagtion Tools
+                    _buildToolButton(
+                      FloorPlannerTool.cursor,
+                      'Cursor - Select and move objects',
+                      Icons.near_me,
                     ),
-                    ElevatedButton.icon(
-                      onPressed: _fileBusy ? null : _loadLayout,
-                      icon: const Icon(Icons.folder_open),
-                      label: const Text('Load Layout'),
+                    _buildToolButton(
+                      FloorPlannerTool.hand,
+                      'Hand - Move around the canvas',
+                      Icons.pan_tool,
+                    ),
+
+                    const SizedBox(
+                      height: 35, child: VerticalDivider(
+                        thickness: 1,
+                        color: Colors.black45,
+                      ),
+                    ),
+
+                    //Drawing Tools
+                    _buildToolButton(
+                      FloorPlannerTool.wall,
+                      'Walls',
+                      Icons.square,
+                    ),
+                    _buildToolButton(
+                      FloorPlannerTool.door,
+                      'Doors',
+                      Icons.door_front_door,
+                    ),
+                    _buildToolButton(
+                      FloorPlannerTool.exit,
+                      'Exits',
+                      Icons.exit_to_app,
+                    ),
+                    _buildToolButton(
+                      FloorPlannerTool.window,
+                      'Windows',
+                      Icons.window,
+                    ),
+                    _buildToolButton(
+                      FloorPlannerTool.texbox,
+                      'Add Textbox',
+                      Icons.text_fields,
+                    ),
+
+                    const SizedBox(
+                      height: 35,
+                      child: VerticalDivider(
+                        thickness: 1,
+                        color: Colors.black45,
+                      ),
+                    ),
+
+                    //Delete
+                    Tooltip(
+                      message: 'Delete selected object',
+                      child: IconButton(
+                        onPressed: _deleteSelectedObject,
+                        icon: const Icon(Icons.delete_outline),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    //Save
+                    Tooltip(
+                      message: 'Save Floor Plan',
+                      child: IconButton(
+                        onPressed: _fileBusy ? null : _saveLayout,
+                        icon: const Icon(Icons.save_alt_outlined),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+
+                    //Load
+                    Tooltip(
+                      message: 'Load Floor Plan',
+                      child: IconButton(
+                        onPressed: _fileBusy ? null : _loadLayout,
+                        icon: const Icon(Icons.folder_open_outlined),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ),
+                )
+              )
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LibraryHeading extends StatelessWidget {
+  final String title;
+
+  const _LibraryHeading({
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext conext) {
+    return Padding(
+      padding: const EdgeInsetsGeometry.fromLTRB(12, 14, 12, 6),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
