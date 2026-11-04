@@ -37,6 +37,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
   final List<FloorObject> _objects = [];
   int _nextId = 1;
 
+  final GlobalKey _canvasKey = GlobalKey();
+
   FloorObject? _selectedObject;
 
   FloorPlannerTool _activeTool = FloorPlannerTool.cursor;
@@ -186,21 +188,34 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
   }
 
-  void _addObject(FloorObjectType type) {
+  void _addObjectAt(
+    FloorObjectType type,
+    Offset dropPosition,
+  ) {
     final size = type.defaultSize;
+
+    // Centre the object on the mouse position.
+    final position = Offset(
+      (dropPosition.dx - size.width /2)
+          .clamp(0.0, 3000.0 - size.width)
+          .toDouble(),
+      (dropPosition.dy - size.height / 2)
+          .clamp(0.0, 3000.0 - size.height)
+          .toDouble(),
+    );
 
     setState(() {
       final newObject = FloorObject(
         id: _nextId++,
         type: type,
-        position: const Offset(100,100),
+        position: position,
         width: size.width,
         height: size.height,
-        );
+      );
 
-        _objects.add(newObject);
-        _selectedObject = newObject;
-        _activeTool = FloorPlannerTool.cursor;
+      _objects.add(newObject);
+      _selectedObject = newObject;
+      _activeTool = FloorPlannerTool.cursor;
     });
   }
 
@@ -317,18 +332,46 @@ class _FloorPlannerState extends State<FloorPlanner> {
     FloorObjectType type,
     IconData icon,
   ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical:3,
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: () => _addObject(type),
-          icon: Icon(icon),
-          label: Text(label),
+    Widget itemButton() {
+      return Container(
+        width: 150,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade400),
         ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(label),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Draggable<FloorObjectType>(
+      data: type,
+
+      // What follows the mouse while dragging.
+      feedback: Material(
+        elevation: 6,
+        color: Colors.transparent,
+        child: itemButton(),
+      ),
+
+      // Make the original button appear faded during dragging.
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: itemButton(),
+      ),
+
+      child: Tooltip(
+        message: 'Drag $label onto the floor plan',
+        child: itemButton(),
       ),
     );
   }
@@ -372,45 +415,68 @@ class _FloorPlannerState extends State<FloorPlanner> {
                 clipBehavior: Clip.hardEdge,
 
                 child: SizedBox(
+                  key: _canvasKey,
                   width: 3000,
                   height: 3000,
-                  child: Container(
-                    color: Colors.grey.shade200,
 
-                    child: IgnorePointer(
-                      //Disable individual object interaction while panning
-                      ignoring: _activeTool == FloorPlannerTool.hand,
+                  child: DragTarget<FloorObjectType>(
+                    onAcceptWithDetails: (details) {
+                      final renderObject =
+                        _canvasKey.currentContext?.findRenderObject();
 
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          for (final object in _objects)
-                            Positioned(
-                              key: ValueKey(object.id),
-                              left: object.position.dx,
-                              top: object.position.dy,
-                              child: FloorObjectWidget(
-                                object: object,
-                                isSelected: selected?.id == object.id,
+                      if (renderObject is! RenderBox) return;
+
+                      // Convert mouse position into floor-plan coordiantes.
+                      final localPosition =
+                          renderObject.globalToLocal(details.offset);
+
+                      _addObjectAt(
+                        details.data, localPosition,
+                      );
+                    },
+
+                    builder: (context, candidateData, rejectedData) {
+                      return Container(
+                        color: candidateData.isNotEmpty
+                            ? Colors.blue.withValues(alpha: 0.08)
+                            : Colors.grey.shade200,
+
+                        child: IgnorePointer(
+                          ignoring: _activeTool == FloorPlannerTool.hand,
+
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              for (final object in _objects)
+                                Positioned(
+                                  key: ValueKey(object.id),
+                                  left: object.position.dx,
+                                  top: object.position.dy,
+                                  child: FloorObjectWidget(
+                                    object: object,
+                                    isSelected: selected?.id == object.id,
 
 
-                                onDrag: (delta) => _moveObject(
-                                  object,
-                                  delta,
-                                  const Size(3000, 3000),
+                                    onDrag: (delta) => _moveObject(
+                                      object,
+                                      delta,
+                                      const Size(3000, 3000),
+                                    ), 
+                                    
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedObject != object
+                                          ? _selectedObject = object
+                                          : _selectedObject = null;
+                                      });
+                                    }
+                                  ),
                                 ),
-
-
-                                onTap: () {
-                                  setState(() {
-                                    _selectedObject = object;
-                                  });
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),  
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
