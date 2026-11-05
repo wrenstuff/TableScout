@@ -209,8 +209,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
         id: _nextId++,
         type: type,
         position: position,
-        width: size.width,
-        height: size.height,
+        lengthCm: size.width,
+        widthCm: size.height,
       );
 
       _objects.add(newObject);
@@ -247,6 +247,75 @@ class _FloorPlannerState extends State<FloorPlanner> {
         newPosition.dx.clamp(0.0, maxX).toDouble(),
         newPosition.dy.clamp(0.0, maxY).toDouble(),
       );
+    });
+  }
+
+  void _resizeObject(
+    FloorObject object,
+    FloorObjectResizeHandle handle,
+    Offset delta,
+    Size canvasSize,
+  ) {
+    if (_activeTool != FloorPlannerTool.cursor) return;
+
+    // Compensate for the current canvas zoom.
+    final scale =
+       _transformationController.value.getMaxScaleOnAxis();
+
+    final dx = delta.dx / scale;
+    final dy = delta.dy / scale;
+
+    const minDimension = 10.0;
+
+    // Current object boundaries.
+    double left = object.position.dx;
+    double top = object.position.dy;
+    double right = left + object.lengthCm;
+    double bottom = top + object.widthCm;
+
+    // Move the relevant horizontal edge.
+    if (handle == FloorObjectResizeHandle.left ||
+        handle == FloorObjectResizeHandle.topLeft ||
+        handle == FloorObjectResizeHandle.bottomLeft) {
+      left = (left + dx).clamp(
+        0.0,
+        right - minDimension,
+      );
+    }
+
+    if (handle == FloorObjectResizeHandle.right ||
+        handle == FloorObjectResizeHandle.topRight ||
+        handle == FloorObjectResizeHandle.bottomRight) {
+      right = (right + dx).clamp(
+        left + minDimension,
+        canvasSize.width,
+      );
+    }
+
+    // Move the relevant vertical edge.
+    if (handle == FloorObjectResizeHandle.top ||
+        handle == FloorObjectResizeHandle.topLeft ||
+        handle == FloorObjectResizeHandle.topRight) {
+      top = (top + dy).clamp(
+        0.0,
+        bottom - minDimension,
+      );
+    }
+
+    if (handle == FloorObjectResizeHandle.bottom ||
+        handle == FloorObjectResizeHandle.bottomLeft ||
+        handle == FloorObjectResizeHandle.bottomRight) {
+      bottom = (bottom + dy).clamp(
+        top + minDimension,
+        canvasSize.height,
+      );
+    }
+
+    setState(() {
+      object.position = Offset(left,top);
+      object.lengthCm = right - left;
+      object.widthCm = bottom - top;
+      _selectedObject = object;
     });
   }
 
@@ -450,11 +519,19 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               for (final object in _objects)
                                 Positioned(
                                   key: ValueKey(object.id),
-                                  left: object.position.dx,
-                                  top: object.position.dy,
+                                  left: object.position.dx - 6,
+                                  top: object.position.dy - 6,
                                   child: FloorObjectWidget(
                                     object: object,
                                     isSelected: selected?.id == object.id,
+
+
+                                    onResize: (handle, delta) => _resizeObject(
+                                      object,
+                                      handle,
+                                      delta,
+                                      const Size(3000, 3000),
+                                    ),
 
 
                                     onDrag: (delta) => _moveObject(
