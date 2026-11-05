@@ -5,10 +5,12 @@ from argon2 import PasswordHasher
 from pathlib import Path
 import sys
 from argon2.exceptions import VerificationError, InvalidHashError
+from update_details import updatedetails_bp
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from email_service import contact_email
 
 app = Flask(__name__)
+app.register_blueprint(updatedetails_bp)
 
 CORS (app, resources={
     r"/tablescout/*": {
