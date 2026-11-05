@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:tablescout/services/auth_service.dart';
 
+
 class SessionManager extends ChangeNotifier {
   //Whether or not user is logged in
   bool _isLoggedIn = false;
@@ -33,6 +34,7 @@ class SessionManager extends ChangeNotifier {
   bool get isAdmin => isLoggedIn && _role?.toUpperCase() == 'ADMIN';
   bool get isManager => isLoggedIn && _role?.toUpperCase() == 'MANAGER';
   bool get isUser => isLoggedIn && _role?.toUpperCase() == 'STAFF';
+  bool get isSupervisor => isLoggedIn && _role?.toUpperCase() == 'SUPERVISOR';
 
   //Authenticate through the backend and create a session
   Future<bool> login({
@@ -51,7 +53,6 @@ class SessionManager extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
-
       final user = data['user'];
 
       if (user is! Map ||
