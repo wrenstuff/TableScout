@@ -43,6 +43,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   final GlobalKey _canvasKey = GlobalKey();
 
+  final GlobalKey _interactiveViewerKey = GlobalKey();
+
   FloorObject? _selectedObject;
 
   FloorPlannerTool _activeTool = FloorPlannerTool.cursor;
@@ -192,6 +194,16 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
   }
 
+  String _getObjectNumber(FloorObject object) {
+    final sameTypeObjects = _objects
+        .where((item) => item.type == object.type)
+        .toList();
+
+    final objectNumber = sameTypeObjects.indexOf(object) + 1;
+
+    return '${object.type.label} $objectNumber';
+  }
+
   void _addObjectAt(
     FloorObjectType type,
     Offset dropPosition,
@@ -221,6 +233,42 @@ class _FloorPlannerState extends State<FloorPlanner> {
       _selectedObject = newObject;
       _activeTool = FloorPlannerTool.cursor;
     });
+  }
+
+  void _addObjectFromLibraryClick(FloorObjectType type) {
+    Offset dropPosition;
+
+    // If this is the first object, use the center of the visible canvas.
+    if (_objects.isEmpty) {
+      final viewerRenderObject = 
+          _interactiveViewerKey.currentContext?.findRenderObject();
+
+      final canvasRenderObject = 
+          _canvasKey.currentContext?.findRenderObject();
+
+      if (viewerRenderObject is! RenderBox ||
+          canvasRenderObject is! RenderBox) {
+        return;
+      }
+
+      final viewportCentreGlobal = viewerRenderObject.localToGlobal(
+        viewerRenderObject.size.center(Offset.zero),
+      );
+
+      dropPosition = canvasRenderObject.globalToLocal(
+        viewportCentreGlobal,
+      );
+    } else {
+      // Otherwise, use the centre of the most recently added object.
+      final lastObject = _objects.last;
+
+      dropPosition = Offset(
+        lastObject.position.dx + lastObject.lengthCm / 2,
+        lastObject.position.dy + lastObject.widthCm / 2,
+      );
+    }
+
+    _addObjectAt(type, dropPosition);
   }
 
   void _moveObject(
@@ -517,8 +565,12 @@ class _FloorPlannerState extends State<FloorPlanner> {
       ),
 
       child: Tooltip(
-        message: 'Drag $label onto the floor plan',
-        child: itemButton(),
+        message: 'Click or drag $label onto the floor plan',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _addObjectFromLibraryClick(type),
+          child: itemButton(),
+        ),
       ),
     );
   }
@@ -544,6 +596,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
             child: Listener(
               onPointerSignal: _handleCanvasPointerSignal,
               child: InteractiveViewer(
+                key: _interactiveViewerKey,
                 transformationController: _transformationController,
 
                 // Hand tool controls panning
@@ -670,27 +723,167 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Text('Object ${selected.id}'),
-                          Text('Type: ${selected.type.label}'),
-                          const SizedBox(height: 8),
+
+                          const SizedBox(height: 24),
+
                           Text(
-                            'X: ${selected.position.dx.toStringAsFixed(0)}',
+                            _getObjectNumber(selected),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          Text(
-                            'Y: ${selected.position.dy.toStringAsFixed(0)}',
+
+                          const SizedBox(height: 24),
+
+                          //Nickname
+                          const Text(
+                            'Table Nickname',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          Text('Width: ${selected.width}'),
-                          Text('Height: ${selected.height}'),
+                          TextFormField(
+                            key: ValueKey('nickname-${selected.id}'),
+                            initialValue: selected.nickname,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter a name',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                selected.nickname = value;
+                              });
+                            },
+                          ),
+
                           const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _deleteSelectedObject,
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Delete Object'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
+
+                          //Position
+                          const Text(
+                            'Position',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text('X: ${selected.position.dx.toStringAsFixed(1)}'),
+                          Text('Y: ${selected.position.dy.toStringAsFixed(1)}'),
+
+                          const SizedBox(height: 24),
+
+                          //Dimensions
+                          const Text(
+                            'Dimensions (cm)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            key: ValueKey('lenght-${selected.id}'),
+                            initialValue: selected.lengthCm.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Length',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted: (value) {
+                              final newLength = double.tryParse(value);
+
+                              if (newLength != null && newLength >= 10) {
+                                setState(() {
+                                  selected.lengthCm = newLength;
+                                });
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          TextFormField(
+                            key: ValueKey('width-${selected.id}'),
+                            initialValue: selected.widthCm.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Width',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted:(value) {
+                              final newWidth = double.tryParse(value);
+
+                              if (newWidth != null && newWidth >= 10) {
+                                setState(() {
+                                  selected.widthCm = newWidth;
+                                });
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          //Rotation
+                          TextFormField(
+                            key: ValueKey('rotation-${selected.id}'),
+                            initialValue: selected.rotationDegrees.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Rotation (degrees)',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted: (value) {
+                              final newRotation = double.tryParse(value);
+
+                              if (newRotation != null) {
+                                setState(() {
+                                  selected.rotationDegrees = newRotation;
+                                });
+                              }
+                            },
+                          ),
+
+                          // Text Content - Only for Textboxes
+                          if (selected.type == FloorObjectType.textbox) ...[
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Text Content',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextFormField(
+                              key: ValueKey('text-${selected.id}'),
+                              initialValue: selected.text ?? '',
+                              maxLines: 4,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter text',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  selected.text = value;
+                                });
+                              },
+                            ),
+                          ],
+
+                          const SizedBox(height: 425),
+
+                          //Delete Object
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _deleteSelectedObject,
+                              icon: const Icon(Icons.delete),
+                              label: const Text('Delete Object'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
                           ),
                         ],
