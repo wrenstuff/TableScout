@@ -529,6 +529,28 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               ),
               child: Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          flex: 5,
+                          child: Text('Sort by Game'),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text('Sort by Table/s'),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text('Sort by Time'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8,),
+
                   Expanded(
                     child: ListView(
                       children: [
@@ -542,7 +564,32 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                                   : Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(_events[i].name),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 5,
+                                  child: Text(
+                                    _events[i].name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    _events[i].tables.isEmpty
+                                        ? 'Not Assigned'
+                                        : 'Table ${_events[i].tables.join(', ')}'
+                                  ),
+                                ),
+
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    _events[i].time,
+                                  ),
+                                )
+                              ],
+                            ),
                           ),
                       ],
                     ),
