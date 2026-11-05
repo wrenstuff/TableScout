@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:tablescout/session/session_manager.dart';
-import 'package:tablescout/pages/passwordmanage_page.dart';
+import 'package:tablescout/pages/password_manage_page.dart';
 
 class AccountPage extends StatefulWidget {
   final VoidCallback onNavigateToPassword;

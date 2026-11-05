@@ -10,7 +10,7 @@ import 'package:tablescout/pages/events_page.dart';
 import 'package:tablescout/pages/account_page.dart';
 import 'package:tablescout/pages/staff_manage.dart';
 import 'package:tablescout/pages/privacy_page.dart';
-import 'package:tablescout/pages/passwordmanage_page.dart';
+import 'package:tablescout/pages/password_manage_page.dart';
 import 'package:tablescout/pages/cloud_page.dart';
 import 'package:tablescout/pages/customise_page.dart';
 import 'package:tablescout/pages/notifications_page.dart';
