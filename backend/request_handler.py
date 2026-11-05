@@ -1,6 +1,10 @@
+
 import asyncio
 import json
 import sqlite3
+
+from signup_handler import handle_signup
+from contact_handler import handle_contact
 
 from event_page_handler import (
     create_event,
@@ -8,6 +12,7 @@ from event_page_handler import (
     create_format,
     get_events_data,
 )
+
 
 async def handle_request(message):
     try:
@@ -21,7 +26,7 @@ async def handle_request(message):
     if not isinstance(data, dict):
         return {
             "type": "error",
-            "message": "Request mst be a JSON object."
+            "message": "Request must be a JSON object."
         }
 
     request_type = data.get("type")
@@ -33,12 +38,29 @@ async def handle_request(message):
             "request_id": request_id,
             "message": message,
         }
+      
+    if request_type in (
+        "signup",
+        "contact"
+    ):
+        if request_type == "signup":
+            return await handle_signup(data)
+        if request_type == "contact":
+            try:
+                return await handle_contact(data)
+            except Exception as error:
+                print(f"Error handling contact request: {error}")
+                return {
+                    "type": "error",
+                    "success": False,
+                    "message": "An error occurred while processing the contact request."
+                }
 
     if request_type not in (
         "get_events_data",
         "create_game",
         "create_format",
-        "create_event",
+        "create_event"   
     ):
         return {
             "type": "error",
@@ -58,6 +80,10 @@ async def handle_request(message):
                 "event_id": event_id
             }
 
+        # Handle signup requests
+        
+        
+        # Handle game and format creation
         if request_type in ("create_game", "create_format"):
             name = data.get("name")
             name_short = data.get("name_short")
@@ -66,7 +92,7 @@ async def handle_request(message):
                 raise ValueError("Name is required.")
 
             if not isinstance(name_short, str) or not name_short.strip():
-                raise ValueError("Short name is required")
+                raise ValueError("Short name is required.")
 
             if request_type == "create_game":
                 await asyncio.to_thread(
@@ -88,6 +114,7 @@ async def handle_request(message):
                     name_short,
                 )
 
+        # Return event data for event-related requests
         return await asyncio.to_thread(get_events_data)
 
     except ValueError as error:
