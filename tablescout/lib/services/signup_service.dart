@@ -33,19 +33,19 @@ class SignupService {
       );
 
       final response = await channel.stream
-         .first
+          .first
         .timeout(const Duration(seconds: 15));
 
       final data =
-         jsonDecode(response as String) as Map<String, dynamic>;
+          jsonDecode(response as String) as Map<String, dynamic>;
 
       if (data['success'] == true) {
-         return data;
-       }
+        return data;
+      }
 
-       throw Exception(
+      throw Exception(
         data['error'] ?? "Signup could not be completed.",
-       );
+      );
     } finally {
       await channel.sink.close();
     }
