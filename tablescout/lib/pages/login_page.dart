@@ -21,7 +21,8 @@ class LoginPage extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: SizedBox(
-                width: 400,
+                width: 500,
+                height: 570,
                 child: LoginWidget(),
               ),
             ),
