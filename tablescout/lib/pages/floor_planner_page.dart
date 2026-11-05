@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -30,6 +31,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
   static const double toolbarWidth = 200;
   static const double bottomToolbarHeight = 130;
   static const double toolbarGap = 20;
+
+  double _rotationStartAngle = 0;
+  double _rotationStartDegrees = 0;
 
   final TransformationController _transformationController =
     TransformationController();
@@ -230,7 +234,15 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final scale =
       _transformationController.value.getMaxScaleOnAxis();
 
-    final newPosition = object.position + (delta/scale);
+    // Convert the rotated drag direction back into canvas coordinates();
+    final angle = object.rotationDegrees * math.pi / 180;
+
+    final canvasDelta = Offset(
+      delta.dx * math.cos(angle) - delta.dy * math.sin(angle),
+      delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
+    );
+
+    final newPosition = object.position + (canvasDelta/scale);
 
     final maxX = canvasSize.width > object.width
         ? canvasSize.width - object.width
@@ -317,6 +329,72 @@ class _FloorPlannerState extends State<FloorPlanner> {
       object.widthCm = bottom - top;
       _selectedObject = object;
     });
+  }
+
+  void _startObjectRotation(
+    FloorObject object,
+    Offset globalPosition,
+  ) {
+    final renderObject = 
+        _canvasKey.currentContext?.findRenderObject();
+
+    if (renderObject is! RenderBox) return;
+
+    final pointerPosition =
+        renderObject.globalToLocal(globalPosition);
+
+    final objectCentre = Offset(
+      object.position.dx + object.lengthCm / 2,
+      object.position.dy + object.widthCm / 2,
+    );
+
+    _rotationStartAngle = math.atan2(
+      pointerPosition.dy - objectCentre.dy,
+      pointerPosition.dx - objectCentre.dx,
+    );
+
+    _rotationStartDegrees = object.rotationDegrees;
+  }
+
+  void _rotateObject(
+    FloorObject object,
+    Offset globalPosition,
+  ) {
+    if (_activeTool != FloorPlannerTool.cursor) return;
+
+    final renderObject =
+        _canvasKey.currentContext?.findRenderObject();
+
+    if (renderObject is! RenderBox) return;
+
+    final pointerPosition =
+        renderObject.globalToLocal(globalPosition);
+
+    final objectCentre = Offset(
+      object.position.dx + object.lengthCm / 2,
+      object.position.dy + object.widthCm / 2,
+    );
+
+    final currentAngle = math.atan2(
+      pointerPosition.dy - objectCentre.dy,
+      pointerPosition.dx - objectCentre.dx,
+    );
+
+    //Calculate the difference from the starting angle
+    //This prevents a jump when crossing the -180/180 degree boundary.
+    final angleDifference = math.atan2(
+      math.sin(currentAngle - _rotationStartAngle),
+      math.cos(currentAngle - _rotationStartAngle),
+    );
+
+    setState(() {
+      object.rotationDegrees = 
+          _rotationStartDegrees +
+          (angleDifference * 180 / math.pi);
+
+      _selectedObject = object;
+    });
+
   }
 
   void _deleteSelectedObject() {
@@ -525,7 +603,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                     object: object,
                                     isSelected: selected?.id == object.id,
 
-
                                     onResize: (handle, delta) => _resizeObject(
                                       object,
                                       handle,
@@ -533,6 +610,15 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                       const Size(3000, 3000),
                                     ),
 
+                                    onRotateStart: (position) => _startObjectRotation(
+                                      object,
+                                      position,
+                                    ),
+
+                                    onRotate: (position) => _rotateObject(
+                                      object,
+                                      position,
+                                    ),
 
                                     onDrag: (delta) => _moveObject(
                                       object,

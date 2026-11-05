@@ -232,6 +232,8 @@ class FloorObjectWidget extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
   final void Function(FloorObjectResizeHandle, Offset) onResize;
+  final ValueChanged<Offset> onRotateStart;
+  final ValueChanged<Offset> onRotate;
 
   const FloorObjectWidget({
     super.key,
@@ -239,6 +241,8 @@ class FloorObjectWidget extends StatelessWidget {
     required this.onDrag,
     required this.onTap,
     required this.onResize,
+    required this.onRotateStart,
+    required this.onRotate,
     this.isSelected = false,
   });
 
@@ -252,15 +256,15 @@ class FloorObjectWidget extends StatelessWidget {
     return Transform.rotate(
       angle: object.rotationDegrees * math.pi / 180,
       child: SizedBox(
-        width: object.lengthCm + handleSize,
-        height: object.widthCm + handleSize,
+        width: object.lengthCm + handleSize + 20,
+        height: object.widthCm + handleSize + 50,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             //Actual Object.
             Positioned(
-              left: handlePadding,
-              top: handlePadding,
+              left: handlePadding + 10,
+              top: handlePadding + 40,
               child: GestureDetector(
                 onTap: onTap,
                 onPanUpdate: (details) => onDrag(details.delta),
@@ -309,39 +313,191 @@ class FloorObjectWidget extends StatelessWidget {
 
             // Resize handles only appear on selected objects.
             if (isSelected) ...[
-              _buildResizeHandle(
-                FloorObjectResizeHandle.topLeft,
-                Alignment.topLeft,
-                handleSize,
+
+              // Rotation Connector.
+              Positioned(
+                left: 10 + handlePadding + object.lengthCm / 2 - 1,
+                top: 16,
+                child: Container(
+                  width: 2,
+                  height: 24,
+                  color: Colors.blue,
+                ),
               ),
-              _buildResizeHandle(
-                FloorObjectResizeHandle.top,
-                Alignment.topCenter,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.topRight,
-                Alignment.topRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.right,
-                Alignment.centerRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottomRight,
-                Alignment.bottomRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottom,
-                Alignment.bottomCenter,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottomLeft,
-                Alignment.bottomLeft,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.left,
-                Alignment.centerLeft,
-                handleSize,
+
+              // Rotation Handle.
+              Positioned(
+                left: 10+ handlePadding + object.lengthCm / 2 - 8,
+                top: 0,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (details) {
+                    onRotateStart(details.globalPosition);
+                  },
+                  onPanUpdate: (details) {
+                    onRotate(details.globalPosition);
+                  },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.blue,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.topLeft,
+                      Alignment.topLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.top,
+                      Alignment.topCenter,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.topRight,
+                      Alignment.topRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.right,
+                      Alignment.centerRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottomRight,
+                      Alignment.bottomRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottom,
+                      Alignment.bottomCenter,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottomLeft,
+                      Alignment.bottomLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.left,
+                      Alignment.centerLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
               ),
             ],
           ],
