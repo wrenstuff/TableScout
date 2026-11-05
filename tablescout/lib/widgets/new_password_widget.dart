@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tablescout/widgets/auth_container.dart';
 
 class NewPasswordWidget extends StatefulWidget {
   const NewPasswordWidget({super.key});
@@ -16,12 +17,9 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
   bool _hideConfirmPassword = true;
   
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: const Color(0xFFB5BAD0),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return AuthContainer(
+      boxHeight: 450,
+      
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

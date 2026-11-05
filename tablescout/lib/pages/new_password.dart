@@ -27,7 +27,8 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: const SizedBox(
-                width: 400,
+                width: 500,
+                height: 570,
                 child: NewPasswordWidget(),
               ),
             ),

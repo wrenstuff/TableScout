@@ -11,9 +11,7 @@ class PasswordRecoveryWidget extends StatelessWidget {
       boxHeight: 450,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-
         children: [
-
           const Text(
             'TableScout',
             textAlign: TextAlign.center,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tablescout/widgets/recover_code_widget.dart';
+import 'package:tablescout/widgets/auth_container.dart';
 
 class RecoverCodePage extends StatefulWidget {
   const RecoverCodePage({super.key});
@@ -27,7 +28,8 @@ class _RecoverCodePageState extends State<RecoverCodePage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: const SizedBox(
-                width: 400,
+                width: 500,
+                height: 570,
                 child: RecoverCodeWidget(),
               ),
             ),
