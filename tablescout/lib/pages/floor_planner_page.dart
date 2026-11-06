@@ -68,7 +68,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
     try {
       final data = {
-        'version': 1,
+        'version': 2,
         'objects': [
           for (final object in _objects)
             {
@@ -76,8 +76,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
               'type': object.type.name,
               'x': object.position.dx,
               'y': object.position.dy,
-              'width': object.width,
-              'height': object.height,
+              'lengthCm': object.lengthCm,
+              'widthCm': object.widthCm,
+              'rotationDegrees': object.rotationDegrees,
+              'nickname': object.nickname,
               'text': object.text,
             },
         ],
@@ -111,7 +113,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       final decoded = jsonDecode(await _layoutFile.readAsString());
 
       if (decoded is! Map<String, dynamic> ||
-          decoded['version'] != 1 ||
+          (decoded['version'] != 1 && decoded['version'] != 2) ||
           decoded['objects'] is! List) {
         throw const FormatException('Invalid layout file.');
       }
@@ -120,8 +122,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
       final ids = <int>{};
       var nextId = 1;
 
-      double readNumber(Map<String, dynamic> object, String key) {
-        final value = object[key];
+      double readNumber(
+        Map<String, dynamic> object,
+        String key, {
+        String? oldKey,
+        double? defaultValue,
+      }) {
+        final value = object[key] ?? (oldKey == null ? null : object[oldKey]);
+
+        if (value == null && defaultValue != null) {
+          return defaultValue;
+        }
 
         if (value is! num || !value.isFinite) {
           throw FormatException('Invalid value for "$key".');
@@ -152,11 +163,43 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
         final x = readNumber(entry, 'x');
         final y = readNumber(entry, 'y');
-        final width = readNumber(entry, 'width');
-        final height = readNumber(entry, 'height');
 
-        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+        // Read the new dimension fields, or fall back to old width/height.
+        final lengthCm = readNumber(
+          entry,
+          'lengthCm',
+          oldKey: 'width',
+        );
+
+        final widthCm = readNumber(
+          entry,
+          'widthCm',
+          oldKey: 'height',
+        );
+
+        final rotationDegrees = readNumber(
+          entry,
+          'rotationDegrees',
+          defaultValue: 0,
+        );
+
+        if (x < 0 ||
+            y < 0 ||
+            lengthCm <= 0 ||
+            widthCm <= 0) {
           throw const FormatException('Invalid position or size.');
+        }
+
+        final nickname = entry['nickname'];
+
+        if (nickname != null && nickname is! String) {
+          throw const FormatException('Invalid object nickname');
+        }
+
+        final text = entry['text'];
+
+        if (text != null && text is! String) {
+          throw const FormatException('Invalid object text.');
         }
 
         loadedObjects.add(
@@ -164,9 +207,11 @@ class _FloorPlannerState extends State<FloorPlanner> {
             id: id,
             type: matchingTypes.first,
             position: Offset(x, y),
-            width: width,
-            height: height,
-            text: entry['text'] is String ? entry['text'] as String: null,
+            lengthCm: lengthCm,
+            widthCm: widthCm,
+            rotationDegrees: rotationDegrees,
+            nickname: nickname as String? ?? '',
+            text: text as String?,
           ),
         );
 
@@ -643,52 +688,61 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
                         child: IgnorePointer(
                           ignoring: _activeTool == FloorPlannerTool.hand,
-
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              for (final object in _objects)
-                                Positioned(
-                                  key: ValueKey(object.id),
-                                  left: object.position.dx - 6,
-                                  top: object.position.dy - 6,
-                                  child: FloorObjectWidget(
-                                    object: object,
-                                    isSelected: selected?.id == object.id,
-
-                                    onResize: (handle, delta) => _resizeObject(
-                                      object,
-                                      handle,
-                                      delta,
-                                      const Size(3000, 3000),
-                                    ),
-
-                                    onRotateStart: (position) => _startObjectRotation(
-                                      object,
-                                      position,
-                                    ),
-
-                                    onRotate: (position) => _rotateObject(
-                                      object,
-                                      position,
-                                    ),
-
-                                    onDrag: (delta) => _moveObject(
-                                      object,
-                                      delta,
-                                      const Size(3000, 3000),
-                                    ), 
+                          child : GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              setState(() {
+                                _selectedObject = null;
+                              });
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                for (final object in _objects)
+                                  Positioned(
+                                    key: ValueKey(object.id),
+                                    left: object.position.dx - 6,
+                                    top: object.position.dy - 6,
+                                    child: FloorObjectWidget(
+                                      object: object,
+                                      displayNumber: _getObjectNumber(object),
+                                      isSelected: selected?.id == object.id,
                                     
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedObject != object
-                                          ? _selectedObject = object
-                                          : _selectedObject = null;
-                                      });
-                                    }
+
+                                      onResize: (handle, delta) => _resizeObject(
+                                        object,
+                                        handle,
+                                        delta,
+                                        const Size(3000, 3000),
+                                      ),
+
+                                      onRotateStart: (position) => _startObjectRotation(
+                                        object,
+                                        position,
+                                      ),
+
+                                      onRotate: (position) => _rotateObject(
+                                        object,
+                                        position,
+                                      ),
+
+                                      onDrag: (delta) => _moveObject(
+                                        object,
+                                        delta,
+                                        const Size(3000, 3000),
+                                      ), 
+                                    
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedObject != object
+                                            ? _selectedObject = object
+                                            : _selectedObject = null;
+                                        });
+                                      }
+                                    ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );

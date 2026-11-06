@@ -234,6 +234,7 @@ class FloorObjectWidget extends StatelessWidget {
   final void Function(FloorObjectResizeHandle, Offset) onResize;
   final ValueChanged<Offset> onRotateStart;
   final ValueChanged<Offset> onRotate;
+  final String displayNumber;
 
   const FloorObjectWidget({
     super.key,
@@ -243,6 +244,7 @@ class FloorObjectWidget extends StatelessWidget {
     required this.onResize,
     required this.onRotateStart,
     required this.onRotate,
+    required this.displayNumber,
     this.isSelected = false,
   });
 
@@ -291,21 +293,43 @@ class FloorObjectWidget extends StatelessWidget {
                           ? BorderRadius.zero
                           : BorderRadius.circular(6),
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: Text(
-                        isTextbox
-                            ? (object.text ?? 'Text')
-                            : object.displayName,
-                        style: TextStyle(
-                          color: isTextbox ? Colors.black : Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  child: Stack(
+                    children: [
+                      // Existing object name or textbox content.
+                      Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Text(
+                              isTextbox
+                                  ? (object.text ?? 'Text')
+                                  : object.displayName,
+                              style: TextStyle(
+                                color: isTextbox ? Colors.black : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+
+                      // Automatic Object number
+                      if (!isTextbox)
+                        Positioned(
+                          top: 2,
+                          left: 4,
+                          child: Text(
+                            displayNumber.split(' ').last,
+                            style: TextStyle(
+                              color: isSelected ? Colors.blue.shade900 : Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
