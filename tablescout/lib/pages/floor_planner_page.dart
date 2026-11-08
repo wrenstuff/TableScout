@@ -51,6 +51,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
   bool get _canUndo => _undoStack.isNotEmpty;
   bool get _canRedo => _redoStack.isNotEmpty;
 
+  // Stores the floor plan before an object is moved.
+  _FloorPlanSnapshot? _moveStartSnapshot;
+
   final GlobalKey _canvasKey = GlobalKey();
 
   final GlobalKey _interactiveViewerKey = GlobalKey();
@@ -109,6 +112,40 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
     // A new action invalidates the Redo history.
     _redoStack.clear();
+  }
+
+  // Capture the flor plan when object movement begins.
+  void _startObjectMove(FloorObject object) {
+    _moveStartSnapshot = _createSnapshot();
+  }
+
+  // Record one history entry when object movement finishes.
+  void _finishObjectMove() {
+    if (_moveStartSnapshot == null) return;
+
+    final startSnapshot = _moveStartSnapshot!;
+    final currentSnapshot = _createSnapshot();
+
+    // Only record history if the object actually mvoed.
+    final moved = startSnapshot.objects.any((original) {
+      final current = _objects.firstWhere(
+        (item) => item.id == original.id,
+      );
+
+      return original.position != current.position;
+    });
+
+    if (moved) {
+      _undoStack.add(startSnapshot);
+
+      if (_undoStack.length > _maxHistory) {
+        _undoStack.removeAt(0);
+      }
+
+      _redoStack.clear();
+    }
+
+    _moveStartSnapshot = null;
   }
 
   // Undo the most recent change.
@@ -830,7 +867,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                         delta,
                                         const Size(3000, 3000),
                                       ), 
-                                    
+
+                                      // Capture history when dragging begins.
+                                      onDragStart: () => _startObjectMove(object),
+
+                                      // Save one history entry when dragging ends.
+                                      onDragEnd: () => _finishObjectMove(),
+                                      
                                       onTap: () {
                                         setState(() {
                                           _selectedObject != object

@@ -231,6 +231,8 @@ class FloorObjectWidget extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
+  final VoidCallback onDragStart;
+  final VoidCallback onDragEnd;
   final void Function(FloorObjectResizeHandle, Offset) onResize;
   final ValueChanged<Offset> onRotateStart;
   final ValueChanged<Offset> onRotate;
@@ -240,6 +242,8 @@ class FloorObjectWidget extends StatelessWidget {
     super.key,
     required this.object,
     required this.onDrag,
+    required this.onDragStart,
+    required this.onDragEnd,
     required this.onTap,
     required this.onResize,
     required this.onRotateStart,
@@ -269,7 +273,9 @@ class FloorObjectWidget extends StatelessWidget {
               top: handlePadding + 40,
               child: GestureDetector(
                 onTap: onTap,
+                onPanStart: (_) => onDragStart(),
                 onPanUpdate: (details) => onDrag(details.delta),
+                onPanEnd: (_) => onDragEnd(),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   width: object.lengthCm,
