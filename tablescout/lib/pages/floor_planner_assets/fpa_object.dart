@@ -234,6 +234,8 @@ class FloorObjectWidget extends StatelessWidget {
   final VoidCallback onDragStart;
   final VoidCallback onDragEnd;
   final void Function(FloorObjectResizeHandle, Offset) onResize;
+  final VoidCallback onResizeStart;
+  final VoidCallback onResizeEnd;
   final ValueChanged<Offset> onRotateStart;
   final ValueChanged<Offset> onRotate;
   final String displayNumber;
@@ -246,6 +248,8 @@ class FloorObjectWidget extends StatelessWidget {
     required this.onDragEnd,
     required this.onTap,
     required this.onResize,
+    required this.onResizeStart,
+    required this.onResizeEnd,
     required this.onRotateStart,
     required this.onRotate,
     required this.displayNumber,
@@ -341,7 +345,7 @@ class FloorObjectWidget extends StatelessWidget {
               ),
             ),
 
-            // Resize handles only appear on selected objects.
+            // handles only appear on selected objects.
             if (isSelected) ...[
 
               // Rotation Connector.
@@ -545,6 +549,10 @@ class FloorObjectWidget extends StatelessWidget {
       alignment: alignment,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
+
+        // Capture history before resizing starts.
+        onPanStart: (_) => onResizeStart(),
+
         onPanUpdate: (details) {
           // Convert mouse movement into the object's local coordinates.
           final angle = -object.rotationDegrees * math.pi / 180;
@@ -558,6 +566,10 @@ class FloorObjectWidget extends StatelessWidget {
 
           onResize(handle, localDelta);
         },
+
+        // Record history after resizing finishes.
+        onPanEnd: (_) => onResizeEnd(),
+
         child: Container(
           width: size,
           height: size,

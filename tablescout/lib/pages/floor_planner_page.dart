@@ -852,6 +852,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                         const Size(3000, 3000),
                                       ),
 
+                                      onResizeStart: () => _startObjectMove(object),
+
+                                      onResizeEnd: () => _finishObjectMove(),
+
                                       onRotateStart: (position) => _startObjectRotation(
                                         object,
                                         position,
