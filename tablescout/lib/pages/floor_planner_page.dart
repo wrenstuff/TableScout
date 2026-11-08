@@ -41,6 +41,16 @@ class _FloorPlannerState extends State<FloorPlanner> {
   final List<FloorObject> _objects = [];
   int _nextId = 1;
 
+  // Undo and Redo History.
+  final List<_FloorPlanSnapshot> _undoStack = [];
+  final List<_FloorPlanSnapshot> _redoStack = [];
+
+  // Limited to 100 changes before cannot undo
+  static const int _maxHistory = 100;
+
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
+
   final GlobalKey _canvasKey = GlobalKey();
 
   final GlobalKey _interactiveViewerKey = GlobalKey();
@@ -59,6 +69,91 @@ class _FloorPlannerState extends State<FloorPlanner> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  // Create an independent copy of all floor objects.
+  List<FloorObject> _copyObjects(List<FloorObject> objects) {
+    return objects.map((object) {
+      return FloorObject(
+        id: object.id,
+        type: object.type,
+        position: Offset(
+          object.position.dx,
+          object.position.dy,
+        ),
+        lengthCm: object.lengthCm,
+        widthCm: object.widthCm,
+        rotationDegrees: object.rotationDegrees,
+        nickname: object.nickname,
+        text: object.text,
+      );
+    }).toList();
+  }
+
+  // Capture the current floor plan.
+  _FloorPlanSnapshot _createSnapshot() {
+    return _FloorPlanSnapshot(
+      objects: _copyObjects(_objects),
+      nextId: _nextId,
+    );
+  }
+
+  // record the current state before making a change.
+  void _recordHistory() {
+    _undoStack.add(_createSnapshot());
+
+    // History stays within the limit.
+    if (_undoStack.length > _maxHistory) {
+      _undoStack.removeAt(0);
+    }
+
+    // A new action invalidates the Redo history.
+    _redoStack.clear();
+  }
+
+  // Undo the most recent change.
+  void _undo() {
+    if (!_canUndo) return;
+
+    setState(() {
+      // Save the current state for Redo.
+      _redoStack.add(_createSnapshot());
+
+      // Retrieve the previous state.
+      final previousState = _undoStack.removeLast();
+
+      // Restore the previous floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(previousState.objects));
+
+      _nextId = previousState.nextId;
+
+      // Clear selection to avoid stale object references.
+      _selectedObject = null;
+    });
+  }
+
+  // Redo the most recently undone change.
+  void _redo() {
+    if (!_canRedo) return;
+
+    setState(() {
+      // Save the current state for Undo.
+      _undoStack.add(_createSnapshot());
+
+      // Retrieve the next state.
+      final nextState = _redoStack.removeLast();
+
+      // Restore the floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(nextState.objects));
+        
+      _nextId = nextState.nextId;
+
+      _selectedObject = null;
+    });
   }
 
   Future<void> _saveLayout() async {
@@ -264,6 +359,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
           .clamp(0.0, 3000.0 - size.height)
           .toDouble(),
     );
+
+    _recordHistory();
 
     setState(() {
       final newObject = FloorObject(
@@ -493,6 +590,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
   void _deleteSelectedObject() {
     final selected = _selectedObject;
     if (selected == null) return;
+
+    _recordHistory();
 
     setState(() {
       _objects.removeWhere((object) => object.id == selected.id);
@@ -1130,6 +1229,36 @@ class _FloorPlannerState extends State<FloorPlanner> {
                       ),
                     ),
 
+                    // Undo
+                    Tooltip(
+                      message: 'Undo',
+                      child: IconButton(
+                        onPressed: _canUndo ? _undo : null,
+                        icon: const Icon(Icons.undo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Redo
+                    Tooltip(
+                      message: 'Redo',
+                      child: IconButton(
+                        onPressed: _canRedo ? _redo : null,
+                        icon: const Icon(Icons.redo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
                     //Delete
                     Tooltip(
                       message: 'Delete selected object',
@@ -1206,4 +1335,14 @@ class _LibraryHeading extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FloorPlanSnapshot {
+  final List<FloorObject> objects;
+  final int nextId;
+
+  _FloorPlanSnapshot({
+    required this.objects,
+    required this.nextId,
+  });
 }
