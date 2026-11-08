@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tablescout/session/session_manager.dart';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});

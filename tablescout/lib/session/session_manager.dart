@@ -33,6 +33,7 @@ class SessionManager extends ChangeNotifier {
   String? get lastError => _lastError;
   String? get token => _token;
 
+  bool get isStore => isLoggedIn && _role?.toUpperCase() == 'STORE';
   bool get isAdmin => isLoggedIn && _role?.toUpperCase() == 'ADMIN';
   bool get isManager => isLoggedIn && _role?.toUpperCase() == 'MANAGER';
   bool get isUser => isLoggedIn && _role?.toUpperCase() == 'STAFF';
