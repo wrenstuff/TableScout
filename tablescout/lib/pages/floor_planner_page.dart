@@ -954,19 +954,30 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          TextFormField(
-                            key: ValueKey('nickname-${selected.id}'),
-                            initialValue: selected.nickname,
-                            decoration: const InputDecoration(
-                              hintText: 'Enter a name',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                selected.nickname = value;
-                              });
+                          Focus(
+                            onFocusChange: (hasFocus) {
+                              if (hasFocus) {
+                                // Capture the original state when editing begins.
+                                _startObjectMove(selected);
+                              } else {
+                                // Record one history entry when editing fnishes.
+                                _finishObjectMove();
+                              }
                             },
+                            child: TextFormField(
+                              key: ValueKey('nickname-${selected.id}'),
+                              initialValue: selected.nickname,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter a name',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  selected.nickname = value;
+                                });
+                              },
+                            ),
                           ),
 
                           const SizedBox(height: 16),
@@ -1003,9 +1014,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newLength = double.tryParse(value);
 
                               if (newLength != null && newLength >= 10) {
-                                setState(() {
-                                  selected.lengthCm = newLength;
-                                });
+                                if (newLength != selected.lengthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.lengthCm = newLength;
+                                  });
+                                }
                               }
                             },
                           ),
@@ -1027,9 +1042,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newWidth = double.tryParse(value);
 
                               if (newWidth != null && newWidth >= 10) {
-                                setState(() {
-                                  selected.widthCm = newWidth;
-                                });
+                                if (newWidth != selected.widthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.widthCm = newWidth;
+                                  });  
+                                }
                               }
                             },
                           ),
@@ -1053,9 +1072,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newRotation = double.tryParse(value);
 
                               if (newRotation != null) {
-                                setState(() {
-                                  selected.rotationDegrees = newRotation;
-                                });
+                                if (newRotation != selected.rotationDegrees) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.rotationDegrees = newRotation;
+                                  });
+                                }
                               }
                             },
                           ),
@@ -1067,19 +1090,28 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               'Text Content',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            TextFormField(
-                              key: ValueKey('text-${selected.id}'),
-                              initialValue: selected.text ?? '',
-                              maxLines: 4,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter text',
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  selected.text = value;
-                                });
+                            Focus(
+                              onFocusChange: (hasFocus) {
+                                if (hasFocus) {
+                                  _startObjectMove(selected);
+                                } else {
+                                  _finishObjectMove();
+                                }
                               },
+                              child: TextFormField(
+                                key: ValueKey('text-${selected.id}'),
+                                initialValue: selected.text ?? '',
+                                maxLines: 4,
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter Text',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selected.text = value;
+                                  });
+                                },
+                              ),
                             ),
                           ],
 
