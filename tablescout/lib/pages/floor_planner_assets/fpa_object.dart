@@ -238,6 +238,8 @@ class FloorObjectWidget extends StatelessWidget {
   final VoidCallback onResizeEnd;
   final ValueChanged<Offset> onRotateStart;
   final ValueChanged<Offset> onRotate;
+  final VoidCallback onRotateGestureStart;
+  final VoidCallback onRotateGestureEnd;
   final String displayNumber;
 
   const FloorObjectWidget({
@@ -252,6 +254,8 @@ class FloorObjectWidget extends StatelessWidget {
     required this.onResizeEnd,
     required this.onRotateStart,
     required this.onRotate,
+    required this.onRotateGestureStart,
+    required this.onRotateGestureEnd,
     required this.displayNumber,
     this.isSelected = false,
   });
@@ -365,12 +369,23 @@ class FloorObjectWidget extends StatelessWidget {
                 top: 0,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+
+                  // Capture history before rotation begins.
                   onPanStart: (details) {
+                    onRotateGestureStart();
                     onRotateStart(details.globalPosition);
                   },
+
+                  // Existing rotation calculations.
                   onPanUpdate: (details) {
                     onRotate(details.globalPosition);
                   },
+
+                  // Record one history entry when rotation finishes.
+                  onPanEnd: (_) {
+                    onRotateGestureEnd();
+                  },
+                  
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
                     child: Container(

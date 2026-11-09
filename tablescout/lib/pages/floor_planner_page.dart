@@ -126,16 +126,24 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final startSnapshot = _moveStartSnapshot!;
     final currentSnapshot = _createSnapshot();
 
-    // Only record history if the object actually mvoed.
-    final moved = startSnapshot.objects.any((original) {
-      final current = _objects.firstWhere(
-        (item) => item.id == original.id,
-      );
+    // Check whether anything in the floor plan has changed.
+    final changed =
+      startSnapshot.objects.length != currentSnapshot.objects.length ||
+      startSnapshot.nextId != currentSnapshot.nextId ||
+      startSnapshot.objects.any((original) {
+        final current = currentSnapshot.objects.firstWhere(
+          (item) => item.id == original.id,
+        );
 
-      return original.position != current.position;
-    });
+        return original.position != current.position ||
+            original.lengthCm != current.lengthCm ||
+            original.widthCm != current.widthCm ||
+            original.rotationDegrees != current.rotationDegrees ||
+            original.nickname != current.nickname ||
+            original.text != current.text;
+      });
 
-    if (moved) {
+    if (changed) {
       _undoStack.add(startSnapshot);
 
       if (_undoStack.length > _maxHistory) {
@@ -865,6 +873,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                         object,
                                         position,
                                       ),
+
+                                      onRotateGestureStart: () => _startObjectMove(object),
+
+                                      onRotateGestureEnd: () => _finishObjectMove(),
 
                                       onDrag: (delta) => _moveObject(
                                         object,
