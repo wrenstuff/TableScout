@@ -231,19 +231,31 @@ class FloorObjectWidget extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
+  final VoidCallback onDragStart;
+  final VoidCallback onDragEnd;
   final void Function(FloorObjectResizeHandle, Offset) onResize;
+  final VoidCallback onResizeStart;
+  final VoidCallback onResizeEnd;
   final ValueChanged<Offset> onRotateStart;
   final ValueChanged<Offset> onRotate;
+  final VoidCallback onRotateGestureStart;
+  final VoidCallback onRotateGestureEnd;
   final String displayNumber;
 
   const FloorObjectWidget({
     super.key,
     required this.object,
     required this.onDrag,
+    required this.onDragStart,
+    required this.onDragEnd,
     required this.onTap,
     required this.onResize,
+    required this.onResizeStart,
+    required this.onResizeEnd,
     required this.onRotateStart,
     required this.onRotate,
+    required this.onRotateGestureStart,
+    required this.onRotateGestureEnd,
     required this.displayNumber,
     this.isSelected = false,
   });
@@ -269,7 +281,9 @@ class FloorObjectWidget extends StatelessWidget {
               top: handlePadding + 40,
               child: GestureDetector(
                 onTap: onTap,
+                onPanStart: (_) => onDragStart(),
                 onPanUpdate: (details) => onDrag(details.delta),
+                onPanEnd: (_) => onDragEnd(),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   width: object.lengthCm,
@@ -335,7 +349,7 @@ class FloorObjectWidget extends StatelessWidget {
               ),
             ),
 
-            // Resize handles only appear on selected objects.
+            // handles only appear on selected objects.
             if (isSelected) ...[
 
               // Rotation Connector.
@@ -355,12 +369,23 @@ class FloorObjectWidget extends StatelessWidget {
                 top: 0,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+
+                  // Capture history before rotation begins.
                   onPanStart: (details) {
+                    onRotateGestureStart();
                     onRotateStart(details.globalPosition);
                   },
+
+                  // Existing rotation calculations.
                   onPanUpdate: (details) {
                     onRotate(details.globalPosition);
                   },
+
+                  // Record one history entry when rotation finishes.
+                  onPanEnd: (_) {
+                    onRotateGestureEnd();
+                  },
+                  
                   child: MouseRegion(
                     cursor: SystemMouseCursors.grab,
                     child: Container(
@@ -539,6 +564,10 @@ class FloorObjectWidget extends StatelessWidget {
       alignment: alignment,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
+
+        // Capture history before resizing starts.
+        onPanStart: (_) => onResizeStart(),
+
         onPanUpdate: (details) {
           // Convert mouse movement into the object's local coordinates.
           final angle = -object.rotationDegrees * math.pi / 180;
@@ -552,6 +581,10 @@ class FloorObjectWidget extends StatelessWidget {
 
           onResize(handle, localDelta);
         },
+
+        // Record history after resizing finishes.
+        onPanEnd: (_) => onResizeEnd(),
+
         child: Container(
           width: size,
           height: size,

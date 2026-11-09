@@ -41,6 +41,19 @@ class _FloorPlannerState extends State<FloorPlanner> {
   final List<FloorObject> _objects = [];
   int _nextId = 1;
 
+  // Undo and Redo History.
+  final List<_FloorPlanSnapshot> _undoStack = [];
+  final List<_FloorPlanSnapshot> _redoStack = [];
+
+  // Limited to 100 changes before cannot undo
+  static const int _maxHistory = 100;
+
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
+
+  // Stores the floor plan before an object is moved.
+  _FloorPlanSnapshot? _moveStartSnapshot;
+
   final GlobalKey _canvasKey = GlobalKey();
 
   final GlobalKey _interactiveViewerKey = GlobalKey();
@@ -59,6 +72,133 @@ class _FloorPlannerState extends State<FloorPlanner> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  // Create an independent copy of all floor objects.
+  List<FloorObject> _copyObjects(List<FloorObject> objects) {
+    return objects.map((object) {
+      return FloorObject(
+        id: object.id,
+        type: object.type,
+        position: Offset(
+          object.position.dx,
+          object.position.dy,
+        ),
+        lengthCm: object.lengthCm,
+        widthCm: object.widthCm,
+        rotationDegrees: object.rotationDegrees,
+        nickname: object.nickname,
+        text: object.text,
+      );
+    }).toList();
+  }
+
+  // Capture the current floor plan.
+  _FloorPlanSnapshot _createSnapshot() {
+    return _FloorPlanSnapshot(
+      objects: _copyObjects(_objects),
+      nextId: _nextId,
+    );
+  }
+
+  // record the current state before making a change.
+  void _recordHistory() {
+    _undoStack.add(_createSnapshot());
+
+    // History stays within the limit.
+    if (_undoStack.length > _maxHistory) {
+      _undoStack.removeAt(0);
+    }
+
+    // A new action invalidates the Redo history.
+    _redoStack.clear();
+  }
+
+  // Capture the flor plan when object movement begins.
+  void _startObjectMove(FloorObject object) {
+    _moveStartSnapshot = _createSnapshot();
+  }
+
+  // Record one history entry when object movement finishes.
+  void _finishObjectMove() {
+    if (_moveStartSnapshot == null) return;
+
+    final startSnapshot = _moveStartSnapshot!;
+    final currentSnapshot = _createSnapshot();
+
+    // Check whether anything in the floor plan has changed.
+    final changed =
+      startSnapshot.objects.length != currentSnapshot.objects.length ||
+      startSnapshot.nextId != currentSnapshot.nextId ||
+      startSnapshot.objects.any((original) {
+        final current = currentSnapshot.objects.firstWhere(
+          (item) => item.id == original.id,
+        );
+
+        return original.position != current.position ||
+            original.lengthCm != current.lengthCm ||
+            original.widthCm != current.widthCm ||
+            original.rotationDegrees != current.rotationDegrees ||
+            original.nickname != current.nickname ||
+            original.text != current.text;
+      });
+
+    if (changed) {
+      _undoStack.add(startSnapshot);
+
+      if (_undoStack.length > _maxHistory) {
+        _undoStack.removeAt(0);
+      }
+
+      _redoStack.clear();
+    }
+
+    _moveStartSnapshot = null;
+  }
+
+  // Undo the most recent change.
+  void _undo() {
+    if (!_canUndo) return;
+
+    setState(() {
+      // Save the current state for Redo.
+      _redoStack.add(_createSnapshot());
+
+      // Retrieve the previous state.
+      final previousState = _undoStack.removeLast();
+
+      // Restore the previous floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(previousState.objects));
+
+      _nextId = previousState.nextId;
+
+      // Clear selection to avoid stale object references.
+      _selectedObject = null;
+    });
+  }
+
+  // Redo the most recently undone change.
+  void _redo() {
+    if (!_canRedo) return;
+
+    setState(() {
+      // Save the current state for Undo.
+      _undoStack.add(_createSnapshot());
+
+      // Retrieve the next state.
+      final nextState = _redoStack.removeLast();
+
+      // Restore the floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(nextState.objects));
+        
+      _nextId = nextState.nextId;
+
+      _selectedObject = null;
+    });
   }
 
   Future<void> _saveLayout() async {
@@ -264,6 +404,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
           .clamp(0.0, 3000.0 - size.height)
           .toDouble(),
     );
+
+    _recordHistory();
 
     setState(() {
       final newObject = FloorObject(
@@ -494,6 +636,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final selected = _selectedObject;
     if (selected == null) return;
 
+    _recordHistory();
+
     setState(() {
       _objects.removeWhere((object) => object.id == selected.id);
       _selectedObject = null;
@@ -716,6 +860,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                         const Size(3000, 3000),
                                       ),
 
+                                      onResizeStart: () => _startObjectMove(object),
+
+                                      onResizeEnd: () => _finishObjectMove(),
+
                                       onRotateStart: (position) => _startObjectRotation(
                                         object,
                                         position,
@@ -726,12 +874,22 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                         position,
                                       ),
 
+                                      onRotateGestureStart: () => _startObjectMove(object),
+
+                                      onRotateGestureEnd: () => _finishObjectMove(),
+
                                       onDrag: (delta) => _moveObject(
                                         object,
                                         delta,
                                         const Size(3000, 3000),
                                       ), 
-                                    
+
+                                      // Capture history when dragging begins.
+                                      onDragStart: () => _startObjectMove(object),
+
+                                      // Save one history entry when dragging ends.
+                                      onDragEnd: () => _finishObjectMove(),
+                                      
                                       onTap: () {
                                         setState(() {
                                           _selectedObject != object
@@ -796,19 +954,30 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          TextFormField(
-                            key: ValueKey('nickname-${selected.id}'),
-                            initialValue: selected.nickname,
-                            decoration: const InputDecoration(
-                              hintText: 'Enter a name',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                selected.nickname = value;
-                              });
+                          Focus(
+                            onFocusChange: (hasFocus) {
+                              if (hasFocus) {
+                                // Capture the original state when editing begins.
+                                _startObjectMove(selected);
+                              } else {
+                                // Record one history entry when editing fnishes.
+                                _finishObjectMove();
+                              }
                             },
+                            child: TextFormField(
+                              key: ValueKey('nickname-${selected.id}'),
+                              initialValue: selected.nickname,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter a name',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  selected.nickname = value;
+                                });
+                              },
+                            ),
                           ),
 
                           const SizedBox(height: 16),
@@ -845,9 +1014,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newLength = double.tryParse(value);
 
                               if (newLength != null && newLength >= 10) {
-                                setState(() {
-                                  selected.lengthCm = newLength;
-                                });
+                                if (newLength != selected.lengthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.lengthCm = newLength;
+                                  });
+                                }
                               }
                             },
                           ),
@@ -869,9 +1042,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newWidth = double.tryParse(value);
 
                               if (newWidth != null && newWidth >= 10) {
-                                setState(() {
-                                  selected.widthCm = newWidth;
-                                });
+                                if (newWidth != selected.widthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.widthCm = newWidth;
+                                  });  
+                                }
                               }
                             },
                           ),
@@ -895,9 +1072,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               final newRotation = double.tryParse(value);
 
                               if (newRotation != null) {
-                                setState(() {
-                                  selected.rotationDegrees = newRotation;
-                                });
+                                if (newRotation != selected.rotationDegrees) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.rotationDegrees = newRotation;
+                                  });
+                                }
                               }
                             },
                           ),
@@ -909,19 +1090,28 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               'Text Content',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            TextFormField(
-                              key: ValueKey('text-${selected.id}'),
-                              initialValue: selected.text ?? '',
-                              maxLines: 4,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter text',
-                                border: OutlineInputBorder(),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  selected.text = value;
-                                });
+                            Focus(
+                              onFocusChange: (hasFocus) {
+                                if (hasFocus) {
+                                  _startObjectMove(selected);
+                                } else {
+                                  _finishObjectMove();
+                                }
                               },
+                              child: TextFormField(
+                                key: ValueKey('text-${selected.id}'),
+                                initialValue: selected.text ?? '',
+                                maxLines: 4,
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter Text',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selected.text = value;
+                                  });
+                                },
+                              ),
                             ),
                           ],
 
@@ -1130,6 +1320,36 @@ class _FloorPlannerState extends State<FloorPlanner> {
                       ),
                     ),
 
+                    // Undo
+                    Tooltip(
+                      message: 'Undo',
+                      child: IconButton(
+                        onPressed: _canUndo ? _undo : null,
+                        icon: const Icon(Icons.undo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Redo
+                    Tooltip(
+                      message: 'Redo',
+                      child: IconButton(
+                        onPressed: _canRedo ? _redo : null,
+                        icon: const Icon(Icons.redo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
                     //Delete
                     Tooltip(
                       message: 'Delete selected object',
@@ -1206,4 +1426,14 @@ class _LibraryHeading extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FloorPlanSnapshot {
+  final List<FloorObject> objects;
+  final int nextId;
+
+  _FloorPlanSnapshot({
+    required this.objects,
+    required this.nextId,
+  });
 }
