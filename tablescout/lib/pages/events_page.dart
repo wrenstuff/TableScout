@@ -762,24 +762,45 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               child: ListView(
                 children: [
                   for (int i = 0; i < _events.length; i++)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: i % 2 == 0
-                            ? Colors.grey.shade300
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: InkWell(
-                        onTap: () => _selectEvent(_events[i]),
-                        borderRadius: BorderRadius.circular(10),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: Text(_events[i].name),
+                    InkWell(
+                      onTap: () => _selectEvent(_events[i]),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: i % 2 == 0
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Text(
+                                _events[i].name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                _events[i].tables.isEmpty
+                                    ? 'Not Assigned'
+                                    : 'Table ${_events[i].tables.join(', ')}',
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${_events[i].startTime} - ${_events[i].endTime}'
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                    )
                 ],
               ),
             ),
