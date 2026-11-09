@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:tablescout/services/auth_service.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 
 class SessionManager extends ChangeNotifier {
@@ -84,6 +87,17 @@ class SessionManager extends ChangeNotifier {
       _storeName = user['storeName'] as String?;
       _token = token;
       _isLoggedIn = true;
+
+      try {
+        await WebSocketService.instance.connect(
+          token: _token!,
+        );
+      } catch (error) {
+        _lastError = 'Unable to establish an authenticated connection.';
+        _isLoggedIn = false;
+        _token = null;
+        return false;
+      }
 
       return true;
     } catch (_) {

@@ -107,7 +107,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   Future<void> _loadEventsData() async {
     try {
-      await _socket.connect();
 
       if (!mounted) return;
 

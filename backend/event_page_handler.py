@@ -54,7 +54,11 @@ def create_format(game_id, name, name_short):
                 "name_short": name_short
             }
 
-def get_events_data():
+def get_events_data(store_id):
+
+    if type(store_id) is not int or store_id <= 0:
+        raise ValueError("Invalid store.")
+
     with closing(Dbconnect.connect()) as connection:
         for row in connection.execute("PRAGMA database_list"):
             print("Database path:", row["file"])
@@ -78,8 +82,10 @@ ORDER BY name
 """
 SELECT *
 FROM events
+WHERE store_id = ?
 ORDER BY date, start_time
-"""
+""",
+(store_id,),
         ).fetchall()
 
     games = [dict(row) for row in games]
@@ -98,13 +104,16 @@ ORDER BY date, start_time
         "events": events,
     }
 
-def create_event(data):
+def create_event(data, store_id):
     name = data.get("name")
     description = data.get("description", "")
     game_id = data.get("game_id")
     format_id = data.get("format_id")
     capacity = data.get("capacity")
     rounds = data.get("rounds")
+
+    if type(store_id) is not int or store_id <= 0:
+        raise ValueError("Invalid store.")
 
     if not isinstance(name, str) or not name.strip():
         raise ValueError("Event name is required.")
@@ -163,6 +172,7 @@ def create_event(data):
             cursor = connection.execute(
 """
 INSERT INTO events (
+    store_id,
     game_id,
     format_id,
     name,
@@ -173,9 +183,10 @@ INSERT INTO events (
     capacity,
     rounds
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """,
                 (
+                    store_id,
                     game_id,
                     format_id,
                     name.strip(),

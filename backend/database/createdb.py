@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS formats (
 
 CREATE TABLE IF NOT EXISTS events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_id INTEGER NOT NULL REFERENCES stores(store_id),
     game_id INTEGER REFERENCES games(id),
     format_id INTEGER REFERENCES formats(id),
     name TEXT,
