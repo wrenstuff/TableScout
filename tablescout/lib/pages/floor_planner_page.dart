@@ -62,6 +62,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   FloorPlannerTool _activeTool = FloorPlannerTool.cursor;
 
+  Offset? _wallDrawStart;
+  Offset? _wallDrawEnd;
+
   bool _fileBusy = false;
 
   final File _layoutFile = File('floor_layout.json');
@@ -764,6 +767,103 @@ class _FloorPlannerState extends State<FloorPlanner> {
     );
   }
 
+  Widget _buildWallPreview() {
+    if (_wallDrawStart == null || _wallDrawEnd == null) {
+      return const SizedBox.shrink();
+    }
+
+    final start = _wallDrawStart!;
+    final end = _wallDrawEnd!;
+
+    final difference = end - start;
+    final length = difference.distance;
+    final angle = math.atan2(difference.dy, difference.dx);
+
+    const thickness = 12.0;
+
+    final midpoint = Offset(
+      (start.dx + end.dx) / 2,
+      (start.dy + end.dy) / 2,
+    );
+
+    return Positioned(
+      left: midpoint.dx - length / 2,
+      top: midpoint.dy - thickness / 2,
+      child: IgnorePointer(
+        child: Transform.rotate(
+          angle: angle,
+          alignment: Alignment.center,
+          child: Container(
+            width: length,
+            height: thickness,
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.4),
+              border: Border.all(color: Colors.blue),
+            ),
+          ),
+        ),
+      ),  
+    );
+  }
+
+  void _finishWallDrawing() {
+    if (_wallDrawStart == null || _wallDrawEnd == null) return;
+
+    final start = _wallDrawStart!;
+    final end = _wallDrawEnd!;
+
+    final difference = end - start;
+    final length = difference.distance;
+
+    // Ignore accidental clicks or very small walls.
+    if (length < 10) {
+      setState(() {
+        _wallDrawStart = null;
+        _wallDrawEnd = null;
+      });
+      return;
+    }
+
+    const thickness = 12.0;
+
+    // Calculate the centre point between the two endpoints.
+    final midpoint = Offset(
+      (start.dx + end.dx) / 2,
+      (start.dy + end.dy) / 2,
+    );
+
+    // Calculate the walls rotation in degrees.
+    final rotationDegrees =
+        math.atan2(difference.dy, difference.dx) * 180 / math.pi;
+
+    // Position the wall so its centre aligns with the midpoint.
+    final position = Offset(
+      midpoint.dx - length / 2,
+      midpoint.dy - thickness / 2
+    );
+
+    // Save the current floor plan for Undo.
+    _recordHistory();
+
+    setState(() {
+      final newWall = FloorObject(
+        id: _nextId++,
+        type: FloorObjectType.wall,
+        position: position,
+        lengthCm: length,
+        widthCm: thickness,
+        rotationDegrees: rotationDegrees,  
+      );
+
+      _objects.add(newWall);
+      _selectedObject = newWall;
+
+      // Clear the temporary preview.
+      _wallDrawStart = null;
+      _wallDrawEnd = null;
+    });
+  }
+
   @override
   void dispose() {
     _transformationController.dispose();
@@ -839,6 +939,41 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                 _selectedObject = null;
                               });
                             },
+                            onPanStart: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+
+                              final canvasPosition = Offset(
+                                  details.localPosition.dx.clamp(0.0, 3000.0).toDouble(),
+                                  details.localPosition.dy.clamp(0.0, 3000.0).toDouble(),
+                              );
+
+                              setState(() {
+                                _wallDrawStart = canvasPosition;
+                                _wallDrawEnd = canvasPosition;
+                              });
+                            },
+                            onPanUpdate: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+
+                              final canvasPosition = Offset(
+                                  details.localPosition.dx.clamp(0.0, 3000.0).toDouble(),
+                                  details.localPosition.dy.clamp(0.0, 3000.0).toDouble(),
+                              );
+
+                              debugPrint(
+                                'Mouse position: ${details.localPosition} | '
+                                'Canvas postion: $canvasPosition',
+                              );
+
+                              setState(() {
+                                _wallDrawEnd = canvasPosition;
+                              });
+                            },
+                            onPanEnd: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+                              
+                              _finishWallDrawing();
+                            },
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
@@ -852,7 +987,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                       displayNumber: _getObjectNumber(object),
                                       isSelected: selected?.id == object.id,
                                     
-
                                       onResize: (handle, delta) => _resizeObject(
                                         object,
                                         handle,
@@ -899,6 +1033,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                       }
                                     ),
                                   ),
+                                // Temporary wall during preview
+                                _buildWallPreview(),
                               ],
                             ),
                           ),
