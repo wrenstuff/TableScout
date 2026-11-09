@@ -5,6 +5,7 @@ import sqlite3
 
 from signup_handler import handle_signup
 from contact_handler import handle_contact
+from database.jwt_auth import token_verify
 
 from event_page_handler import (
     create_event,
@@ -37,6 +38,27 @@ async def handle_request(message):
             "type": "error",
             "request_id": request_id,
             "message": message,
+        }
+    if request_type =="token_verify":
+        token = data.get("token")
+
+        if not isinstance(token, str) or not token:
+            return error_response("jwt is missing")
+        
+        payload =token_verify(token)
+
+        if payload is None:
+            return{
+                type: "verified_token",
+                "request_id": request_id,
+                "valid": False,
+
+            }
+        return {
+            type: "verified_token",
+            "request_id": request_id,
+            "valid": True,
+            "user_id": payload.get("sub"),
         }
       
     if request_type in (
