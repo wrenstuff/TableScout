@@ -220,8 +220,9 @@ class _SignupWidgetState extends State<SignupWidget> {
           controller: _scrollController,
           child:Padding(
             padding:const EdgeInsets.only(right: 20),
-            child:Form(key:_formKey,
-            child: Column(
+            child:Form(
+              key: _formKey,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
