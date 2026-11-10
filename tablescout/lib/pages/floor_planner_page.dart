@@ -730,14 +730,15 @@ class _FloorPlannerState extends State<FloorPlanner> {
   void _finishWallDrawing() {
     if (_wallDrawStart == null || _wallDrawEnd == null) return;
 
-    final start = _wallDrawStart!;
-    final end = _wallDrawEnd!;
+    final originalStart = _wallDrawStart!;
+    final originalEnd = _wallDrawEnd!;
 
-    final difference = end - start;
-    final length = difference.distance;
+    // Check whether either endpoint is snapped to an existing wall.
+    final startIsSnapped = _isSnappedToWallEndpoint(originalStart);
+    final endIsSnapped = _isSnappedToWallEndpoint(originalEnd);
 
     // Ignore accidental clicks or very small walls.
-    if (length < 10) {
+    if ((originalEnd - originalStart).distance < 10) {
       setState(() {
         _wallDrawStart = null;
         _wallDrawEnd = null;
@@ -746,21 +747,47 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
 
     const thickness = 12.0;
+    const overlap = thickness / 2;
 
-    // Calculate the centre point between the two endpoints.
-    final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+    // Calculate the direction the wall is being drawn.
+    final direction = (originalEnd - originalStart) /
+        (originalEnd - originalStart).distance;
 
-    // Calculate the walls rotation in degrees.
+    // Extend snapped endpoints into the existing walls.
+    final start = startIsSnapped
+        ? originalStart - direction * overlap
+        : originalStart;
+
+    final end = endIsSnapped
+        ? originalEnd + direction * overlap
+        : originalEnd;
+
+    final difference = end - start;
+    final length = difference.distance;
+
+    final midpoint = Offset(
+      (start.dx + end.dx) / 2,
+      (start.dy + end.dy) / 2,
+    );
+
     final rotationDegrees =
         math.atan2(difference.dy, difference.dx) * 180 / math.pi;
 
-    // Position the wall so its centre aligns with the midpoint.
-    final position = Offset(
-      midpoint.dx - length / 2,
-      midpoint.dy - thickness / 2,
+    // Account for the extra space around the object widget.
+    final angleRadians = rotationDegrees * math.pi / 180;
+
+    const handleOffset = 15.0;
+
+    final rotatedHandleOffset = Offset(
+      -handleOffset * math.sin(angleRadians),
+      handleOffset * math.cos(angleRadians),
     );
 
-    // Save the current floor plan for Undo.
+    final position = Offset(
+      midpoint.dx - length / 2 - 10 - rotatedHandleOffset.dx,
+      midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
+    );
+
     _recordHistory();
 
     setState(() {
@@ -776,7 +803,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
       _objects.add(newWall);
       _selectedObject = newWall;
 
-      // Clear the temporary preview.
       _wallDrawStart = null;
       _wallDrawEnd = null;
     });
@@ -868,9 +894,11 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                     .toDouble(),
                               );
 
+                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+
                               setState(() {
-                                _wallDrawStart = canvasPosition;
-                                _wallDrawEnd = canvasPosition;
+                                _wallDrawStart = snappedPosition;
+                                _wallDrawEnd = snappedPosition;
                               });
                             },
                             onPanUpdate: (details) {
@@ -890,8 +918,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                 'Canvas postion: $canvasPosition',
                               );
 
+                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+
                               setState(() {
-                                _wallDrawEnd = canvasPosition;
+                                _wallDrawEnd = snappedPosition;
                               });
                             },
                             onPanEnd: (details) {
@@ -1470,30 +1500,38 @@ class _FloorPlannerState extends State<FloorPlanner> {
   }
 
   Offset _getWallStartPoint(FloorObject wall) {
-    final midpoint = Offset(
-      wall.position.dx + wall.lengthCm / 2,
-      wall.position.dy + wall.widthCm / 2,
-    );
-
+    final centre = _getWallCentrePoint(wall);
     final angle = wall.rotationDegrees * math.pi / 180;
 
     return Offset(
-      midpoint.dx - math.cos(angle) * wall.lengthCm / 2,
-      midpoint.dy - math.sin(angle) * wall.lengthCm / 2,
+      centre.dx - math.cos(angle) * wall.lengthCm / 2,
+      centre.dy - math.sin(angle) * wall.lengthCm / 2,
     );
   }
 
   Offset _getWallEndPoint(FloorObject wall) {
-    final midpoint = Offset(
-      wall.position.dx + wall.lengthCm / 2,
-      wall.position.dy + wall.widthCm / 2,
-    );
-
+    final centre = _getWallCentrePoint(wall);
     final angle = wall.rotationDegrees * math.pi / 180;
 
     return Offset(
-      midpoint.dx + math.cos(angle) * wall.lengthCm / 2,
-      midpoint.dy + math.sin(angle) * wall.lengthCm / 2,
+      centre.dx + math.cos(angle) * wall.lengthCm / 2,
+      centre.dy + math.sin(angle) * wall.lengthCm / 2,
+    );
+  }
+
+  Offset _getWallCentrePoint(FloorObject wall) {
+    final angle = wall.rotationDegrees * math.pi / 180;
+
+    return Offset(
+      wall.position.dx +
+        wall.lengthCm / 2 +
+        10 -
+        15 * math.sin(angle),
+
+      wall.position.dy +
+        wall.widthCm / 2 +
+        25 +
+        15 * math.cos(angle),
     );
   }
 
@@ -1524,6 +1562,23 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
 
     return closestPoint;
+  }
+
+  bool _isSnappedToWallEndpoint(Offset point) {
+    const tolerance = 0.1;
+
+    for (final object in _objects) {
+      if (object.type != FloorObjectType.wall) continue;
+
+      final startPoint = _getWallStartPoint(object);
+      final endPoint = _getWallEndPoint(object);
+
+      if ((point - startPoint).distance < tolerance ||
+          (point - endPoint).distance < tolerance) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 
