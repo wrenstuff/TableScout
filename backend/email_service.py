@@ -51,5 +51,35 @@ def contact_email(name: str, email: str, subject: str,  message: str):
         print(f"Email failed to send: {error}")
         return False
 
-      
-    
+def recovery_email(email: str, recovery_code:str):
+    gmail_address =os.getenv("TBS_EMAIL")
+    gmail_password = os.getenv("TBS_EMAIL_API")
+    support_email = os.getenv("TABLESCOUT_EMAIL")
+
+    if not gmail_address or not gmail_password:
+        print ('Gmail config incorrect')
+        return False
+
+    try:
+        from email.message import EmailMessage
+        msg =EmailMessage()
+        msg["From"] = gmail_address
+        msg["To"] = email
+        msg["Subject"] = "TableScout Recovery code"
+        msg.set_content(
+                "Hello,\n\n"
+                "We recieved a request to recover your password\n"
+                "If this is correct continue by entering the following code into the application. If you did not request this please change your password immediately.\n\n"
+                f"Your Verification code is {recovery_code}\n\n"
+                "Thanks - Tablescout support"
+            )    
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(gmail_address, gmail_password)
+            server.send_message(msg)
+
+        print ("recovery code sent successfully!")
+        return True
+    except Exception as error:
+        print(f"Recovery Email failed: {error}")
+        return False
