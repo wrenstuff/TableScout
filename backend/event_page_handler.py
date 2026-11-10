@@ -62,31 +62,36 @@ def get_events_data(store_id):
     with closing(Dbconnect.connect()) as connection:
         for row in connection.execute("PRAGMA database_list"):
             print("Database path:", row["file"])
+
         games = connection.execute(
-"""
-SELECT id, name, name_short
-FROM games
-ORDER BY name
-"""
+            """
+            SELECT id, name, name_short
+            FROM games
+            ORDER BY name
+            """
         ).fetchall()
 
         formats = connection.execute(
-"""
-SELECT id, game_id, name, name_short
-FROM formats
-ORDER BY name
-"""
+            """
+            SELECT id, game_id, name, name_short
+            FROM formats
+            ORDER BY name
+            """
         ).fetchall()
 
+        print('Requested store ID:', store_id)
+
         events = connection.execute(
-"""
-SELECT *
-FROM events
-WHERE store_id = ?
-ORDER BY date, start_time
-""",
-(store_id,),
+            """
+            SELECT *
+            FROM events
+            WHERE store_id = ?
+            ORDER BY date, start_time
+            """,
+            (store_id,),
         ).fetchall()
+
+        print("Returned event IDs:", [row["event_id"] for row in events])
 
     games = [dict(row) for row in games]
     formats = [dict(row) for row in formats]
@@ -170,21 +175,21 @@ def create_event(data, store_id):
                 raise ValueError("The selected format does not belong to this game or no longer exists")
 
             cursor = connection.execute(
-"""
-INSERT INTO events (
-    store_id,
-    game_id,
-    format_id,
-    name,
-    description,
-    date,
-    start_time,
-    end_time,
-    capacity,
-    rounds
-)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-""",
+                """
+                INSERT INTO events (
+                    store_id,
+                    game_id,
+                    format_id,
+                    name,
+                    description,
+                    date,
+                    start_time,
+                    end_time,
+                    capacity,
+                    rounds
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
                 (
                     store_id,
                     game_id,

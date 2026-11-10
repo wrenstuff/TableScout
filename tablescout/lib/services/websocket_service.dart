@@ -110,6 +110,12 @@ class WebSocketService {
     }
   }
 
+  Future<void> reconnect({required String token}) async {
+    await disconnect();
+
+    await connect(token: token);
+  }
+
   void send(Map<String, dynamic> message) {
     final channel = _channel;
 

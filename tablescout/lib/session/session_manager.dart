@@ -89,13 +89,12 @@ class SessionManager extends ChangeNotifier {
       _isLoggedIn = true;
 
       try {
-        await WebSocketService.instance.connect(
+        await WebSocketService.instance.reconnect(
           token: _token!,
         );
       } catch (error) {
         _lastError = 'Unable to establish an authenticated connection.';
-        _isLoggedIn = false;
-        _token = null;
+        _clearSession();
         return false;
       }
 
@@ -165,8 +164,7 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-
-  void logout() {
+  void _clearSession() {
     _isLoggedIn = false;
     _userId =null;
     _email = null;
@@ -177,7 +175,14 @@ class SessionManager extends ChangeNotifier {
     _storeName = null;
     _lastError = null;
     _token = null;
+  }
+
+  Future<void> logout() async {
+
+    _clearSession();
 
     notifyListeners();
+
+    await WebSocketService.instance.disconnect();
   }
 }
