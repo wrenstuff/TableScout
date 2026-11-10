@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:tablescout/services/auth_service.dart';
+import 'package:tablescout/services/websocket_service.dart';
+
 
 class SessionManager extends ChangeNotifier {
   //Whether or not user is logged in
@@ -16,6 +20,7 @@ class SessionManager extends ChangeNotifier {
   int? _storeId;
   String? _storeName;
   String? _lastError;
+  String? _token;
 
   //Getters
   bool get isLoggedIn => _isLoggedIn;
@@ -29,10 +34,13 @@ class SessionManager extends ChangeNotifier {
   int? get storeId => _storeId;
   String? get storeName => _storeName;
   String? get lastError => _lastError;
+  String? get token => _token;
 
+  bool get isStore => isLoggedIn && _role?.toUpperCase() == 'STORE';
   bool get isAdmin => isLoggedIn && _role?.toUpperCase() == 'ADMIN';
   bool get isManager => isLoggedIn && _role?.toUpperCase() == 'MANAGER';
   bool get isUser => isLoggedIn && _role?.toUpperCase() == 'STAFF';
+  bool get isSupervisor => isLoggedIn && _role?.toUpperCase() == 'SUPERVISOR';
 
   //Authenticate through the backend and create a session
   Future<bool> login({
@@ -51,10 +59,12 @@ class SessionManager extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
-
       final user = data['user'];
+      final token = data['token'];
 
-      if (user is! Map ||
+      if (token is! String ||
+          token.isEmpty||
+          user is! Map ||
           user['id'] is! int||
           (user['id'] as int) <= 0 ||
           user['email'] is! String ||
@@ -75,7 +85,18 @@ class SessionManager extends ChangeNotifier {
       _accountStatus = user['accountStatus'] as String;
       _storeId = user['storeId'] as int?;
       _storeName = user['storeName'] as String?;
+      _token = token;
       _isLoggedIn = true;
+
+      try {
+        await WebSocketService.instance.reconnect(
+          token: _token!,
+        );
+      } catch (error) {
+        _lastError = 'Unable to establish an authenticated connection.';
+        _clearSession();
+        return false;
+      }
 
       return true;
     } catch (_) {
@@ -143,8 +164,7 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-
-  void logout() {
+  void _clearSession() {
     _isLoggedIn = false;
     _userId =null;
     _email = null;
@@ -154,7 +174,15 @@ class SessionManager extends ChangeNotifier {
     _storeId = null;
     _storeName = null;
     _lastError = null;
+    _token = null;
+  }
+
+  Future<void> logout() async {
+
+    _clearSession();
 
     notifyListeners();
+
+    await WebSocketService.instance.disconnect();
   }
 }

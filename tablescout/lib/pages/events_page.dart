@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/services/websocket_service.dart';
+import 'package:tablescout/pages/event_creation_page.dart';
 
 class Game {
   final int id;
@@ -118,6 +119,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   final _socket = WebSocketService.instance;
   StreamSubscription<dynamic>? _messageSubscription;
 
+  bool _isCreatingEvent = false;
+
   @override
   void initState() {
     super.initState();
@@ -126,7 +129,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   Future<void> _loadEventsData() async {
     try {
-      await _socket.connect();
 
       if (!mounted) return;
 
@@ -399,8 +401,27 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     );
   }
 
+  void _openCreateEventDialog() {
+    setState(() {
+      _isCreatingEvent = true;
+    });
+  }
+
+
  @override
   Widget build(BuildContext context) {
+    if (_isCreatingEvent) {
+      return EventCreationPage(
+        games: _games,
+        formats: _formats,
+        onBack: () {
+          setState(() {
+            _isCreatingEvent = false;
+          });
+        },
+      );
+    }
+
     final screenSize = MediaQuery.sizeOf(context);
     final padWidth = screenSize.width * 0.1;
     final padHeight = screenSize.height * 0.05;
@@ -759,48 +780,96 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                 color: Colors.grey.shade400,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: ListView(
+              child: Column(
                 children: [
-                  for (int i = 0; i < _events.length; i++)
-                    InkWell(
-                      onTap: () => _selectEvent(_events[i]),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: i % 2 == 0
-                              ? Colors.grey.shade300
-                              : Colors.grey.shade200,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          flex: 5,
+                          child: Text('Sort by Game'),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text('Sort by Table/s'),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text('Sort by Time'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        for (int i = 0; i < _events.length; i++)
+                          InkWell(
+                            onTap: () => _selectEvent(_events[i]),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: i % 2 == 0
+                                    ? Colors.grey.shade300
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: Text(
+                                      _events[i].name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      _events[i].tables.isEmpty
+                                          ? 'Not Assigned'
+                                          : 'Table ${_events[i].tables.join(', ')}',
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      '${_events[i].startTime} - ${_events[i].endTime}',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: ElevatedButton.icon(
+                      onPressed: _openCreateEventDialog,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Event'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: Text(
-                                _events[i].name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                _events[i].tables.isEmpty
-                                    ? 'Not Assigned'
-                                    : 'Table ${_events[i].tables.join(', ')}',
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                '${_events[i].startTime} - ${_events[i].endTime}'
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    )
+                    ),
+                  ),
                 ],
               ),
             ),

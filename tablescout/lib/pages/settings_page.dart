@@ -76,7 +76,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
                 // STAFF MANAGEMENT
                 if (context.read<SessionManager>().isAdmin ||
-                    context.read<SessionManager>().isManager)
+                    context.read<SessionManager>().isManager||
+                    context.read<SessionManager>().isStore)
                   _settingsBox(
                     label: 'Staff Management',
                     icon: Icons.group,

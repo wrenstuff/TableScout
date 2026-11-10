@@ -37,17 +37,6 @@ CREATE TABLE IF NOT EXISTS users (
 )
 #events
 
-#stores
-connection.execute(
-    """
-CREATE TABLE IF NOT EXISTS stores (
-    store_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    store_name TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT  NULL,
-    accstatus TEXT NOT NULL DEFAULT 'ACTIVE'
-)
-"""
-)
 
 connection.executescript("""
 CREATE TABLE IF NOT EXISTS games (
@@ -67,6 +56,7 @@ CREATE TABLE IF NOT EXISTS formats (
 
 CREATE TABLE IF NOT EXISTS events (
     event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    store_id INTEGER NOT NULL REFERENCES stores(store_id),
     game_id INTEGER REFERENCES games(id),
     format_id INTEGER REFERENCES formats(id),
     name TEXT,
@@ -81,7 +71,8 @@ CREATE TABLE IF NOT EXISTS events (
     tables TEXT DEFAULT '[]',
     status TEXT DEFAULT 'not_started',
     standings TEXT DEFAULT '[]',
-    bracket TEXT DEFAULT '[]'
+    bracket TEXT DEFAULT '[]',
+    capacity INTEGER CHECK (capacity IS NULL OR capacity > 0)
 );
     """)
 

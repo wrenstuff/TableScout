@@ -17,14 +17,26 @@ class SignupPage extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: 400,
-                child: SignupWidget(),
-              ),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 48,
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 500,
+                      height: 570,
+                      child: const SignupWidget(),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -31,13 +32,31 @@ class _FloorPlannerState extends State<FloorPlanner> {
   static const double bottomToolbarHeight = 130;
   static const double toolbarGap = 20;
 
+  double _rotationStartAngle = 0;
+  double _rotationStartDegrees = 0;
+
   final TransformationController _transformationController =
     TransformationController();
 
   final List<FloorObject> _objects = [];
   int _nextId = 1;
 
+  // Undo and Redo History.
+  final List<_FloorPlanSnapshot> _undoStack = [];
+  final List<_FloorPlanSnapshot> _redoStack = [];
+
+  // Limited to 100 changes before cannot undo
+  static const int _maxHistory = 100;
+
+  bool get _canUndo => _undoStack.isNotEmpty;
+  bool get _canRedo => _redoStack.isNotEmpty;
+
+  // Stores the floor plan before an object is moved.
+  _FloorPlanSnapshot? _moveStartSnapshot;
+
   final GlobalKey _canvasKey = GlobalKey();
+
+  final GlobalKey _interactiveViewerKey = GlobalKey();
 
   FloorObject? _selectedObject;
 
@@ -55,6 +74,133 @@ class _FloorPlannerState extends State<FloorPlanner> {
     );
   }
 
+  // Create an independent copy of all floor objects.
+  List<FloorObject> _copyObjects(List<FloorObject> objects) {
+    return objects.map((object) {
+      return FloorObject(
+        id: object.id,
+        type: object.type,
+        position: Offset(
+          object.position.dx,
+          object.position.dy,
+        ),
+        lengthCm: object.lengthCm,
+        widthCm: object.widthCm,
+        rotationDegrees: object.rotationDegrees,
+        nickname: object.nickname,
+        text: object.text,
+      );
+    }).toList();
+  }
+
+  // Capture the current floor plan.
+  _FloorPlanSnapshot _createSnapshot() {
+    return _FloorPlanSnapshot(
+      objects: _copyObjects(_objects),
+      nextId: _nextId,
+    );
+  }
+
+  // record the current state before making a change.
+  void _recordHistory() {
+    _undoStack.add(_createSnapshot());
+
+    // History stays within the limit.
+    if (_undoStack.length > _maxHistory) {
+      _undoStack.removeAt(0);
+    }
+
+    // A new action invalidates the Redo history.
+    _redoStack.clear();
+  }
+
+  // Capture the flor plan when object movement begins.
+  void _startObjectMove(FloorObject object) {
+    _moveStartSnapshot = _createSnapshot();
+  }
+
+  // Record one history entry when object movement finishes.
+  void _finishObjectMove() {
+    if (_moveStartSnapshot == null) return;
+
+    final startSnapshot = _moveStartSnapshot!;
+    final currentSnapshot = _createSnapshot();
+
+    // Check whether anything in the floor plan has changed.
+    final changed =
+      startSnapshot.objects.length != currentSnapshot.objects.length ||
+      startSnapshot.nextId != currentSnapshot.nextId ||
+      startSnapshot.objects.any((original) {
+        final current = currentSnapshot.objects.firstWhere(
+          (item) => item.id == original.id,
+        );
+
+        return original.position != current.position ||
+            original.lengthCm != current.lengthCm ||
+            original.widthCm != current.widthCm ||
+            original.rotationDegrees != current.rotationDegrees ||
+            original.nickname != current.nickname ||
+            original.text != current.text;
+      });
+
+    if (changed) {
+      _undoStack.add(startSnapshot);
+
+      if (_undoStack.length > _maxHistory) {
+        _undoStack.removeAt(0);
+      }
+
+      _redoStack.clear();
+    }
+
+    _moveStartSnapshot = null;
+  }
+
+  // Undo the most recent change.
+  void _undo() {
+    if (!_canUndo) return;
+
+    setState(() {
+      // Save the current state for Redo.
+      _redoStack.add(_createSnapshot());
+
+      // Retrieve the previous state.
+      final previousState = _undoStack.removeLast();
+
+      // Restore the previous floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(previousState.objects));
+
+      _nextId = previousState.nextId;
+
+      // Clear selection to avoid stale object references.
+      _selectedObject = null;
+    });
+  }
+
+  // Redo the most recently undone change.
+  void _redo() {
+    if (!_canRedo) return;
+
+    setState(() {
+      // Save the current state for Undo.
+      _undoStack.add(_createSnapshot());
+
+      // Retrieve the next state.
+      final nextState = _redoStack.removeLast();
+
+      // Restore the floor plan.
+      _objects
+        ..clear()
+        ..addAll(_copyObjects(nextState.objects));
+        
+      _nextId = nextState.nextId;
+
+      _selectedObject = null;
+    });
+  }
+
   Future<void> _saveLayout() async {
     if (_fileBusy) return;
 
@@ -62,7 +208,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
     try {
       final data = {
-        'version': 1,
+        'version': 2,
         'objects': [
           for (final object in _objects)
             {
@@ -70,8 +216,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
               'type': object.type.name,
               'x': object.position.dx,
               'y': object.position.dy,
-              'width': object.width,
-              'height': object.height,
+              'lengthCm': object.lengthCm,
+              'widthCm': object.widthCm,
+              'rotationDegrees': object.rotationDegrees,
+              'nickname': object.nickname,
               'text': object.text,
             },
         ],
@@ -105,7 +253,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       final decoded = jsonDecode(await _layoutFile.readAsString());
 
       if (decoded is! Map<String, dynamic> ||
-          decoded['version'] != 1 ||
+          (decoded['version'] != 1 && decoded['version'] != 2) ||
           decoded['objects'] is! List) {
         throw const FormatException('Invalid layout file.');
       }
@@ -114,8 +262,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
       final ids = <int>{};
       var nextId = 1;
 
-      double readNumber(Map<String, dynamic> object, String key) {
-        final value = object[key];
+      double readNumber(
+        Map<String, dynamic> object,
+        String key, {
+        String? oldKey,
+        double? defaultValue,
+      }) {
+        final value = object[key] ?? (oldKey == null ? null : object[oldKey]);
+
+        if (value == null && defaultValue != null) {
+          return defaultValue;
+        }
 
         if (value is! num || !value.isFinite) {
           throw FormatException('Invalid value for "$key".');
@@ -146,11 +303,43 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
         final x = readNumber(entry, 'x');
         final y = readNumber(entry, 'y');
-        final width = readNumber(entry, 'width');
-        final height = readNumber(entry, 'height');
 
-        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+        // Read the new dimension fields, or fall back to old width/height.
+        final lengthCm = readNumber(
+          entry,
+          'lengthCm',
+          oldKey: 'width',
+        );
+
+        final widthCm = readNumber(
+          entry,
+          'widthCm',
+          oldKey: 'height',
+        );
+
+        final rotationDegrees = readNumber(
+          entry,
+          'rotationDegrees',
+          defaultValue: 0,
+        );
+
+        if (x < 0 ||
+            y < 0 ||
+            lengthCm <= 0 ||
+            widthCm <= 0) {
           throw const FormatException('Invalid position or size.');
+        }
+
+        final nickname = entry['nickname'];
+
+        if (nickname != null && nickname is! String) {
+          throw const FormatException('Invalid object nickname');
+        }
+
+        final text = entry['text'];
+
+        if (text != null && text is! String) {
+          throw const FormatException('Invalid object text.');
         }
 
         loadedObjects.add(
@@ -158,9 +347,11 @@ class _FloorPlannerState extends State<FloorPlanner> {
             id: id,
             type: matchingTypes.first,
             position: Offset(x, y),
-            width: width,
-            height: height,
-            text: entry['text'] is String ? entry['text'] as String: null,
+            lengthCm: lengthCm,
+            widthCm: widthCm,
+            rotationDegrees: rotationDegrees,
+            nickname: nickname as String? ?? '',
+            text: text as String?,
           ),
         );
 
@@ -188,6 +379,16 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
   }
 
+  String _getObjectNumber(FloorObject object) {
+    final sameTypeObjects = _objects
+        .where((item) => item.type == object.type)
+        .toList();
+
+    final objectNumber = sameTypeObjects.indexOf(object) + 1;
+
+    return '${object.type.label} $objectNumber';
+  }
+
   void _addObjectAt(
     FloorObjectType type,
     Offset dropPosition,
@@ -204,6 +405,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
           .toDouble(),
     );
 
+    _recordHistory();
+
     setState(() {
       final newObject = FloorObject(
         id: _nextId++,
@@ -219,6 +422,42 @@ class _FloorPlannerState extends State<FloorPlanner> {
     });
   }
 
+  void _addObjectFromLibraryClick(FloorObjectType type) {
+    Offset dropPosition;
+
+    // If this is the first object, use the center of the visible canvas.
+    if (_objects.isEmpty) {
+      final viewerRenderObject = 
+          _interactiveViewerKey.currentContext?.findRenderObject();
+
+      final canvasRenderObject = 
+          _canvasKey.currentContext?.findRenderObject();
+
+      if (viewerRenderObject is! RenderBox ||
+          canvasRenderObject is! RenderBox) {
+        return;
+      }
+
+      final viewportCentreGlobal = viewerRenderObject.localToGlobal(
+        viewerRenderObject.size.center(Offset.zero),
+      );
+
+      dropPosition = canvasRenderObject.globalToLocal(
+        viewportCentreGlobal,
+      );
+    } else {
+      // Otherwise, use the centre of the most recently added object.
+      final lastObject = _objects.last;
+
+      dropPosition = Offset(
+        lastObject.position.dx + lastObject.lengthCm / 2,
+        lastObject.position.dy + lastObject.widthCm / 2,
+      );
+    }
+
+    _addObjectAt(type, dropPosition);
+  }
+
   void _moveObject(
     FloorObject object,
     Offset delta,
@@ -230,7 +469,15 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final scale =
       _transformationController.value.getMaxScaleOnAxis();
 
-    final newPosition = object.position + (delta/scale);
+    // Convert the rotated drag direction back into canvas coordinates();
+    final angle = object.rotationDegrees * math.pi / 180;
+
+    final canvasDelta = Offset(
+      delta.dx * math.cos(angle) - delta.dy * math.sin(angle),
+      delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
+    );
+
+    final newPosition = object.position + (canvasDelta/scale);
 
     final maxX = canvasSize.width > object.width
         ? canvasSize.width - object.width
@@ -319,9 +566,77 @@ class _FloorPlannerState extends State<FloorPlanner> {
     });
   }
 
+  void _startObjectRotation(
+    FloorObject object,
+    Offset globalPosition,
+  ) {
+    final renderObject = 
+        _canvasKey.currentContext?.findRenderObject();
+
+    if (renderObject is! RenderBox) return;
+
+    final pointerPosition =
+        renderObject.globalToLocal(globalPosition);
+
+    final objectCentre = Offset(
+      object.position.dx + object.lengthCm / 2,
+      object.position.dy + object.widthCm / 2,
+    );
+
+    _rotationStartAngle = math.atan2(
+      pointerPosition.dy - objectCentre.dy,
+      pointerPosition.dx - objectCentre.dx,
+    );
+
+    _rotationStartDegrees = object.rotationDegrees;
+  }
+
+  void _rotateObject(
+    FloorObject object,
+    Offset globalPosition,
+  ) {
+    if (_activeTool != FloorPlannerTool.cursor) return;
+
+    final renderObject =
+        _canvasKey.currentContext?.findRenderObject();
+
+    if (renderObject is! RenderBox) return;
+
+    final pointerPosition =
+        renderObject.globalToLocal(globalPosition);
+
+    final objectCentre = Offset(
+      object.position.dx + object.lengthCm / 2,
+      object.position.dy + object.widthCm / 2,
+    );
+
+    final currentAngle = math.atan2(
+      pointerPosition.dy - objectCentre.dy,
+      pointerPosition.dx - objectCentre.dx,
+    );
+
+    //Calculate the difference from the starting angle
+    //This prevents a jump when crossing the -180/180 degree boundary.
+    final angleDifference = math.atan2(
+      math.sin(currentAngle - _rotationStartAngle),
+      math.cos(currentAngle - _rotationStartAngle),
+    );
+
+    setState(() {
+      object.rotationDegrees = 
+          _rotationStartDegrees +
+          (angleDifference * 180 / math.pi);
+
+      _selectedObject = object;
+    });
+
+  }
+
   void _deleteSelectedObject() {
     final selected = _selectedObject;
     if (selected == null) return;
+
+    _recordHistory();
 
     setState(() {
       _objects.removeWhere((object) => object.id == selected.id);
@@ -439,8 +754,12 @@ class _FloorPlannerState extends State<FloorPlanner> {
       ),
 
       child: Tooltip(
-        message: 'Drag $label onto the floor plan',
-        child: itemButton(),
+        message: 'Click or drag $label onto the floor plan',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _addObjectFromLibraryClick(type),
+          child: itemButton(),
+        ),
       ),
     );
   }
@@ -466,6 +785,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
             child: Listener(
               onPointerSignal: _handleCanvasPointerSignal,
               child: InteractiveViewer(
+                key: _interactiveViewerKey,
                 transformationController: _transformationController,
 
                 // Hand tool controls panning
@@ -512,44 +832,75 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
                         child: IgnorePointer(
                           ignoring: _activeTool == FloorPlannerTool.hand,
-
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              for (final object in _objects)
-                                Positioned(
-                                  key: ValueKey(object.id),
-                                  left: object.position.dx - 6,
-                                  top: object.position.dy - 6,
-                                  child: FloorObjectWidget(
-                                    object: object,
-                                    isSelected: selected?.id == object.id,
-
-
-                                    onResize: (handle, delta) => _resizeObject(
-                                      object,
-                                      handle,
-                                      delta,
-                                      const Size(3000, 3000),
-                                    ),
-
-
-                                    onDrag: (delta) => _moveObject(
-                                      object,
-                                      delta,
-                                      const Size(3000, 3000),
-                                    ), 
+                          child : GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              setState(() {
+                                _selectedObject = null;
+                              });
+                            },
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                for (final object in _objects)
+                                  Positioned(
+                                    key: ValueKey(object.id),
+                                    left: object.position.dx - 6,
+                                    top: object.position.dy - 6,
+                                    child: FloorObjectWidget(
+                                      object: object,
+                                      displayNumber: _getObjectNumber(object),
+                                      isSelected: selected?.id == object.id,
                                     
-                                    onTap: () {
-                                      setState(() {
-                                        _selectedObject != object
-                                          ? _selectedObject = object
-                                          : _selectedObject = null;
-                                      });
-                                    }
+
+                                      onResize: (handle, delta) => _resizeObject(
+                                        object,
+                                        handle,
+                                        delta,
+                                        const Size(3000, 3000),
+                                      ),
+
+                                      onResizeStart: () => _startObjectMove(object),
+
+                                      onResizeEnd: () => _finishObjectMove(),
+
+                                      onRotateStart: (position) => _startObjectRotation(
+                                        object,
+                                        position,
+                                      ),
+
+                                      onRotate: (position) => _rotateObject(
+                                        object,
+                                        position,
+                                      ),
+
+                                      onRotateGestureStart: () => _startObjectMove(object),
+
+                                      onRotateGestureEnd: () => _finishObjectMove(),
+
+                                      onDrag: (delta) => _moveObject(
+                                        object,
+                                        delta,
+                                        const Size(3000, 3000),
+                                      ), 
+
+                                      // Capture history when dragging begins.
+                                      onDragStart: () => _startObjectMove(object),
+
+                                      // Save one history entry when dragging ends.
+                                      onDragEnd: () => _finishObjectMove(),
+                                      
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedObject != object
+                                            ? _selectedObject = object
+                                            : _selectedObject = null;
+                                        });
+                                      }
+                                    ),
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -584,27 +935,199 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Text('Object ${selected.id}'),
-                          Text('Type: ${selected.type.label}'),
-                          const SizedBox(height: 8),
+
+                          const SizedBox(height: 24),
+
                           Text(
-                            'X: ${selected.position.dx.toStringAsFixed(0)}',
+                            _getObjectNumber(selected),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          Text(
-                            'Y: ${selected.position.dy.toStringAsFixed(0)}',
+
+                          const SizedBox(height: 24),
+
+                          //Nickname
+                          const Text(
+                            'Table Nickname',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          Text('Width: ${selected.width}'),
-                          Text('Height: ${selected.height}'),
+                          Focus(
+                            onFocusChange: (hasFocus) {
+                              if (hasFocus) {
+                                // Capture the original state when editing begins.
+                                _startObjectMove(selected);
+                              } else {
+                                // Record one history entry when editing fnishes.
+                                _finishObjectMove();
+                              }
+                            },
+                            child: TextFormField(
+                              key: ValueKey('nickname-${selected.id}'),
+                              initialValue: selected.nickname,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter a name',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  selected.nickname = value;
+                                });
+                              },
+                            ),
+                          ),
+
                           const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _deleteSelectedObject,
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Delete Object'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
+
+                          //Position
+                          const Text(
+                            'Position',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text('X: ${selected.position.dx.toStringAsFixed(1)}'),
+                          Text('Y: ${selected.position.dy.toStringAsFixed(1)}'),
+
+                          const SizedBox(height: 24),
+
+                          //Dimensions
+                          const Text(
+                            'Dimensions (cm)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            key: ValueKey('lenght-${selected.id}'),
+                            initialValue: selected.lengthCm.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Length',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted: (value) {
+                              final newLength = double.tryParse(value);
+
+                              if (newLength != null && newLength >= 10) {
+                                if (newLength != selected.lengthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.lengthCm = newLength;
+                                  });
+                                }
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          TextFormField(
+                            key: ValueKey('width-${selected.id}'),
+                            initialValue: selected.widthCm.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Width',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted:(value) {
+                              final newWidth = double.tryParse(value);
+
+                              if (newWidth != null && newWidth >= 10) {
+                                if (newWidth != selected.widthCm) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.widthCm = newWidth;
+                                  });  
+                                }
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          //Rotation
+                          TextFormField(
+                            key: ValueKey('rotation-${selected.id}'),
+                            initialValue: selected.rotationDegrees.toStringAsFixed(1),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                              signed: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Rotation (degrees)',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                            ),
+                            onFieldSubmitted: (value) {
+                              final newRotation = double.tryParse(value);
+
+                              if (newRotation != null) {
+                                if (newRotation != selected.rotationDegrees) {
+                                  _recordHistory();
+
+                                  setState(() {
+                                    selected.rotationDegrees = newRotation;
+                                  });
+                                }
+                              }
+                            },
+                          ),
+
+                          // Text Content - Only for Textboxes
+                          if (selected.type == FloorObjectType.textbox) ...[
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Text Content',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Focus(
+                              onFocusChange: (hasFocus) {
+                                if (hasFocus) {
+                                  _startObjectMove(selected);
+                                } else {
+                                  _finishObjectMove();
+                                }
+                              },
+                              child: TextFormField(
+                                key: ValueKey('text-${selected.id}'),
+                                initialValue: selected.text ?? '',
+                                maxLines: 4,
+                                decoration: const InputDecoration(
+                                  hintText: 'Enter Text',
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selected.text = value;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 425),
+
+                          //Delete Object
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _deleteSelectedObject,
+                              icon: const Icon(Icons.delete),
+                              label: const Text('Delete Object'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -797,6 +1320,36 @@ class _FloorPlannerState extends State<FloorPlanner> {
                       ),
                     ),
 
+                    // Undo
+                    Tooltip(
+                      message: 'Undo',
+                      child: IconButton(
+                        onPressed: _canUndo ? _undo : null,
+                        icon: const Icon(Icons.undo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Redo
+                    Tooltip(
+                      message: 'Redo',
+                      child: IconButton(
+                        onPressed: _canRedo ? _redo : null,
+                        icon: const Icon(Icons.redo),
+                        style: IconButton.styleFrom(
+                          fixedSize: const Size(44, 44),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+
                     //Delete
                     Tooltip(
                       message: 'Delete selected object',
@@ -873,4 +1426,14 @@ class _LibraryHeading extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FloorPlanSnapshot {
+  final List<FloorObject> objects;
+  final int nextId;
+
+  _FloorPlanSnapshot({
+    required this.objects,
+    required this.nextId,
+  });
 }

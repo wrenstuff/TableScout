@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:tablescout/widgets/login_widget.dart';
+import 'package:tablescout/widgets/password_recovery_widget.dart';
 
-class PasswordRecoveryPage extends StatelessWidget {
+class PasswordRecoveryPage extends StatefulWidget {
   const PasswordRecoveryPage({super.key});
 
   @override
+  State<PasswordRecoveryPage> createState() => _PasswordRecoveryPageState();
+}
+
+class _PasswordRecoveryPageState extends State<PasswordRecoveryPage> {
+  @override
+  
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -20,8 +26,10 @@ class PasswordRecoveryPage extends StatelessWidget {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: 400,
+              child: const SizedBox(
+                width: 500,
+                height: 570,
+                child: PasswordRecoveryWidget(),
               ),
             ),
           ),

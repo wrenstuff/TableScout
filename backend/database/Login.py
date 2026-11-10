@@ -1,13 +1,34 @@
+
+import sys
+import jwt
+import os
+
 from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
 from flask_cors import CORS
 from argon2 import PasswordHasher
 from pathlib import Path
-import sys
+from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
 from argon2.exceptions import VerificationError, InvalidHashError
-from update_details import updatedetails_bp
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+
+backend_path =Path(__file__).resolve().parent.parent
+
+sys.path.append(str(backend_path))
+
+env_path = backend_path /"api.env"
+
+load_dotenv(dotenv_path= env_path, override=True)
+
 from email_service import contact_email
+from update_details import updatedetails_bp
+
+
+SECRET_KEY = os.getenv("TABLESCOUT_SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("key is missing ensure api file is present")
 
 app = Flask(__name__)
 app.register_blueprint(updatedetails_bp)
@@ -21,6 +42,21 @@ CORS (app, resources={
     }
 })
 hasher = PasswordHasher()
+
+def create_token(userid):
+    now = datetime.now(timezone.utc)
+
+    payload = {
+        "sub": str(userid),
+        "iat": now,
+        "exp": now + timedelta(hours=1)
+    }
+
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm="HS256"
+    )
 
 @app.route("/tablescout/pages/login", methods =["POST"])
 def login():
@@ -94,10 +130,11 @@ def login():
             "error": "Your account is pending approval or inactive."
         }), 403
 
+    token = create_token(user["userid"])
     # Return the details needed by Flutter's SessionManager.
     return jsonify({
         "message": "Login successful",
-        # returning user data
+        "token": token,
         "user":{
             "id": user["userid"],
             "email": user["email"],

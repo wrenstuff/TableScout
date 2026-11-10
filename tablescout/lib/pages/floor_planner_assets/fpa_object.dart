@@ -231,14 +231,32 @@ class FloorObjectWidget extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ValueChanged<Offset> onDrag;
+  final VoidCallback onDragStart;
+  final VoidCallback onDragEnd;
   final void Function(FloorObjectResizeHandle, Offset) onResize;
+  final VoidCallback onResizeStart;
+  final VoidCallback onResizeEnd;
+  final ValueChanged<Offset> onRotateStart;
+  final ValueChanged<Offset> onRotate;
+  final VoidCallback onRotateGestureStart;
+  final VoidCallback onRotateGestureEnd;
+  final String displayNumber;
 
   const FloorObjectWidget({
     super.key,
     required this.object,
     required this.onDrag,
+    required this.onDragStart,
+    required this.onDragEnd,
     required this.onTap,
     required this.onResize,
+    required this.onResizeStart,
+    required this.onResizeEnd,
+    required this.onRotateStart,
+    required this.onRotate,
+    required this.onRotateGestureStart,
+    required this.onRotateGestureEnd,
+    required this.displayNumber,
     this.isSelected = false,
   });
 
@@ -252,18 +270,20 @@ class FloorObjectWidget extends StatelessWidget {
     return Transform.rotate(
       angle: object.rotationDegrees * math.pi / 180,
       child: SizedBox(
-        width: object.lengthCm + handleSize,
-        height: object.widthCm + handleSize,
+        width: object.lengthCm + handleSize + 20,
+        height: object.widthCm + handleSize + 50,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             //Actual Object.
             Positioned(
-              left: handlePadding,
-              top: handlePadding,
+              left: handlePadding + 10,
+              top: handlePadding + 40,
               child: GestureDetector(
                 onTap: onTap,
+                onPanStart: (_) => onDragStart(),
                 onPanUpdate: (details) => onDrag(details.delta),
+                onPanEnd: (_) => onDragEnd(),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   width: object.lengthCm,
@@ -287,61 +307,246 @@ class FloorObjectWidget extends StatelessWidget {
                           ? BorderRadius.zero
                           : BorderRadius.circular(6),
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Padding(
-                      padding: const EdgeInsets.all(3),
-                      child: Text(
-                        isTextbox
-                            ? (object.text ?? 'Text')
-                            : object.displayName,
-                        style: TextStyle(
-                          color: isTextbox ? Colors.black : Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  child: Stack(
+                    children: [
+                      // Existing object name or textbox content.
+                      Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Text(
+                              isTextbox
+                                  ? (object.text ?? 'Text')
+                                  : object.displayName,
+                              style: TextStyle(
+                                color: isTextbox ? Colors.black : Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Automatic Object number
+                      if (!isTextbox)
+                        Positioned(
+                          top: 2,
+                          left: 4,
+                          child: Text(
+                            displayNumber.split(' ').last,
+                            style: TextStyle(
+                              color: isSelected ? Colors.blue.shade900 : Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // handles only appear on selected objects.
+            if (isSelected) ...[
+
+              // Rotation Connector.
+              Positioned(
+                left: 10 + handlePadding + object.lengthCm / 2 - 1,
+                top: 16,
+                child: Container(
+                  width: 2,
+                  height: 24,
+                  color: Colors.blue,
+                ),
+              ),
+
+              // Rotation Handle.
+              Positioned(
+                left: 10+ handlePadding + object.lengthCm / 2 - 8,
+                top: 0,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+
+                  // Capture history before rotation begins.
+                  onPanStart: (details) {
+                    onRotateGestureStart();
+                    onRotateStart(details.globalPosition);
+                  },
+
+                  // Existing rotation calculations.
+                  onPanUpdate: (details) {
+                    onRotate(details.globalPosition);
+                  },
+
+                  // Record one history entry when rotation finishes.
+                  onPanEnd: (_) {
+                    onRotateGestureEnd();
+                  },
+                  
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.blue,
+                          width: 2,
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // Resize handles only appear on selected objects.
-            if (isSelected) ...[
-              _buildResizeHandle(
-                FloorObjectResizeHandle.topLeft,
-                Alignment.topLeft,
-                handleSize,
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.topLeft,
+                      Alignment.topLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
               ),
-              _buildResizeHandle(
-                FloorObjectResizeHandle.top,
-                Alignment.topCenter,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.topRight,
-                Alignment.topRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.right,
-                Alignment.centerRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottomRight,
-                Alignment.bottomRight,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottom,
-                Alignment.bottomCenter,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.bottomLeft,
-                Alignment.bottomLeft,
-                handleSize,
-              ),_buildResizeHandle(
-                FloorObjectResizeHandle.left,
-                Alignment.centerLeft,
-                handleSize,
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.top,
+                      Alignment.topCenter,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.topRight,
+                      Alignment.topRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.right,
+                      Alignment.centerRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottomRight,
+                      Alignment.bottomRight,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottom,
+                      Alignment.bottomCenter,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.bottomLeft,
+                      Alignment.bottomLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 10,
+                    top: 40,
+                    right: 10,
+                    bottom: 10,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildResizeHandle(
+                      FloorObjectResizeHandle.left,
+                      Alignment.centerLeft,
+                      handleSize,
+                    ),
+                  ),
+                ),
               ),
             ],
           ],
@@ -359,6 +564,10 @@ class FloorObjectWidget extends StatelessWidget {
       alignment: alignment,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
+
+        // Capture history before resizing starts.
+        onPanStart: (_) => onResizeStart(),
+
         onPanUpdate: (details) {
           // Convert mouse movement into the object's local coordinates.
           final angle = -object.rotationDegrees * math.pi / 180;
@@ -372,6 +581,10 @@ class FloorObjectWidget extends StatelessWidget {
 
           onResize(handle, localDelta);
         },
+
+        // Record history after resizing finishes.
+        onPanEnd: (_) => onResizeEnd(),
+
         child: Container(
           width: size,
           height: size,
