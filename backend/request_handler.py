@@ -6,6 +6,8 @@ import sqlite3
 from signup_handler import handle_signup
 from contact_handler import handle_contact
 from database.jwt_auth import token_verify
+from contextlib import closing
+from database.Dbconnection import Dbconnect
 
 from event_page_handler import (
     create_event,
@@ -14,8 +16,41 @@ from event_page_handler import (
     get_events_data,
 )
 
+def get_authenticated_user(token):
+    payload = token_verify(token)
 
-async def handle_request(message):
+    if payload is None:
+        return None
+
+    user_id = payload.get("sub")
+
+    if not user_id:
+        return None
+    with closing(Dbconnect.connect()) as connection:
+        user = connection.execute(
+"""
+SELECT userid, store_id, accstatus
+FROM users
+WHERE userid = ?
+""",
+(user_id,),
+        ).fetchone()
+
+    if user is None:
+        return None
+
+    if user["accstatus"] != "ACTIVE":
+        return None
+
+    if user["store_id"] is None:
+        return None
+
+    return {
+        "user_id": user["userid"],
+        "store_id": user["store_id"],
+    }
+
+async def handle_request(message, session):
     try:
         data = json.loads(message)
     except (ValueError, UnicodeDecodeError):
@@ -43,22 +78,31 @@ async def handle_request(message):
         token = data.get("token")
 
         if not isinstance(token, str) or not token:
-            return error_response("jwt is missing")
-        
-        payload =token_verify(token)
+            return error_response("JWT is missing.")
 
-        if payload is None:
-            return{
-                type: "verified_token",
+        user = await asyncio.to_thread(
+            get_authenticated_user,
+            token,
+        )
+
+        if user is None:
+            session["user_id"] = None
+            session["store_id"] = None
+
+            return {
+                "type": "verified_token",
                 "request_id": request_id,
                 "valid": False,
-
             }
+
+        session["user_id"] = user["user_id"]
+        session["store_id"] = user["store_id"]
+
         return {
-            type: "verified_token",
+            "type": "verified_token",
             "request_id": request_id,
             "valid": True,
-            "user_id": payload.get("sub"),
+            "user_id": user["user_id"],
         }
       
     if request_type in (
@@ -78,6 +122,13 @@ async def handle_request(message):
                     "message": "An error occurred while processing the contact request."
                 }
 
+    store_id = session.get("store_id")
+
+    if store_id is None:
+        return error_response(
+            "Authentication required. Please log in again."
+        )
+
     if request_type not in (
         "get_events_data",
         "create_game",
@@ -94,6 +145,7 @@ async def handle_request(message):
             event_id = await asyncio.to_thread(
                 create_event,
                 data,
+                store_id,
             )
 
             return {
@@ -137,7 +189,10 @@ async def handle_request(message):
                 )
 
         # Return event data for event-related requests
-        return await asyncio.to_thread(get_events_data)
+        return await asyncio.to_thread(
+            get_events_data, 
+            store_id,
+        )
 
     except ValueError as error:
         return error_response(str(error))

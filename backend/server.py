@@ -16,11 +16,23 @@ updates = EventsUpdates()
 
 async def handle_connection(websocket):
     print(f"Flutter Connected — running {__file__}", flush=True)
-    updates.add_client(websocket)
+
+    session = {
+        "user_id": None,
+        "store_id": None,
+    }
+
+    updates.add_client(websocket, session)
 
     try:
         async for message in websocket:
-            response = await handle_request(message)
+            print("Recieved:", message, flush=True)
+            print("Current session:", session, flush=True)
+
+            response = await handle_request(message, session)
+
+            print("Sending response:", response, flush=True)
+
             await websocket.send(json.dumps(response))
     
     except ConnectionClosed:

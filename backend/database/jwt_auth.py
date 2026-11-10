@@ -4,7 +4,7 @@ import jwt
 from pathlib import Path
 from dotenv import load_dotenv
 
-backend_path = Path(__name__).resolve().parent.parent
+backend_path = Path(__file__).resolve().parent.parent
 env_path = backend_path / "api.env"
 
 load_dotenv(dotenv_path=env_path, override=True)

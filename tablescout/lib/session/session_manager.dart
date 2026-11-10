@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:tablescout/services/auth_service.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 
 class SessionManager extends ChangeNotifier {
@@ -85,6 +88,16 @@ class SessionManager extends ChangeNotifier {
       _token = token;
       _isLoggedIn = true;
 
+      try {
+        await WebSocketService.instance.reconnect(
+          token: _token!,
+        );
+      } catch (error) {
+        _lastError = 'Unable to establish an authenticated connection.';
+        _clearSession();
+        return false;
+      }
+
       return true;
     } catch (_) {
       // Avoiding exposing raw internal exceptions to the interface.
@@ -151,8 +164,7 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
-
-  void logout() {
+  void _clearSession() {
     _isLoggedIn = false;
     _userId =null;
     _email = null;
@@ -163,7 +175,14 @@ class SessionManager extends ChangeNotifier {
     _storeName = null;
     _lastError = null;
     _token = null;
+  }
+
+  Future<void> logout() async {
+
+    _clearSession();
 
     notifyListeners();
+
+    await WebSocketService.instance.disconnect();
   }
 }

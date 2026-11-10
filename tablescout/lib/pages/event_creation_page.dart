@@ -168,7 +168,6 @@ class _EventCreationPageState extends State<EventCreationPage> {
 
     try {
       final service = WebSocketService.instance;
-      await service.connect();
 
       if (!mounted) return;
 
