@@ -16,15 +16,7 @@ class FloorPlanner extends StatefulWidget {
   State<FloorPlanner> createState() => _FloorPlannerState();
 }
 
-enum FloorPlannerTool {
-  cursor,
-  hand,
-  wall,
-  door,
-  exit,
-  window,
-  texbox,
-}
+enum FloorPlannerTool { cursor, hand, wall, door, exit, window, texbox }
 
 class _FloorPlannerState extends State<FloorPlanner> {
   static const double outerPadding = 20;
@@ -36,7 +28,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
   double _rotationStartDegrees = 0;
 
   final TransformationController _transformationController =
-    TransformationController();
+      TransformationController();
 
   final List<FloorObject> _objects = [];
   int _nextId = 1;
@@ -62,6 +54,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   FloorPlannerTool _activeTool = FloorPlannerTool.cursor;
 
+  Offset? _wallDrawStart;
+  Offset? _wallDrawEnd;
+
   bool _fileBusy = false;
 
   final File _layoutFile = File('floor_layout.json');
@@ -69,9 +64,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
   void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   // Create an independent copy of all floor objects.
@@ -80,10 +74,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       return FloorObject(
         id: object.id,
         type: object.type,
-        position: Offset(
-          object.position.dx,
-          object.position.dy,
-        ),
+        position: Offset(object.position.dx, object.position.dy),
         lengthCm: object.lengthCm,
         widthCm: object.widthCm,
         rotationDegrees: object.rotationDegrees,
@@ -95,10 +86,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   // Capture the current floor plan.
   _FloorPlanSnapshot _createSnapshot() {
-    return _FloorPlanSnapshot(
-      objects: _copyObjects(_objects),
-      nextId: _nextId,
-    );
+    return _FloorPlanSnapshot(objects: _copyObjects(_objects), nextId: _nextId);
   }
 
   // record the current state before making a change.
@@ -128,20 +116,20 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
     // Check whether anything in the floor plan has changed.
     final changed =
-      startSnapshot.objects.length != currentSnapshot.objects.length ||
-      startSnapshot.nextId != currentSnapshot.nextId ||
-      startSnapshot.objects.any((original) {
-        final current = currentSnapshot.objects.firstWhere(
-          (item) => item.id == original.id,
-        );
+        startSnapshot.objects.length != currentSnapshot.objects.length ||
+        startSnapshot.nextId != currentSnapshot.nextId ||
+        startSnapshot.objects.any((original) {
+          final current = currentSnapshot.objects.firstWhere(
+            (item) => item.id == original.id,
+          );
 
-        return original.position != current.position ||
-            original.lengthCm != current.lengthCm ||
-            original.widthCm != current.widthCm ||
-            original.rotationDegrees != current.rotationDegrees ||
-            original.nickname != current.nickname ||
-            original.text != current.text;
-      });
+          return original.position != current.position ||
+              original.lengthCm != current.lengthCm ||
+              original.widthCm != current.widthCm ||
+              original.rotationDegrees != current.rotationDegrees ||
+              original.nickname != current.nickname ||
+              original.text != current.text;
+        });
 
     if (changed) {
       _undoStack.add(startSnapshot);
@@ -194,7 +182,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       _objects
         ..clear()
         ..addAll(_copyObjects(nextState.objects));
-        
+
       _nextId = nextState.nextId;
 
       _selectedObject = null;
@@ -305,17 +293,9 @@ class _FloorPlannerState extends State<FloorPlanner> {
         final y = readNumber(entry, 'y');
 
         // Read the new dimension fields, or fall back to old width/height.
-        final lengthCm = readNumber(
-          entry,
-          'lengthCm',
-          oldKey: 'width',
-        );
+        final lengthCm = readNumber(entry, 'lengthCm', oldKey: 'width');
 
-        final widthCm = readNumber(
-          entry,
-          'widthCm',
-          oldKey: 'height',
-        );
+        final widthCm = readNumber(entry, 'widthCm', oldKey: 'height');
 
         final rotationDegrees = readNumber(
           entry,
@@ -323,10 +303,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
           defaultValue: 0,
         );
 
-        if (x < 0 ||
-            y < 0 ||
-            lengthCm <= 0 ||
-            widthCm <= 0) {
+        if (x < 0 || y < 0 || lengthCm <= 0 || widthCm <= 0) {
           throw const FormatException('Invalid position or size.');
         }
 
@@ -389,15 +366,12 @@ class _FloorPlannerState extends State<FloorPlanner> {
     return '${object.type.label} $objectNumber';
   }
 
-  void _addObjectAt(
-    FloorObjectType type,
-    Offset dropPosition,
-  ) {
+  void _addObjectAt(FloorObjectType type, Offset dropPosition) {
     final size = type.defaultSize;
 
     // Centre the object on the mouse position.
     final position = Offset(
-      (dropPosition.dx - size.width /2)
+      (dropPosition.dx - size.width / 2)
           .clamp(0.0, 3000.0 - size.width)
           .toDouble(),
       (dropPosition.dy - size.height / 2)
@@ -427,11 +401,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
     // If this is the first object, use the center of the visible canvas.
     if (_objects.isEmpty) {
-      final viewerRenderObject = 
-          _interactiveViewerKey.currentContext?.findRenderObject();
+      final viewerRenderObject = _interactiveViewerKey.currentContext
+          ?.findRenderObject();
 
-      final canvasRenderObject = 
-          _canvasKey.currentContext?.findRenderObject();
+      final canvasRenderObject = _canvasKey.currentContext?.findRenderObject();
 
       if (viewerRenderObject is! RenderBox ||
           canvasRenderObject is! RenderBox) {
@@ -442,9 +415,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
         viewerRenderObject.size.center(Offset.zero),
       );
 
-      dropPosition = canvasRenderObject.globalToLocal(
-        viewportCentreGlobal,
-      );
+      dropPosition = canvasRenderObject.globalToLocal(viewportCentreGlobal);
     } else {
       // Otherwise, use the centre of the most recently added object.
       final lastObject = _objects.last;
@@ -458,16 +429,11 @@ class _FloorPlannerState extends State<FloorPlanner> {
     _addObjectAt(type, dropPosition);
   }
 
-  void _moveObject(
-    FloorObject object,
-    Offset delta,
-    Size canvasSize,
-  ) {
+  void _moveObject(FloorObject object, Offset delta, Size canvasSize) {
     // Only allows object movement when cursor is active.
     if (_activeTool != FloorPlannerTool.cursor) return;
 
-    final scale =
-      _transformationController.value.getMaxScaleOnAxis();
+    final scale = _transformationController.value.getMaxScaleOnAxis();
 
     // Convert the rotated drag direction back into canvas coordinates();
     final angle = object.rotationDegrees * math.pi / 180;
@@ -477,7 +443,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
     );
 
-    final newPosition = object.position + (canvasDelta/scale);
+    final newPosition = object.position + (canvasDelta / scale);
 
     final maxX = canvasSize.width > object.width
         ? canvasSize.width - object.width
@@ -506,8 +472,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
     if (_activeTool != FloorPlannerTool.cursor) return;
 
     // Compensate for the current canvas zoom.
-    final scale =
-       _transformationController.value.getMaxScaleOnAxis();
+    final scale = _transformationController.value.getMaxScaleOnAxis();
 
     final dx = delta.dx / scale;
     final dy = delta.dy / scale;
@@ -524,59 +489,42 @@ class _FloorPlannerState extends State<FloorPlanner> {
     if (handle == FloorObjectResizeHandle.left ||
         handle == FloorObjectResizeHandle.topLeft ||
         handle == FloorObjectResizeHandle.bottomLeft) {
-      left = (left + dx).clamp(
-        0.0,
-        right - minDimension,
-      );
+      left = (left + dx).clamp(0.0, right - minDimension);
     }
 
     if (handle == FloorObjectResizeHandle.right ||
         handle == FloorObjectResizeHandle.topRight ||
         handle == FloorObjectResizeHandle.bottomRight) {
-      right = (right + dx).clamp(
-        left + minDimension,
-        canvasSize.width,
-      );
+      right = (right + dx).clamp(left + minDimension, canvasSize.width);
     }
 
     // Move the relevant vertical edge.
     if (handle == FloorObjectResizeHandle.top ||
         handle == FloorObjectResizeHandle.topLeft ||
         handle == FloorObjectResizeHandle.topRight) {
-      top = (top + dy).clamp(
-        0.0,
-        bottom - minDimension,
-      );
+      top = (top + dy).clamp(0.0, bottom - minDimension);
     }
 
     if (handle == FloorObjectResizeHandle.bottom ||
         handle == FloorObjectResizeHandle.bottomLeft ||
         handle == FloorObjectResizeHandle.bottomRight) {
-      bottom = (bottom + dy).clamp(
-        top + minDimension,
-        canvasSize.height,
-      );
+      bottom = (bottom + dy).clamp(top + minDimension, canvasSize.height);
     }
 
     setState(() {
-      object.position = Offset(left,top);
+      object.position = Offset(left, top);
       object.lengthCm = right - left;
       object.widthCm = bottom - top;
       _selectedObject = object;
     });
   }
 
-  void _startObjectRotation(
-    FloorObject object,
-    Offset globalPosition,
-  ) {
-    final renderObject = 
-        _canvasKey.currentContext?.findRenderObject();
+  void _startObjectRotation(FloorObject object, Offset globalPosition) {
+    final renderObject = _canvasKey.currentContext?.findRenderObject();
 
     if (renderObject is! RenderBox) return;
 
-    final pointerPosition =
-        renderObject.globalToLocal(globalPosition);
+    final pointerPosition = renderObject.globalToLocal(globalPosition);
 
     final objectCentre = Offset(
       object.position.dx + object.lengthCm / 2,
@@ -591,19 +539,14 @@ class _FloorPlannerState extends State<FloorPlanner> {
     _rotationStartDegrees = object.rotationDegrees;
   }
 
-  void _rotateObject(
-    FloorObject object,
-    Offset globalPosition,
-  ) {
+  void _rotateObject(FloorObject object, Offset globalPosition) {
     if (_activeTool != FloorPlannerTool.cursor) return;
 
-    final renderObject =
-        _canvasKey.currentContext?.findRenderObject();
+    final renderObject = _canvasKey.currentContext?.findRenderObject();
 
     if (renderObject is! RenderBox) return;
 
-    final pointerPosition =
-        renderObject.globalToLocal(globalPosition);
+    final pointerPosition = renderObject.globalToLocal(globalPosition);
 
     final objectCentre = Offset(
       object.position.dx + object.lengthCm / 2,
@@ -623,13 +566,11 @@ class _FloorPlannerState extends State<FloorPlanner> {
     );
 
     setState(() {
-      object.rotationDegrees = 
-          _rotationStartDegrees +
-          (angleDifference * 180 / math.pi);
+      object.rotationDegrees =
+          _rotationStartDegrees + (angleDifference * 180 / math.pi);
 
       _selectedObject = object;
     });
-
   }
 
   void _deleteSelectedObject() {
@@ -647,14 +588,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
   void _handleCanvasPointerSignal(PointerSignalEvent event) {
     if (event is! PointerScrollEvent) return;
 
-    final currentScale =
-      _transformationController.value.getMaxScaleOnAxis();
+    final currentScale = _transformationController.value.getMaxScaleOnAxis();
 
     //Scroll up to zoom in, scroll down to zoom out
     final zoomFactor = event.scrollDelta.dy < 0 ? 1.1 : 0.9;
 
     //Keep zoom between 20 and 400%
-    final newScale  =(currentScale * zoomFactor).clamp(0.2, 4.0);
+    final newScale = (currentScale * zoomFactor).clamp(0.2, 4.0);
 
     final scaleFactor = newScale / currentScale;
 
@@ -665,7 +605,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       ..translate(focalPoint.dx, focalPoint.dy)
       ..scale(scaleFactor)
       ..translate(-focalPoint.dx, -focalPoint.dy);
-      
+
     _transformationController.value = matrix;
   }
 
@@ -680,7 +620,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       message: tooltip,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: (){
+        onTap: () {
           setState(() {
             _activeTool = tool;
           });
@@ -690,32 +630,24 @@ class _FloorPlannerState extends State<FloorPlanner> {
           height: 44,
           decoration: BoxDecoration(
             color: isActive
-              ? Colors.blue.withValues(alpha: 0.2)
-              : Colors.transparent,
+                ? Colors.blue.withValues(alpha: 0.2)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isActive
-                ? Colors.blue
-                : Colors.grey.shade400,
+              color: isActive ? Colors.blue : Colors.grey.shade400,
             ),
           ),
           child: Icon(
             icon,
             size: 22,
-            color: isActive
-              ? Colors.blue
-              : Colors.grey.shade800,
+            color: isActive ? Colors.blue : Colors.grey.shade800,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLibraryItem(
-    String label,
-    FloorObjectType type,
-    IconData icon,
-  ) {
+  Widget _buildLibraryItem(String label, FloorObjectType type, IconData icon) {
     Widget itemButton() {
       return Container(
         width: 150,
@@ -729,9 +661,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
           children: [
             Icon(icon, size: 22),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(label),
-            ),
+            Expanded(child: Text(label)),
           ],
         ),
       );
@@ -748,10 +678,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
       ),
 
       // Make the original button appear faded during dragging.
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: itemButton(),
-      ),
+      childWhenDragging: Opacity(opacity: 0.3, child: itemButton()),
 
       child: Tooltip(
         message: 'Click or drag $label onto the floor plan',
@@ -762,6 +689,123 @@ class _FloorPlannerState extends State<FloorPlanner> {
         ),
       ),
     );
+  }
+
+  Widget _buildWallPreview() {
+    if (_wallDrawStart == null || _wallDrawEnd == null) {
+      return const SizedBox.shrink();
+    }
+
+    final start = _wallDrawStart!;
+    final end = _wallDrawEnd!;
+
+    final difference = end - start;
+    final length = difference.distance;
+    final angle = math.atan2(difference.dy, difference.dx);
+
+    const thickness = 12.0;
+
+    final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
+
+    return Positioned(
+      left: midpoint.dx - length / 2,
+      top: midpoint.dy - thickness / 2,
+      child: IgnorePointer(
+        child: Transform.rotate(
+          angle: angle,
+          alignment: Alignment.center,
+          child: Container(
+            width: length,
+            height: thickness,
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.4),
+              border: Border.all(color: Colors.blue),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _finishWallDrawing() {
+    if (_wallDrawStart == null || _wallDrawEnd == null) return;
+
+    final originalStart = _wallDrawStart!;
+    final originalEnd = _wallDrawEnd!;
+
+    // Check whether either endpoint is snapped to an existing wall.
+    final startIsSnapped = _isSnappedToWallEndpoint(originalStart);
+    final endIsSnapped = _isSnappedToWallEndpoint(originalEnd);
+
+    // Ignore accidental clicks or very small walls.
+    if ((originalEnd - originalStart).distance < 10) {
+      setState(() {
+        _wallDrawStart = null;
+        _wallDrawEnd = null;
+      });
+      return;
+    }
+
+    const thickness = 12.0;
+    const overlap = thickness / 2;
+
+    // Calculate the direction the wall is being drawn.
+    final direction = (originalEnd - originalStart) /
+        (originalEnd - originalStart).distance;
+
+    // Extend snapped endpoints into the existing walls.
+    final start = startIsSnapped
+        ? originalStart - direction * overlap
+        : originalStart;
+
+    final end = endIsSnapped
+        ? originalEnd + direction * overlap
+        : originalEnd;
+
+    final difference = end - start;
+    final length = difference.distance;
+
+    final midpoint = Offset(
+      (start.dx + end.dx) / 2,
+      (start.dy + end.dy) / 2,
+    );
+
+    final rotationDegrees =
+        math.atan2(difference.dy, difference.dx) * 180 / math.pi;
+
+    // Account for the extra space around the object widget.
+    final angleRadians = rotationDegrees * math.pi / 180;
+
+    const handleOffset = 15.0;
+
+    final rotatedHandleOffset = Offset(
+      -handleOffset * math.sin(angleRadians),
+      handleOffset * math.cos(angleRadians),
+    );
+
+    final position = Offset(
+      midpoint.dx - length / 2 - 10 - rotatedHandleOffset.dx,
+      midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
+    );
+
+    _recordHistory();
+
+    setState(() {
+      final newWall = FloorObject(
+        id: _nextId++,
+        type: FloorObjectType.wall,
+        position: position,
+        lengthCm: length,
+        widthCm: thickness,
+        rotationDegrees: rotationDegrees,
+      );
+
+      _objects.add(newWall);
+      _selectedObject = newWall;
+
+      _wallDrawStart = null;
+      _wallDrawEnd = null;
+    });
   }
 
   @override
@@ -810,18 +854,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
                   child: DragTarget<FloorObjectType>(
                     onAcceptWithDetails: (details) {
-                      final renderObject =
-                        _canvasKey.currentContext?.findRenderObject();
+                      final renderObject = _canvasKey.currentContext
+                          ?.findRenderObject();
 
                       if (renderObject is! RenderBox) return;
 
                       // Convert mouse position into floor-plan coordiantes.
-                      final localPosition =
-                          renderObject.globalToLocal(details.offset);
-
-                      _addObjectAt(
-                        details.data, localPosition,
+                      final localPosition = renderObject.globalToLocal(
+                        details.offset,
                       );
+
+                      _addObjectAt(details.data, localPosition);
                     },
 
                     builder: (context, candidateData, rejectedData) {
@@ -832,12 +875,59 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
                         child: IgnorePointer(
                           ignoring: _activeTool == FloorPlannerTool.hand,
-                          child : GestureDetector(
+                          child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 _selectedObject = null;
                               });
+                            },
+                            onPanStart: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+
+                              final canvasPosition = Offset(
+                                details.localPosition.dx
+                                    .clamp(0.0, 3000.0)
+                                    .toDouble(),
+                                details.localPosition.dy
+                                    .clamp(0.0, 3000.0)
+                                    .toDouble(),
+                              );
+
+                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+
+                              setState(() {
+                                _wallDrawStart = snappedPosition;
+                                _wallDrawEnd = snappedPosition;
+                              });
+                            },
+                            onPanUpdate: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+
+                              final canvasPosition = Offset(
+                                details.localPosition.dx
+                                    .clamp(0.0, 3000.0)
+                                    .toDouble(),
+                                details.localPosition.dy
+                                    .clamp(0.0, 3000.0)
+                                    .toDouble(),
+                              );
+
+                              debugPrint(
+                                'Mouse position: ${details.localPosition} | '
+                                'Canvas postion: $canvasPosition',
+                              );
+
+                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+
+                              setState(() {
+                                _wallDrawEnd = snappedPosition;
+                              });
+                            },
+                            onPanEnd: (details) {
+                              if (_activeTool != FloorPlannerTool.wall) return;
+
+                              _finishWallDrawing();
                             },
                             child: Stack(
                               clipBehavior: Clip.none,
@@ -851,54 +941,59 @@ class _FloorPlannerState extends State<FloorPlanner> {
                                       object: object,
                                       displayNumber: _getObjectNumber(object),
                                       isSelected: selected?.id == object.id,
-                                    
 
-                                      onResize: (handle, delta) => _resizeObject(
-                                        object,
-                                        handle,
-                                        delta,
-                                        const Size(3000, 3000),
-                                      ),
+                                      onResize: (handle, delta) =>
+                                          _resizeObject(
+                                            object,
+                                            handle,
+                                            delta,
+                                            const Size(3000, 3000),
+                                          ),
 
-                                      onResizeStart: () => _startObjectMove(object),
+                                      onResizeStart: () =>
+                                          _startObjectMove(object),
 
                                       onResizeEnd: () => _finishObjectMove(),
 
-                                      onRotateStart: (position) => _startObjectRotation(
-                                        object,
-                                        position,
-                                      ),
+                                      onRotateStart: (position) =>
+                                          _startObjectRotation(
+                                            object,
+                                            position,
+                                          ),
 
-                                      onRotate: (position) => _rotateObject(
-                                        object,
-                                        position,
-                                      ),
+                                      onRotate: (position) =>
+                                          _rotateObject(object, position),
 
-                                      onRotateGestureStart: () => _startObjectMove(object),
+                                      onRotateGestureStart: () =>
+                                          _startObjectMove(object),
 
-                                      onRotateGestureEnd: () => _finishObjectMove(),
+                                      onRotateGestureEnd: () =>
+                                          _finishObjectMove(),
 
                                       onDrag: (delta) => _moveObject(
                                         object,
                                         delta,
                                         const Size(3000, 3000),
-                                      ), 
+                                      ),
 
                                       // Capture history when dragging begins.
-                                      onDragStart: () => _startObjectMove(object),
+                                      onDragStart: () =>
+                                          _startObjectMove(object),
 
                                       // Save one history entry when dragging ends.
                                       onDragEnd: () => _finishObjectMove(),
-                                      
+
                                       onTap: () {
                                         setState(() {
                                           _selectedObject != object
-                                            ? _selectedObject = object
-                                            : _selectedObject = null;
+                                              ? _selectedObject = object
+                                              : _selectedObject = null;
                                         });
-                                      }
+                                      },
                                     ),
                                   ),
+                                // Temporary wall during preview
+                                _buildWallPreview(),
                               ],
                             ),
                           ),
@@ -921,9 +1016,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
               color: Colors.grey.shade400,
               padding: const EdgeInsets.all(16),
               child: selected == null
-                  ? const Center(
-                      child: Text('Select an object'),
-                    )
+                  ? const Center(child: Text('Select an object'))
                   : SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1038,7 +1131,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
-                            onFieldSubmitted:(value) {
+                            onFieldSubmitted: (value) {
                               final newWidth = double.tryParse(value);
 
                               if (newWidth != null && newWidth >= 10) {
@@ -1047,7 +1140,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
                                   setState(() {
                                     selected.widthCm = newWidth;
-                                  });  
+                                  });
                                 }
                               }
                             },
@@ -1058,7 +1151,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           //Rotation
                           TextFormField(
                             key: ValueKey('rotation-${selected.id}'),
-                            initialValue: selected.rotationDegrees.toStringAsFixed(1),
+                            initialValue: selected.rotationDegrees
+                                .toStringAsFixed(1),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                               signed: true,
@@ -1246,7 +1340,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
                     ),
                   ),
                 ],
-              )
+              ),
             ),
           ),
 
@@ -1279,7 +1373,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
                     ),
 
                     const SizedBox(
-                      height: 35, child: VerticalDivider(
+                      height: 35,
+                      child: VerticalDivider(
                         thickness: 1,
                         color: Colors.black45,
                       ),
@@ -1379,7 +1474,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
                         ),
                       ),
                     ),
-                    
 
                     //Load
                     Tooltip(
@@ -1396,22 +1490,102 @@ class _FloorPlannerState extends State<FloorPlanner> {
                       ),
                     ),
                   ],
-                )
-              )
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+
+  Offset _getWallStartPoint(FloorObject wall) {
+    final centre = _getWallCentrePoint(wall);
+    final angle = wall.rotationDegrees * math.pi / 180;
+
+    return Offset(
+      centre.dx - math.cos(angle) * wall.lengthCm / 2,
+      centre.dy - math.sin(angle) * wall.lengthCm / 2,
+    );
+  }
+
+  Offset _getWallEndPoint(FloorObject wall) {
+    final centre = _getWallCentrePoint(wall);
+    final angle = wall.rotationDegrees * math.pi / 180;
+
+    return Offset(
+      centre.dx + math.cos(angle) * wall.lengthCm / 2,
+      centre.dy + math.sin(angle) * wall.lengthCm / 2,
+    );
+  }
+
+  Offset _getWallCentrePoint(FloorObject wall) {
+    final angle = wall.rotationDegrees * math.pi / 180;
+
+    return Offset(
+      wall.position.dx +
+        wall.lengthCm / 2 +
+        10 -
+        15 * math.sin(angle),
+
+      wall.position.dy +
+        wall.widthCm / 2 +
+        25 +
+        15 * math.cos(angle),
+    );
+  }
+
+  Offset _getSnappedWallPoint(Offset point) {
+    const snapDistance = 20.0;
+
+    Offset closestPoint = point;
+    double closestDistance = snapDistance;
+
+    for (final object in _objects) {
+      if (object.type != FloorObjectType.wall) continue;
+
+      final startPoint = _getWallStartPoint(object);
+      final endPoint = _getWallEndPoint(object);
+
+      final startDistance = (point - startPoint).distance;
+      final endDistance = (point - endPoint).distance;
+
+      if (startDistance < closestDistance) {
+        closestDistance = startDistance;
+        closestPoint = startPoint;
+      }
+
+      if (endDistance < closestDistance) {
+        closestDistance = endDistance;
+        closestPoint = endPoint;
+      }
+    }
+
+    return closestPoint;
+  }
+
+  bool _isSnappedToWallEndpoint(Offset point) {
+    const tolerance = 0.1;
+
+    for (final object in _objects) {
+      if (object.type != FloorObjectType.wall) continue;
+
+      final startPoint = _getWallStartPoint(object);
+      final endPoint = _getWallEndPoint(object);
+
+      if ((point - startPoint).distance < tolerance ||
+          (point - endPoint).distance < tolerance) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 class _LibraryHeading extends StatelessWidget {
   final String title;
 
-  const _LibraryHeading({
-    required this.title,
-  });
+  const _LibraryHeading({required this.title});
 
   @override
   Widget build(BuildContext conext) {
@@ -1419,10 +1593,7 @@ class _LibraryHeading extends StatelessWidget {
       padding: const EdgeInsetsGeometry.fromLTRB(12, 14, 12, 6),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -1432,8 +1603,5 @@ class _FloorPlanSnapshot {
   final List<FloorObject> objects;
   final int nextId;
 
-  _FloorPlanSnapshot({
-    required this.objects,
-    required this.nextId,
-  });
+  _FloorPlanSnapshot({required this.objects, required this.nextId});
 }
