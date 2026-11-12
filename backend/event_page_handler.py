@@ -28,7 +28,7 @@ def create_game(name, name_short):
                 "name_short": name_short,
             }
 
-def create_format(game_id, name, name_short):
+def create_format(game_id, name, name_short, play_rec=2):
     name = name.strip()
     name_short = name_short.strip()
 
@@ -38,20 +38,24 @@ def create_format(game_id, name, name_short):
     if not name_short:
         raise ValueError("Format short name is required.")
 
+    if type(play_rec) is not int or play_rec <= 0:
+        raise ValueError("Recommended players must be a positive integer.")
+
     with closing(Dbconnect.connect()) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
 
         with connection:
             cursor = connection.execute(
-                "INSERT INTO formats (game_id, name, name_short) VALUES (?, ?, ?)",
-                (game_id, name, name_short),
+                "INSERT INTO formats (game_id, name, name_short, play_rec) VALUES (?, ?, ?, ?)",
+                (game_id, name, name_short, play_rec),
             )
 
             return {
                 "id": cursor.lastrowid,
                 "game_id": game_id,
                 "name": name,
-                "name_short": name_short
+                "name_short": name_short,
+                "play_rec": play_rec,
             }
 
 def get_events_data(store_id):
@@ -73,7 +77,7 @@ def get_events_data(store_id):
 
         formats = connection.execute(
             """
-            SELECT id, game_id, name, name_short
+            SELECT id, game_id, name, name_short, play_rec
             FROM formats
             ORDER BY name
             """

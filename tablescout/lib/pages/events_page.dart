@@ -32,12 +32,14 @@ class Format {
   final int gameId;
   final String name;
   final String name_short;
+  final int playRec;
 
   const Format({
     required this.id,
     required this.gameId,
     required this.name,
     required this.name_short,
+    required this.playRec,
   });
 
   factory Format.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class Format {
       gameId: json['game_id'] as int, 
       name: json['name'] as String,
       name_short: json['name_short'] as String,
+      playRec: json["play_rec"] as int? ?? 2,
     );
   }
 }
@@ -63,6 +66,7 @@ class StoreEvent {
   final int rounds;
   final int currentRound;
   final String status;
+  final List<String> participants;
 
   const StoreEvent({
     required this.id,
@@ -77,6 +81,7 @@ class StoreEvent {
     required this.rounds,
     required this.currentRound,
     required this.status,
+    required this.participants
   });
 
   factory StoreEvent.fromJson(Map<String, dynamic> json) {
@@ -95,6 +100,9 @@ class StoreEvent {
       rounds: json['rounds'] as int? ?? 0,
       currentRound: json['current_round'] as int? ?? 0,
       status: json['status'] as String? ?? 'not_started',
+      participants: json['participants'] is List
+        ? List<String>.from(json['participants'])
+        : [],
     );
   }
 }
@@ -115,6 +123,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   int? _selectedFormatId;
 
   StoreEvent? _selectedEvent;
+  List<String> _registeredPlayers = [];
 
   final _socket = WebSocketService.instance;
   StreamSubscription<dynamic>? _messageSubscription;
@@ -229,6 +238,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   void _selectEvent(StoreEvent event) {
     setState(() {
       _selectedEvent = event;
+      _registeredPlayers = List<String>.from(event.participants);
     });
   }
 
@@ -288,7 +298,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   Future<void> _openAddGameDialog() async {
     await _openNameDialog(
       title: 'Create Game',
-      onCreate: (name, shortName) {
+      onCreate: (name, shortName, playRec) {
         _socket.send({
           'type': 'create_game',
           'name': name,
@@ -304,24 +314,28 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
     await _openNameDialog(
       title: 'Create Format',
-      onCreate: (name, shortName) {
+      onCreate: (name, shortName, playRec) {
         _socket.send({
           'type': 'create_format',
           'game_id': gameId,
           'name': name,
           'name_short': shortName,
+          'play_rec': playRec,
         });
       },
+      includeRecommendedPlayers: true,
     );
   }
 
   Future<void> _openNameDialog({
     required String title,
-    required void Function(String name, String shortName) onCreate,
+    required void Function(String name, String shortName, int playRec) onCreate,
+    bool includeRecommendedPlayers = false,
   }) async {
     final formKey = GlobalKey<FormState>();
     var name = '';
     var shortName = '';
+    var playRec = 2;
 
     await showDialog<void>(
       context: context,
@@ -365,6 +379,27 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     },
                     onSaved: (value) => shortName = value!.trim(),
                   ),
+                  if (includeRecommendedPlayers) ...[
+                    const SizedBox(height: 16,),
+                    TextFormField(
+                      initialValue: '2',
+                      decoration: const InputDecoration(
+                        labelText: 'Recommended Players',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final players = int.tryParse(value ?? '');
+
+                        if (players == null || players < 1) {
+                          return 'Enter a valid player count';
+                        }
+
+                        return null;
+                      },
+                      onSaved: (value) => playRec = int.parse(value!),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -381,7 +416,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                 formKey.currentState!.save();
 
                 try {
-                  onCreate(name, shortName);
+                  onCreate(name, shortName, playRec);
                   Navigator.of(dialogContext).pop();
                 } catch (error) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -478,6 +513,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           _detailRow(
             'Format',
             format.isEmpty ? 'Unknown' : format.first.name,
+          ),
+          _detailRow(
+            'Recommended Players',
+            format.isEmpty ? 'Unknown' : format.first.playRec.toString(),
           ),
           _detailRow('Description', event.description),
           _detailRow('Date', event.date),
@@ -595,6 +634,24 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildRegisteredPlayersPanel() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(12)
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          
+        ],
+      ),
+    )
   }
   
   Widget _buildEventsOverview(double padWidth, double padHeight) {

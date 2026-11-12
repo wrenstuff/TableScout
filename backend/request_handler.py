@@ -177,15 +177,20 @@ async def handle_request(message, session):
 
             elif request_type == "create_format":
                 game_id = data.get("game_id")
+                play_rec = data.get("play_rec", 2)
 
                 if type(game_id) is not int or game_id <= 0:
                     raise ValueError("Select a valid game.")
+
+                if type(play_rec) is not int or play_rec <= 0:
+                    raise ValueError("Recommended players must be a positive integer.")
 
                 await asyncio.to_thread(
                     create_format,
                     game_id,
                     name,
                     name_short,
+                    play_rec,
                 )
 
         # Return event data for event-related requests
