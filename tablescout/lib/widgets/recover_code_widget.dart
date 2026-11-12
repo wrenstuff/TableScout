@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tablescout/widgets/auth_container.dart';
 
@@ -10,12 +11,42 @@ class RecoverCodeWidget extends StatefulWidget {
 }
 
 class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
+  final _formkey = GlobalKey<FormState>();
+  final _codeChecker = TextEditingController();
+
+  bool _loading = false;
+  String? _errorMessage;
+  @override 
+  void dispose(){
+    _codeChecker.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verifyCode() async{
+    if (!_formkey.currentState!.validate()){
+      return;
+    }
+    setState((){
+      _loading =true;
+      _errorMessage =null;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+
+    setState(() {
+      _loading = false;
+      _errorMessage ='Invalid code please try again.'; 
+    });
+  }
   @override
   
   Widget build(BuildContext context) {
     return AuthContainer(
       boxHeight: 450,
-      child: Column(
+      child: Form(
+        key: _formkey,
+        child:Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
 
@@ -52,23 +83,48 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
 
           const SizedBox(height: 8),
 
-          const TextField(
-            decoration: InputDecoration(
-              hintText: 'Enter your recovery code',
+          TextFormField(
+            controller: _codeChecker,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(
+              hintText: 'Enter your 6 digit recovery code',
               prefixIcon: Icon(Icons.lock_outline),
               border: OutlineInputBorder(),
+              counterText: '',
             ),
+            validator: (value){
+              if (value ==null || value.isEmpty){
+                return 'please enter your 6 digit recovery code';
+              }
+              
+              if (value.length !=6){
+                return 'recovery code lengeth is not 6 digits please enter the correct number';
+              }
+              return null;
+            },
           ),
+           if (_errorMessage != null)... [
+            const SizedBox(height: 12),
+            Text(_errorMessage!,
+            style: const TextStyle(
+              color: Colors.red,
+              fontSize:13,
+            ),
+            textAlign: TextAlign.center,
+            )
+           ],
 
           const SizedBox(height: 24),
 
           SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: () {
-                // Handle password recovery logic here
-                context.go('/new-password');
-              },
+              onPressed: _loading ? null : _verifyCode,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF54414E),
                 foregroundColor: const Color(0xFFB5BAD0),
@@ -93,6 +149,7 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

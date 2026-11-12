@@ -54,7 +54,7 @@ def contact_email(name: str, email: str, subject: str,  message: str):
 def recovery_email(email: str, recovery_code:str):
     gmail_address =os.getenv("TBS_EMAIL")
     gmail_password = os.getenv("TBS_EMAIL_API")
-    support_email = os.getenv("TABLESCOUT_EMAIL")
+    
 
     if not gmail_address or not gmail_password:
         print ('Gmail config incorrect')
@@ -62,6 +62,7 @@ def recovery_email(email: str, recovery_code:str):
 
     try:
         from email.message import EmailMessage
+
         msg =EmailMessage()
         msg["From"] = gmail_address
         msg["To"] = email

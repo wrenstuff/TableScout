@@ -1,6 +1,9 @@
 import sys
 import jwt
 import os
+import secrets
+import time
+
 
 from flask import Flask, request, jsonify
 from Dbconnection import Dbconnect
@@ -20,7 +23,7 @@ env_path = backend_path /"api.env"
 
 load_dotenv(dotenv_path= env_path, override=True)
 
-from email_service import contact_email
+from email_service import contact_email, recovery_email
 from update_details import updatedetails_bp
 
 
@@ -183,6 +186,95 @@ def contact():
                 "success": False,
                 "message": "unable to send message, please try again later."
             }), 500
-        
+
+@app.route("/tablescout/pages/password-recovery", methods=["POST"])
+def password_recovery():
+    #time delay
+    start_time =time.monotonic()
+
+    info = request.get_json(silent=True) or {}
+    email = info.get("email")
+
+    if not isinstance(email, str) or not email.strip():
+        return jsonify ({
+            "success": False,
+            "message": "please enter your email address"
+        }), 400
+
+    email = email.strip().lower()
+    connection = Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+        SELECT userid
+        FROM users
+        WHERE email = ?
+        AND accstatus = 'ACTIVE'""", (email,))
+
+        user = cursor.fetchone()
+
+        if user is None:
+            elapsed_time = time.monotonic() - start_time
+            if elapsed_time < 2:
+                time.sleep(2- elapsed_time)
+            
+            return jsonify({
+            "success": True,
+            "message": "Recovery code will be sent to email address"
+        }), 200
+
+        #6 digit recovery code
+        recovery_code = str (secrets.randbelow(900000) + 100000)
+        #hash the code
+        code_hash = hasher.hash(recovery_code)
+
+        #expitarion of code
+        expires_at = int(( datetime.now(timezone.utc) + timedelta(minutes =15)).timestamp())
+
+        cursor.execute("""
+            INSERT INTO password_resets(userid, code_hash, expires_at)
+            VALUES (?, ?, ?)
+            """, (user["userid"], code_hash, expires_at))
+
+        reset_id  = cursor.lastrowid
+        connection.commit()
+
+        if not recovery_email(email, recovery_code):
+
+            cursor.execute ("""
+            DELETE FROM password_resets
+            WHERE reset_id =?""",
+            (reset_id,)
+            )
+
+            connection.commit()
+
+            return jsonify({
+                "success": False,
+                "message": "Unable to send the email please check details"
+            }), 500
+
+        return jsonify({
+            "success": True,
+            "message": "Sending the recovery code to email"
+        }), 200
+
+    except Exception as error:
+        connection.rollback()
+        print(f"Password recovery error {error}")
+
+        return jsonify({
+            "success": False,
+            "message": "unable to prcoess your request."
+        }), 500
+
+    
+    finally:
+        connection.close()
+
+    
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

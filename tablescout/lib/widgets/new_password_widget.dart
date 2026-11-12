@@ -11,19 +11,55 @@ class NewPasswordWidget extends StatefulWidget {
 }
 
 class _NewPasswordWidgetState extends State<NewPasswordWidget> {
-  @override
+  //variable init
+  final _formkey = GlobalKey<FormState>();
+  final _passwordcontrol = TextEditingController();
+  final _confirmpasswordcontrol = TextEditingController();
 
+  
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
-  
+  bool _loading = false;
+
+  String? _errorMessage;
+  @override
+  void dispose(){
+    _passwordcontrol.dispose();
+    _confirmpasswordcontrol.dispose();
+    super.dispose();
+  }
+   Future<void> _submitPassword() async {
+    if (!_formkey.currentState!.validate()) {
+      return;
+    }
+
+    setState((){
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if(!mounted) return;
+
+     setState((){
+      _loading = false;
+    });
+
+    context.go('/login');
+  }
+
+  @override
+
   Widget build(BuildContext context) {
     return AuthContainer(
       boxHeight: 450,
-      
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      child: Form(
+        key: _formkey,
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
 
           const Text(
             'TableScout',
@@ -58,7 +94,8 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
 
           const SizedBox(height: 12),
 
-           TextField(
+           TextFormField(
+            controller: _passwordcontrol,
             obscureText: _hidePassword,
             decoration: InputDecoration(
               hintText: 'Enter new password',
@@ -79,7 +116,8 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
 
           const SizedBox(height: 15),
 
-          TextField(
+          TextFormField(
+            controller: _confirmpasswordcontrol,
             obscureText: _hideConfirmPassword,
             decoration: InputDecoration(
               hintText: 'Confirm new password',
@@ -132,6 +170,7 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
