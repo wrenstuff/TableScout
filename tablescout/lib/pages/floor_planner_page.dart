@@ -21,7 +21,7 @@ enum FloorPlannerTool { cursor, hand, wall, door, exit, window, texbox }
 class _FloorPlannerState extends State<FloorPlanner> {
   static const double outerPadding = 20;
   static const double toolbarWidth = 200;
-  static const double bottomToolbarHeight = 130;
+  static const double bottomToolbarHeight = 80;
   static const double toolbarGap = 20;
 
   double _rotationStartAngle = 0;
@@ -56,6 +56,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   Offset? _wallDrawStart;
   Offset? _wallDrawEnd;
+
+  _WallIntersectionSnap? _pendingWallSnap;
 
   bool _fileBusy = false;
 
@@ -213,9 +215,17 @@ class _FloorPlannerState extends State<FloorPlanner> {
         ],
       };
 
+      debugPrint('Starting JSON Conversion');
+
       final json = const JsonEncoder.withIndent('  ').convert(data);
 
+      debugPrint('JSON conversion successful!');
+
+      debugPrint('Starting file write');
+
       await _layoutFile.writeAsString(json, flush: true);
+
+      debugPrint('File write successful');
 
       _showMessage('Layout saved to ${_layoutFile.absolute.path}');
     } catch (error) {
@@ -565,10 +575,24 @@ class _FloorPlannerState extends State<FloorPlanner> {
       math.cos(currentAngle - _rotationStartAngle),
     );
 
-    setState(() {
-      object.rotationDegrees =
-          _rotationStartDegrees + (angleDifference * 180 / math.pi);
+    // Calculate the rotation based on the mouse movement.
+    final newRotation = 
+        _rotationStartDegrees + (angleDifference * 180 / math.pi);
 
+    // Find the nearest 90-degree angle.
+    final nearestRightAngle = 
+        (newRotation / 90).round() * 90.0;
+
+    // Only snapping when within 5 degrees of that angle.
+    final rotationDifference = 
+        (newRotation - nearestRightAngle).abs();
+
+    final snappedRotation = rotationDifference <= 5.0
+        ? nearestRightAngle
+        : newRotation;
+
+    setState(() {
+      object.rotationDegrees = snappedRotation;
       _selectedObject = object;
     });
   }
@@ -651,7 +675,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
     Widget itemButton() {
       return Container(
         width: 150,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(8),
@@ -688,6 +712,44 @@ class _FloorPlannerState extends State<FloorPlanner> {
           child: itemButton(),
         ),
       ),
+    );
+  }
+
+  Offset _snapWallToRightAngle(Offset start, Offset end) {
+    const snapThresholdDegrees = 5.0;
+
+    final difference = end - start;
+    final length = difference.distance;
+
+    if (length < 0.001) return end;
+
+    // Calculating the current wall angle.
+    final currentAngle = 
+        math.atan2(difference.dy, difference.dx);
+
+    final currentDegrees = currentAngle * 180 / math.pi;
+
+    // Find the nearest 90-degree angle.
+    final snappedDegrees = 
+        (currentDegrees / 90).round() * 90.0;
+
+    // Calculate the difference between these angles.
+    final angleDifference = math.atan2(
+      math.sin((currentDegrees - snappedDegrees) * math.pi / 180),
+      math.cos((currentDegrees - snappedDegrees) * math.pi / 180),
+    ) * 180 / math.pi;
+
+    // Only snap when sufficiently close.
+    if (angleDifference.abs() > snapThresholdDegrees) {
+      return end;
+    }
+
+    final snappedRadians = snappedDegrees * math.pi / 180;
+
+    // Keep the original wall length.
+    return start + Offset(
+      math.cos(snappedRadians) * length,
+      math.sin(snappedRadians) * length,
     );
   }
 
@@ -733,18 +795,30 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final originalStart = _wallDrawStart!;
     final originalEnd = _wallDrawEnd!;
 
-    // Check whether either endpoint is snapped to an existing wall.
-    final startIsSnapped = _isSnappedToWallEndpoint(originalStart);
-    final endIsSnapped = _isSnappedToWallEndpoint(originalEnd);
-
     // Ignore accidental clicks or very small walls.
     if ((originalEnd - originalStart).distance < 10) {
       setState(() {
         _wallDrawStart = null;
         _wallDrawEnd = null;
+        _pendingWallSnap = null;
       });
       return;
     }
+
+    // Record the current floor plan before modifying either wall.
+    // This allows undo to restore both walls together.
+    _recordHistory();
+
+    // Adjust the nearby perpendiclar wall, if one was found.
+    final pendingSnap = _pendingWallSnap;
+
+    if (pendingSnap != null && _objects.contains(pendingSnap.wall)) {
+      _moveWallEndpoint(pendingSnap);
+    }
+
+    // Check whether either endpoint is now snapped to an existing wall.
+    final startIsSnapped = _isSnappedToWallEndpoint(originalStart);
+    final endIsSnapped = _isSnappedToWallEndpoint(originalEnd);
 
     const thickness = 12.0;
     const overlap = thickness / 2;
@@ -788,8 +862,6 @@ class _FloorPlannerState extends State<FloorPlanner> {
       midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
     );
 
-    _recordHistory();
-
     setState(() {
       final newWall = FloorObject(
         id: _nextId++,
@@ -805,6 +877,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
       _wallDrawStart = null;
       _wallDrawEnd = null;
+      _pendingWallSnap = null;
     });
   }
 
@@ -902,25 +975,33 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               });
                             },
                             onPanUpdate: (details) {
-                              if (_activeTool != FloorPlannerTool.wall) return;
+                              if (_wallDrawStart == null) return;
 
-                              final canvasPosition = Offset(
-                                details.localPosition.dx
-                                    .clamp(0.0, 3000.0)
-                                    .toDouble(),
-                                details.localPosition.dy
-                                    .clamp(0.0, 3000.0)
-                                    .toDouble(),
+                              final renderObject = 
+                                  _canvasKey.currentContext?.findRenderObject();
+
+                              if (renderObject is! RenderBox) return;
+
+                              final canvasPosition = 
+                                  renderObject.globalToLocal(details.globalPosition);
+
+                              // First, apply the existing 90-degree angle snapping.
+                              final angleSnappedPosition = 
+                                  _snapWallToRightAngle(_wallDrawStart!, canvasPosition);
+
+                              // Check whether a nearby perpendicular wall can be adjusted.
+                              final pendingSnap = _findWallIntersectionSnap(
+                                _wallDrawStart!,
+                                angleSnappedPosition,
+                                canvasPosition,
                               );
 
-                              debugPrint(
-                                'Mouse position: ${details.localPosition} | '
-                                'Canvas postion: $canvasPosition',
-                              );
-
-                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+                              // Use the intersection when one is found.
+                              final snappedPosition = 
+                              pendingSnap?.intersection ?? angleSnappedPosition;
 
                               setState(() {
+                                _pendingWallSnap = pendingSnap;
                                 _wallDrawEnd = snappedPosition;
                               });
                             },
@@ -1580,6 +1661,154 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
     return false;
   }
+
+  // Calculate the 2D cross product of two vectors.
+  double _crossProduct(Offset a, Offset b) {
+    return a.dx * b.dy - a.dy * b.dx;
+  }
+
+  // Find a nearby wall endpoint that can be adjusted
+  // to create a clean 90-degree intersection
+  _WallIntersectionSnap? _findWallIntersectionSnap(
+    Offset start,
+    Offset proposedEnd,
+    Offset mousePostion,
+  ) {
+    const snapDistance = 20.0;
+    const perpendicularToleranceDegrees = 10.0;
+
+    final newDirection = proposedEnd - start;
+    final newLength = newDirection.distance;
+
+    if (newLength < 0.001) return null;
+
+    final normalizedNewDirection = newDirection / newLength;
+
+    _WallIntersectionSnap? bestSnap;
+    double closestDistance = snapDistance;
+
+    for (final wall in _objects) {
+      if (wall.type != FloorObjectType.wall) continue;
+
+      final wallStart = _getWallStartPoint(wall);
+      final wallEnd = _getWallEndPoint(wall);
+
+      final existingDirection = wallEnd - wallStart;
+      final existingLength = existingDirection.distance;
+
+      if (existingLength < 0.001) continue;
+
+      final normalizedExistingDirection = 
+          existingDirection / existingLength;
+
+      // Check whether the walls are appropriately perpendiclular.
+      final dotProduct = (
+        normalizedNewDirection.dx * normalizedExistingDirection.dx +
+        normalizedNewDirection.dy * normalizedExistingDirection.dy
+      ).abs();
+
+      final perpendicularLimit = 
+          math.sin(perpendicularToleranceDegrees * math.pi / 180);
+
+      if (dotProduct > perpendicularLimit) continue;
+
+      // Check which endpoint is closest to the mouse.
+      final startDistance = (mousePostion - wallStart).distance;
+      final endDistance = (mousePostion - wallEnd).distance;
+
+      final moveStartEndpoint = startDistance <= endDistance;
+      final endpointDistance =
+          moveStartEndpoint ? startDistance : endDistance;
+
+      if (endpointDistance >= closestDistance) continue;
+
+      // Find the intersection between the two wall centre lines.
+      final denominator = _crossProduct(
+        normalizedNewDirection,
+        existingDirection,
+      );
+
+      if (denominator.abs() < 0.001) continue;
+
+      final distanceAlongNewWall = _crossProduct(
+        wallStart - start,
+        existingDirection,
+      ) / denominator;
+
+      final intersection = 
+          start + normalizedNewDirection * distanceAlongNewWall;
+
+      // Only adjust the existing wall if the intersectinon
+      // is within the allowed adjustment distance.
+      final distanceToEndpoint = (
+        intersection -
+        (moveStartEndpoint ? wallStart : wallEnd)
+      ).distance;
+
+      if (distanceToEndpoint > snapDistance) continue;
+
+      // Make sure the intersection is also close to the mouse.
+      if ((intersection - mousePostion).distance > snapDistance) {
+        continue;
+      }
+
+      closestDistance = endpointDistance;
+
+      bestSnap = _WallIntersectionSnap(
+        wall: wall,
+        moveStartEndpoint: moveStartEndpoint,
+        intersection: intersection,
+      );
+    }
+
+    return bestSnap;
+  }
+
+  void _moveWallEndpoint(_WallIntersectionSnap snap) {
+    final wall = snap.wall;
+
+    final oldStart = _getWallStartPoint(wall);
+    final oldEnd = _getWallEndPoint(wall);
+
+    final newStart = snap.moveStartEndpoint
+        ? snap.intersection
+        : oldStart;
+
+    final newEnd = snap.moveStartEndpoint
+        ? oldEnd
+        : snap.intersection;
+
+    final difference = newEnd - newStart;
+    final length = difference.distance;
+
+    if (length < 0.001) return;
+
+    final midpoint = Offset(
+      (newStart.dx + newEnd.dx) / 2,
+      (newStart.dy + newEnd.dy) / 2,
+    );
+
+    final rotationDegrees = 
+        math.atan2(difference.dy, difference.dx) * 180 / math.pi;
+
+    final angleRadians = rotationDegrees * math.pi / 180;
+
+    const handleOffset = 15.0;
+    const thickness = 12.0;
+
+    final rotatedHandleOffset = Offset(
+      -handleOffset * math.sin(angleRadians),
+      handleOffset * math.cos(angleRadians),
+    );
+
+    wall
+        ..lengthCm = length
+        ..rotationDegrees = rotationDegrees
+        ..position = Offset(
+          midpoint.dx - length / 2 - 10 - rotatedHandleOffset.dx,
+          midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
+        );
+  }
 }
 
 class _LibraryHeading extends StatelessWidget {
@@ -1604,4 +1833,16 @@ class _FloorPlanSnapshot {
   final int nextId;
 
   _FloorPlanSnapshot({required this.objects, required this.nextId});
+}
+
+class _WallIntersectionSnap {
+  final FloorObject wall;
+  final bool moveStartEndpoint;
+  final Offset intersection;
+
+  _WallIntersectionSnap({
+    required this.wall,
+    required this.moveStartEndpoint,
+    required this.intersection,
+  });
 }
