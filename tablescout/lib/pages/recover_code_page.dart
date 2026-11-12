@@ -3,7 +3,8 @@ import 'package:tablescout/widgets/recover_code_widget.dart';
 import 'package:tablescout/widgets/auth_container.dart';
 
 class RecoverCodePage extends StatefulWidget {
-  const RecoverCodePage({super.key});
+  final String email;
+  const RecoverCodePage({super.key, required this.email});
 
   @override
   State<RecoverCodePage> createState() => _RecoverCodePageState();
@@ -27,10 +28,10 @@ class _RecoverCodePageState extends State<RecoverCodePage> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 500,
                 height: 570,
-                child: RecoverCodeWidget(),
+                child: RecoverCodeWidget(email: widget.email),
               ),
             ),
           ),

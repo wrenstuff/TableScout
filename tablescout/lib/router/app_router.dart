@@ -73,9 +73,12 @@ class AppRouter {
         ),
         GoRoute(
           path: '/recover-code',
-          pageBuilder:(context, state) => const NoTransitionPage(
-            child: RecoverCodePage(),
-          ),
+          pageBuilder:(context, state){ 
+            final email = state.extra as String;
+            return NoTransitionPage(
+            child: RecoverCodePage(email: email),
+          );
+          },
         ),
         GoRoute(
           path: '/new-password',

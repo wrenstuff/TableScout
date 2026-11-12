@@ -224,6 +224,12 @@ def password_recovery():
             "success": True,
             "message": "Recovery code will be sent to email address"
         }), 200
+        #invalidate previous codes
+        cursor.execute("""
+        UPDATE password_resets
+        set used =1
+        WHERE userid =?
+        AND used = 0""", (user["userid"],))
 
         #6 digit recovery code
         recovery_code = str (secrets.randbelow(900000) + 100000)
@@ -274,7 +280,110 @@ def password_recovery():
     finally:
         connection.close()
 
-    
+@app.route("/tablescout/pages/verify-recovery-code", methods =["POST"])
+def verify_recovery_code():
+    info = request.get_json(silent=True) or {}
+
+    email = info.get("email")
+    recovery_code = info.get("code")
+
+    if (
+        not isinstance(email, str)
+        or not email.strip()
+        or not isinstance(recovery_code, str)
+        or not recovery_code.isdigit()
+        or len(recovery_code) !=6
+    ):
+        return jsonify({
+            "success": False,
+            "message": "pelase enter a valid code"
+        }), 400
+    email = email.strip().lower()
+    connection =Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+        SELECT
+            password_resets.reset_id,
+            password_resets.userid,
+            password_resets.code_hash,
+            password_resets.expires_at
+        FROM password_resets
+        INNER JOIN users
+          ON password_resets.userid = users.userid
+        Where users.email =?
+        AND users.accstatus = 'ACTIVE'
+        AND password_resets.used = 0
+        ORDER BY password_resets.reset_id DESC
+        LIMIT 1  """, (email,))
+        reset = cursor.fetchone()
+
+        if reset is None: 
+            return jsonify({
+                "success": False,
+                "message": "Invalid or expired code"
+            }
+        ),400
+        current_time =int(datetime.now(timezone.utc).timestamp())
+
+        if reset["expires_at"] <= current_time:
+
+            cursor.execute("""
+            UPDATE password_resets
+            SET used = 1
+            WHERE reset_id =?""", (reset["reset_id"],))
+
+            connection.commit()
+
+            return jsonify({
+                "success": False,
+                "message": "recovery code has expired, please go back through the process"
+            }), 400
+
+        try:
+            hasher.verify(reset["code_hash"], recovery_code)
+
+        except (VerificationError, InvalidHashError):
+            return jsonify({
+                "success": False,
+                "message": "invalid or expired recovery code."
+            }), 400
+        timenow = datetime.now(timezone.utc)
+
+        payload = {
+            "sub": str(reset["userid"]),
+            "reset_id": reset["reset_id"],
+            "purpose": "password_reset",
+            "iat": timenow,
+            "exp": timenow + timedelta(minutes = 10)
+        }
+
+        reset_token = jwt.encode(
+            payload,
+            SECRET_KEY,
+            algorithm="HS256"
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Code verified, Proceeding",
+            "reset_token": reset_token
+        }), 200
+
+    except Exception as error:
+        connection.rollback()
+        print(f"Recovery verification error: {error}")
+
+        return jsonify({
+           "success": False,
+            "message": "Cant verify the code please try again",
+        }), 500
+
+    finally: 
+        connection.close()
+        
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

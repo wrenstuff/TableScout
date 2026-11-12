@@ -23,11 +23,11 @@ class Dbconnect:
         expires_at INTEGER NOT NULL,
         used INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY(userid)
-            REFERENCES users(usersid)
+            REFERENCES users(userid)
             ON DELETE CASCADE
                                ) """)
             connection.execute("""
-            CREATE INDEX IF NOT idx_password_resets_userid
+            CREATE INDEX IF NOT EXISTS idx_password_resets_userid
             ON password_resets(userid)""")
             connection.commit()
 

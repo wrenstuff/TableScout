@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:tablescout/widgets/auth_container.dart';
+import 'package:tablescout/app_config.dart';
 
 class RecoverCodeWidget extends StatefulWidget {
-  const RecoverCodeWidget({super.key});
+  final String email;
+  
+  const RecoverCodeWidget({super.key, required this.email,});
 
   @override
   State<RecoverCodeWidget> createState() => _RecoverCodeWidgetState();
@@ -31,13 +36,55 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
       _errorMessage =null;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
+    try{
+      final response = await http.post(
+        
+        Uri.parse(
+          '${AppConfig.httpBaseUrl}/tablescout/pages/verify-recovery-code',
+        ),
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': widget.email,
+          'code': _codeChecker.text.trim(),
+        }),
+      );
+      debugPrint('Status code: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
+      final data = jsonDecode(response.body);
 
-    setState(() {
-      _loading = false;
-      _errorMessage ='Invalid code please try again.'; 
-    });
+      if (!mounted)  return;
+
+      if (response.statusCode == 200 && data ['success'] == true){
+        final resetToken = data['reset_token'];
+
+        if (resetToken == null){
+          setState(() {
+            _errorMessage = "Code not verified";
+          });
+          return;
+        }
+        context.go('/new-password', extra: resetToken);
+      } else {
+        setState(() {
+          _errorMessage = data['message'] ?? 'invalid code, try again';
+        });
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Recovery code error: $error');
+      debugPrint('Stack trace: $stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = "Something went wrong. Check the debug console.";
+      });
+    } finally {
+      if (mounted){
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
   }
   @override
   
@@ -133,7 +180,11 @@ class _RecoverCodeWidgetState extends State<RecoverCodeWidget> {
                 ),
                 elevation: 0,
               ),
-              child: const Text('SUBMIT CODE'),
+              child: _loading
+              ? const CircularProgressIndicator(
+                color: Color(0xFFB5BAD0),
+              )
+              : const Text ('Submit code'),
             ),
           ),
 
