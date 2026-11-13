@@ -1,15 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:tablescout/widgets/auth_container.dart';
+import 'dart:convert';
+import 'package:tablescout/app_config.dart';
 
-class PasswordRecoveryWidget extends StatelessWidget {
+class PasswordRecoveryWidget extends StatefulWidget {
   const PasswordRecoveryWidget({super.key});
 
+  @override
+  State<PasswordRecoveryWidget> createState() =>
+  _PasswordRecoveryWidgetState();
+
+}
+  class _PasswordRecoveryWidgetState
+   extends State<PasswordRecoveryWidget>
+{
+  final _emailController = TextEditingController();
+  final _formkey = GlobalKey<FormState>();
+  bool _isLoading = false;
+
+  @override 
+  void dispose(){
+    _emailController.dispose();
+    super.dispose();
+  }
+  Future<void> _submitEmail() async {
+    if (!_formkey.currentState!.validate())return;
+
+    setState(() {
+      _isLoading = true;
+    });
+  
+
+  final email = _emailController.text.trim();
+  
+  try {
+    final response = await http.post(
+      Uri.parse(
+        '${AppConfig.httpBaseUrl}/tablescout/pages/password-recovery',
+      ),
+      headers:{
+        'Content-Type': 'application/json'
+      },
+      body: jsonEncode({
+        'email': email
+      }),
+    );
+    final result = jsonDecode(response.body);
+
+    if (!mounted) return;
+
+    if (response.statusCode >=200 &&
+    response.statusCode <300 && result['success']== true ){
+      context.go('/recover-code', extra: email);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['error'] ?? 'Request not processed'
+          ),
+        ),
+      );
+    }
+  } catch (e){
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text ('Cannot connect to server')
+      ),
+    );
+  } finally {
+    if (mounted){
+      setState((){
+        _isLoading = false;
+      });
+      
+    }
+  }
+
+}
   @override
   Widget build(BuildContext context) {
     return AuthContainer(
       boxHeight: 450,
-      child: Column(
+      child: Form(
+        key: _formkey,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
@@ -45,13 +122,20 @@ class PasswordRecoveryWidget extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          const TextField(
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: 'Enter your email',
               prefixIcon: Icon(Icons.person_outline),
               border: OutlineInputBorder(),
-
             ),
+            validator: (value){
+              if (value == null || value.trim().isEmpty){
+                return 'Please enter your email';
+              }
+              return null;
+            },
           ),
           
           const SizedBox(height: 24),
@@ -59,10 +143,7 @@ class PasswordRecoveryWidget extends StatelessWidget {
           SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: () {
-                // Handle password recovery logic here
-                context.go('/recover-code');
-              },
+              onPressed: _isLoading ? null : _submitEmail,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF54414E),
                 foregroundColor: const Color(0xFFB5BAD0),
@@ -71,7 +152,14 @@ class PasswordRecoveryWidget extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text('SUBMIT EMAIL'),
+              child: _isLoading ? const SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                ),
+              )
+              : const Text('SUBMIT EMAIL'),
             ),
           ),
 
@@ -87,6 +175,7 @@ class PasswordRecoveryWidget extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

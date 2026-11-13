@@ -11,7 +11,30 @@ class Dbconnect:
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         return connection
+    @staticmethod
+    def initialize():
+        connection =Dbconnect.connect()
+        try: 
+            connection.execute("""
+        Create TABLE IF NOT EXISTS password_resets(
+        reset_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userid INTEGER NOT NULL,
+        code_hash TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        used INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY(userid)
+            REFERENCES users(userid)
+            ON DELETE CASCADE
+                               ) """)
+            connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_password_resets_userid
+            ON password_resets(userid)""")
+            connection.commit()
 
+            print("Password table created"
+            )
+        finally:
+            connection.close()
 if __name__ == "__main__":
     connection = Dbconnect.connect()
     try:
