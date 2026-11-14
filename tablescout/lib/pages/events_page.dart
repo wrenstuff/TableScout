@@ -102,7 +102,11 @@ class StoreEvent {
       status: json['status'] as String? ?? 'not_started',
       participants: json['participants'] is List
         ? List<String>.from(json['participants'])
-        : [],
+        : json['participants'] is String
+            ? List<String>.from(
+              jsonDecode(json['participants']) as List,
+              )
+            : [],
     );
   }
 }
@@ -293,6 +297,60 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   void _finishRound() {
     _sendEventAction('finish_round');
+  }
+
+  Future<void> _addPlayer() async {
+    final controller = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Register Player'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Player Name',
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (_) {
+              final name = controller.text.trim();
+
+              if (name.isEmpty) return;
+
+              setState(() {
+                _registeredPlayers.add(name);
+              });
+
+              Navigator.of(dialogContext).pop();
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = controller.text.trim();
+
+                if (name.isEmpty) return;
+
+                setState(() {
+                  _registeredPlayers.add(name);
+                });
+
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Add Player'),
+            ),
+          ],
+        );
+      },
+    );
+
+    controller.dispose();
   }
 
   Future<void> _openAddGameDialog() async {
@@ -487,128 +545,143 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             )
             : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextButton.icon(
-            onPressed: _backToEvents,
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Back to Events'),
-          ),
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextButton.icon(
+                  onPressed: _backToEvents,
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Back to Events'),
+                ),
 
-          Text(
-            event.name,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+                Text(
+                  event.name,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 16,),
+
+                _detailRow(
+                  'Game',
+                  game.isEmpty ? 'Unknown' : game.first.name,
+                ),
+                _detailRow(
+                  'Format',
+                  format.isEmpty ? 'Unknown' : format.first.name,
+                ),
+                _detailRow(
+                  'Recommended Players',
+                  format.isEmpty ? 'Unknown' : format.first.playRec.toString(),
+                ),
+                _detailRow('Description', event.description),
+                _detailRow('Date', event.date),
+                _detailRow('Start Time', event.startTime),
+                _detailRow('End Time', event.endTime),
+                _detailRow('Tables', event.tables.join(', ')),
+
+                const SizedBox(height: 24,),
+
+                const Text(
+                  'Event Management',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    if (event.status == 'not_started')
+                      ElevatedButton(
+                        onPressed: _startEvent,
+                        child: const Text('start'),
+                      ),
+                    if (event.status == 'running')
+                      ElevatedButton(
+                        onPressed: _pauseEvent,
+                        child: const Text('Pause'),
+                      ),
+                    if (event.status == 'paused')
+                      ElevatedButton(
+                        onPressed: _resumeEvent,
+                        child: const Text('Resume'),
+                      ),
+                    if (event.status == 'running' || event.status == 'paused')
+                      ElevatedButton(
+                        onPressed: _stopEvent,
+                        child: const Text('Stop'),
+                      ),
+                    
+                    OutlinedButton(
+                      onPressed: _resetEvent,
+                      child: const Text('Reset Event'),
+                    ),                
+                  ],
+                ),
+
+                const SizedBox(height: 24,),
+
+                const Text(
+                  'Round Management',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+
+                const SizedBox(height: 12,),
+
+                Text('Round ${event.currentRound} / ${event.rounds}'),
+
+                const SizedBox(height: 8,),
+
+                LinearProgressIndicator(
+                  value: event.rounds > 0
+                      ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
+                      : 0,
+                ),
+
+                const SizedBox(height: 12,),
+
+                Wrap(
+                  spacing: 10,
+                  children: [
+                    ElevatedButton(
+                      onPressed: event.status == 'running' && event.currentRound < event.rounds
+                          ? _startRound
+                          : null,
+                      child: const Text('Start Next Round'),
+                    ),
+
+                    OutlinedButton(
+                      onPressed: event.status == 'running' && event.currentRound > 0
+                          ? _finishRound
+                          : null,
+                      child: const Text('Finish Round'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 16,),
+          const SizedBox(width: 20,),
 
-          _detailRow(
-            'Game',
-            game.isEmpty ? 'Unknown' : game.first.name,
-          ),
-          _detailRow(
-            'Format',
-            format.isEmpty ? 'Unknown' : format.first.name,
-          ),
-          _detailRow(
-            'Recommended Players',
-            format.isEmpty ? 'Unknown' : format.first.playRec.toString(),
-          ),
-          _detailRow('Description', event.description),
-          _detailRow('Date', event.date),
-          _detailRow('Start Time', event.startTime),
-          _detailRow('End Time', event.endTime),
-          _detailRow('Tables', event.tables.join(', ')),
-
-          const SizedBox(height: 24,),
-
-          const Text(
-            'Event Management',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              if (event.status == 'not_started')
-                ElevatedButton(
-                  onPressed: _startEvent,
-                  child: const Text('start'),
-                ),
-              if (event.status == 'running')
-                ElevatedButton(
-                  onPressed: _pauseEvent,
-                  child: const Text('Pause'),
-                ),
-              if (event.status == 'paused')
-                ElevatedButton(
-                  onPressed: _resumeEvent,
-                  child: const Text('Resume'),
-                ),
-              if (event.status == 'running' || event.status == 'paused')
-                ElevatedButton(
-                  onPressed: _stopEvent,
-                  child: const Text('Stop'),
-                ),
-              
-              OutlinedButton(
-                onPressed: _resetEvent,
-                child: const Text('Reset Event'),
-              ),                
-            ],
-          ),
-
-          const SizedBox(height: 24,),
-
-          const Text(
-            'Round Management',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold
-            ),
-          ),
-
-          const SizedBox(height: 12,),
-
-          Text('Round ${event.currentRound} / ${event.rounds}'),
-
-          const SizedBox(height: 8,),
-
-          LinearProgressIndicator(
-            value: event.rounds > 0
-                ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
-                : 0,
-          ),
-
-          const SizedBox(height: 12,),
-
-          Wrap(
-            spacing: 10,
-            children: [
-              ElevatedButton(
-                onPressed: event.status == 'running' && event.currentRound < event.rounds
-                    ? _startRound
-                    : null,
-                child: const Text('Start Next Round'),
-              ),
-
-              OutlinedButton(
-                onPressed: event.status == 'running' && event.currentRound > 0
-                    ? _finishRound
-                    : null,
-                child: const Text('Finish Round'),
-              ),
-            ],
+          Expanded(
+            flex: 2,
+            child: _buildRegisteredPlayersPanel(),
           ),
         ],
       ),
@@ -648,10 +721,72 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Registered Players',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '${_registeredPlayers.length}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(
+            height: 350,
+            child: _registeredPlayers.isEmpty
+                ? const Center(
+                    child: Text('No players registered'),
+                  )
+                : ListView.separated(
+                    itemCount: _registeredPlayers.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1,),
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          child: Text('${index + 1}'),
+                        ),
+                        title: Text(_registeredPlayers[index]),
+                        trailing: IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                          ),
+                          tooltip: 'Remove player',
+                          onPressed: () {
+                            setState(() {
+                              _registeredPlayers.removeAt(index);
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  )
+          ),
+
+          SizedBox(height: 12,),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _addPlayer,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add Player'),
+            ),
+          )
         ],
       ),
-    )
+    );
   }
   
   Widget _buildEventsOverview(double padWidth, double padHeight) {
