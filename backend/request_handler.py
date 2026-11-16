@@ -14,6 +14,7 @@ from event_page_handler import (
     create_game,
     create_format,
     get_events_data,
+    update_event_player,
 )
 
 def get_authenticated_user(token):
@@ -129,6 +130,48 @@ async def handle_request(message, session):
             "Authentication required. Please log in again."
         )
 
+    if request_type in ("add_event_player", "remove_event_player"):
+        event_id = data.get("event_id")
+        player_name = data.get("player_name")
+
+        if not event_id:
+            return {
+                "type": "error",
+                "message": "Missing event ID",
+            }
+
+        if not player_name or not player_name.strip():
+            return {
+                "type": "error",
+                "message": "Player name cannot be empty",
+            }
+
+        action = (
+            "add"
+            if request_type == "add_event_player"
+            else "remove"
+        )
+
+        try:
+            await asyncio.to_thread(
+                update_event_player,
+                event_id,
+                player_name,
+                action,
+                store_id,
+            )
+
+            return await asyncio.to_thread(
+                get_events_data,
+                store_id,
+            )
+
+        except(ValueError, sqlite3.Error) as error:
+            return {
+                "type": "error",
+                "message": str(error),
+            }
+
     if request_type not in (
         "get_events_data",
         "create_game",
@@ -177,15 +220,20 @@ async def handle_request(message, session):
 
             elif request_type == "create_format":
                 game_id = data.get("game_id")
+                play_rec = data.get("play_rec", 2)
 
                 if type(game_id) is not int or game_id <= 0:
                     raise ValueError("Select a valid game.")
+
+                if type(play_rec) is not int or play_rec <= 0:
+                    raise ValueError("Recommended players must be a positive integer.")
 
                 await asyncio.to_thread(
                     create_format,
                     game_id,
                     name,
                     name_short,
+                    play_rec,
                 )
 
         # Return event data for event-related requests

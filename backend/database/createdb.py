@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS formats (
     game_id INTEGER NOT NULL,
     name TEXT NOT NULL COLLATE NOCASE,
     name_short TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    play_rec INTEGER NOT NULL DEFAULT 2,
     FOREIGN KEY (game_id) REFERENCES games(id),
     UNIQUE (game_id, name)
 );

@@ -2,7 +2,6 @@ import json
 
 from contextlib import closing
 from database.Dbconnection import Dbconnect
-from datetime import datetime
 from datetime import date, time
 
 def create_game(name, name_short):
@@ -28,7 +27,7 @@ def create_game(name, name_short):
                 "name_short": name_short,
             }
 
-def create_format(game_id, name, name_short):
+def create_format(game_id, name, name_short, play_rec=2):
     name = name.strip()
     name_short = name_short.strip()
 
@@ -38,20 +37,24 @@ def create_format(game_id, name, name_short):
     if not name_short:
         raise ValueError("Format short name is required.")
 
+    if type(play_rec) is not int or play_rec <= 0:
+        raise ValueError("Recommended players must be a positive integer.")
+
     with closing(Dbconnect.connect()) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
 
         with connection:
             cursor = connection.execute(
-                "INSERT INTO formats (game_id, name, name_short) VALUES (?, ?, ?)",
-                (game_id, name, name_short),
+                "INSERT INTO formats (game_id, name, name_short, play_rec) VALUES (?, ?, ?, ?)",
+                (game_id, name, name_short, play_rec),
             )
 
             return {
                 "id": cursor.lastrowid,
                 "game_id": game_id,
                 "name": name,
-                "name_short": name_short
+                "name_short": name_short,
+                "play_rec": play_rec,
             }
 
 def get_events_data(store_id):
@@ -73,7 +76,7 @@ def get_events_data(store_id):
 
         formats = connection.execute(
             """
-            SELECT id, game_id, name, name_short
+            SELECT id, game_id, name, name_short, play_rec
             FROM formats
             ORDER BY name
             """
@@ -207,6 +210,58 @@ def create_event(data, store_id):
             event_id = cursor.lastrowid
 
     return event_id
+
+def update_event_player(event_id, player_name, action, store_id):
+    
+    player_name = player_name.strip()
+
+    if not player_name:
+        raise ValueError("Player name cannot be empty")
+
+    if action not in ("add", "remove"):
+        raise ValueError("Invalid player action")
+
+    conn = Dbconnect.connect()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT participants
+            FROM events
+            WHERE event_id = ? AND store_id = ?
+            """,
+            (event_id, store_id),
+        )
+
+        event = cursor.fetchone()
+
+        if event is None:
+            raise ValueError("Event not found")
+
+        participants = json.loads(event['participants'] or '[]')
+
+        if action == "add":
+            if player_name not in participants:
+                participants.append(player_name)
+
+        elif action == "remove":
+            if player_name in participants:
+                participants.remove(player_name)
+
+        cursor.execute(
+            """
+            UPDATE events
+            SET participants = ?
+            WHERE event_id = ? AND store_id = ?
+            """,
+            (json.dumps(participants), event_id, store_id)
+        )
+
+        conn.commit()
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     data = get_events_data()
