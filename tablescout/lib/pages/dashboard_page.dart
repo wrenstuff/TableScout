@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -45,62 +46,64 @@ class _DashboardPageState extends State<DashboardPage> {
     final padHeight = (screenSize.height * 0.2) / 3;
     final padWidth = screenSize.width * 0.1;
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // CHANGE THIS TO A FUNCTION THAT GETS NUM OF EVENTS
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Temporary event count
+    // Replace with actual event data later.
     final tempBoxNum = 5;
+
+    final isMobile = ScreenDimensions.isMobile(context);
 
     return Column(
       children: [
+        // ONGOING EVENTS PANEL
         Container(
           height: screenSize.height * 0.4,
-          width: !ScreenDimensions.isMobile(context)
-           ? double.infinity 
-           : (screenWidth - 55),
-          margin: !ScreenDimensions.isMobile(context)
-            ? EdgeInsets.fromLTRB(
-                padWidth,
-                padHeight,
-                padWidth,
-                padHeight / 2,
-              )
-            : EdgeInsets.fromLTRB(
-                55,
-                0,
-                0,
-                0,
-              ),
+          width: !isMobile ? double.infinity : screenWidth - 55,
+          margin: !isMobile
+              ? EdgeInsets.fromLTRB(
+                  padWidth,
+                  padHeight,
+                  padWidth,
+                  padHeight / 2,
+                )
+              : const EdgeInsets.fromLTRB(55, 0, 0, 0),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: ScreenDimensions.isMobile(context)
-                ? BorderRadius.zero
-                : BorderRadius.circular(10),
-            color: Colors.grey[400],
+            borderRadius:
+                isMobile ? BorderRadius.zero : BorderRadius.circular(10),
+            color: AppColours.primary,
+            border: Border.all(
+              color: AppColours.accent,
+              width: 2,
+            ),
           ),
           child: Column(
             children: [
               Padding(
-                padding: ScreenDimensions.isMobile(context)
-                  ? EdgeInsets.only(top: 20.0)
-                  : EdgeInsets.zero,
-                child: Text(
+                padding: isMobile
+                    ? const EdgeInsets.only(top: 20)
+                    : EdgeInsets.zero,
+                child: const Text(
                   'Ongoing Events',
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColours.accent,
+                  ),
                 ),
               ),
+
               const SizedBox(height: 12),
 
               Expanded(
                 child: Row(
                   children: [
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    // CHANGE VARIABLE NAME LATER
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    // CHEVRON LEFT BUTTON
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (tempBoxNum > (ScreenDimensions.isMobile(context) ? 1 : 3))
+                    // LEFT SCROLL BUTTON
+                    if (tempBoxNum > (isMobile ? 1 : 3))
                       IconButton(
-                        icon: const Icon(Icons.chevron_left),
+                        icon: const Icon(
+                          Icons.chevron_left,
+                          color: AppColours.accent,
+                        ),
                         onPressed: () => _scrollEvents(-1),
                       ),
 
@@ -108,15 +111,17 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           const gap = 16.0;
-                          final visibleCards = ScreenDimensions.isMobile(context) ? 1 : 3;
-                          final cardWidth = (constraints.maxWidth - gap * (visibleCards - 1)) / visibleCards;
+
+                          final visibleCards = isMobile ? 1 : 3;
+
+                          final cardWidth =
+                              (constraints.maxWidth -
+                                      gap * (visibleCards - 1)) /
+                                  visibleCards;
 
                           return ListView.separated(
                             controller: _eventsController,
                             scrollDirection: Axis.horizontal,
-                            // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                            // CHANGE VARIABLE NAME LATER
-                            // !!!!!!!!!!!!!!!!!!!!!!!!!!
                             itemCount: tempBoxNum,
                             separatorBuilder: (context, index) =>
                                 const SizedBox(width: gap),
@@ -125,17 +130,33 @@ class _DashboardPageState extends State<DashboardPage> {
                                 width: cardWidth,
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[200],
+                                  color: AppColours.surface,
                                   borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColours.accent,
+                                    width: 1.5,
+                                  ),
                                 ),
                                 child: Column(
                                   children: [
-                                    Text('Event $i'),
+                                    Text(
+                                      'Event ${i + 1}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColours.accent,
+                                      ),
+                                    ),
+
                                     const SizedBox(height: 16),
+
                                     const Text('Event Name'),
+
                                     const SizedBox(height: 16),
+
                                     const Text('Event Timer'),
+
                                     const SizedBox(height: 16),
+
                                     const Text('Round Number'),
                                   ],
                                 ),
@@ -146,14 +167,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
 
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    // CHANGE VARIABLE NAME LATER
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    // CHEVRON RIGHT BUTTON
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!
-                    if (tempBoxNum > (ScreenDimensions.isMobile(context) ? 1 : 3))
+                    // RIGHT SCROLL BUTTON
+                    if (tempBoxNum > (isMobile ? 1 : 3))
                       IconButton(
-                        icon: const Icon(Icons.chevron_right),
+                        icon: const Icon(
+                          Icons.chevron_right,
+                          color: AppColours.accent,
+                        ),
                         onPressed: () => _scrollEvents(1),
                       ),
                   ],
@@ -163,34 +183,38 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
 
+        // FLOOR VIEW PANEL
         Container(
-          height: !ScreenDimensions.isMobile(context)
-            ? screenSize.height * 0.4
-            : screenSize.height * 0.6,
-          width: !ScreenDimensions.isMobile(context)
-            ? double.infinity
-            : (screenWidth - 55),
-          margin: !ScreenDimensions.isMobile(context)
+          height: !isMobile
+              ? screenSize.height * 0.4
+              : screenSize.height * 0.6,
+          width: !isMobile ? double.infinity : screenWidth - 55,
+          margin: !isMobile
               ? EdgeInsets.fromLTRB(
                   padWidth,
                   padHeight / 2,
                   padWidth,
                   padHeight,
                 )
-              : EdgeInsets.fromLTRB(
-                  55,
-                  0,
-                  0,
-                  0,
-                ),
+              : const EdgeInsets.fromLTRB(55, 0, 0, 0),
           decoration: BoxDecoration(
-            borderRadius: ScreenDimensions.isMobile(context)
-                ? BorderRadius.zero
-                : BorderRadius.circular(10),
-            color: Colors.grey[300],
+            borderRadius:
+                isMobile ? BorderRadius.zero : BorderRadius.circular(10),
+            color: AppColours.primary,
+            border: Border.all(
+              color: AppColours.accent,
+              width: 2,
+            ),
           ),
           child: const Center(
-            child: Text('Floor View'),
+            child: Text(
+              'Floor View',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+              ),
+            ),
           ),
         ),
       ],
