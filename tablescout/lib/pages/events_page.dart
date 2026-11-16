@@ -63,6 +63,10 @@ class StoreEvent {
   final int currentRound;
   final String status;
   final List<String> participants;
+  final List<List<String>> pairingGroups;
+  final List<String> pairingByes;
+  final List<String> pairingUnassigned;
+  final int? pairingPlayRec;
 
   const StoreEvent({
     required this.id,
@@ -78,9 +82,16 @@ class StoreEvent {
     required this.currentRound,
     required this.status,
     required this.participants,
+    required this.pairingGroups,
+    required this.pairingByes,
+    required this.pairingUnassigned,
+    required this.pairingPlayRec,
   });
 
   factory StoreEvent.fromJson(Map<String, dynamic> json) {
+    final pairingData = json['pairings'] is Map
+          ? Map<String, dynamic>.from(json['pairings'] as Map)
+          : <String, dynamic>{};
     return StoreEvent(
       id: json['event_id'] as int,
       gameId: json['game_id'] as int,
@@ -99,8 +110,39 @@ class StoreEvent {
           : json['participants'] is String
           ? List<String>.from(jsonDecode(json['participants']) as List)
           : [],
+      pairingGroups: (pairingData['groups'] as List? ?? [])
+        .map((group) => List<String>.from(group as List))
+        .toList(),
+      pairingByes: List<String>.from(pairingData['byes'] as List? ?? [],),
+      pairingUnassigned: List<String>.from(pairingData['unassigned'] as List? ?? [],),
+      pairingPlayRec: pairingData['play_rec'] as int?,
     );
   }
+
+  StoreEvent copyWithPairings(Map<String, dynamic> pairings) {
+    return StoreEvent(
+      id: id, 
+      formatId: formatId, 
+      gameId: gameId, 
+      name: name, 
+      description: description, 
+      tables: tables, 
+      date: date, 
+      startTime: startTime, 
+      endTime: endTime, 
+      rounds: rounds, 
+      currentRound: currentRound, 
+      status: status, 
+      participants: participants, 
+      pairingGroups: (pairings['groups'] as List? ?? [])
+        .map((group) => List<String>.from(group as List))
+        .toList(), 
+      pairingByes: List<String>.from(pairings['byes'] as List? ?? []), 
+      pairingUnassigned: List<String>.from(pairings['unassigned'] as List? ?? []), 
+      pairingPlayRec: pairings['play_rec'] as int?,
+    );
+  }
+
 }
 
 class EventsOverviewPage extends StatefulWidget {
@@ -125,6 +167,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   StreamSubscription<dynamic>? _messageSubscription;
 
   bool _isCreatingEvent = false;
+  bool _isGeneratingPairings = false;
 
   @override
   void initState() {
@@ -156,6 +199,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       );
 
       if (data['type'] == 'error') {
+        if (mounted) {
+          setState(() {
+            _isGeneratingPairings = false;
+          });
+        }
+
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -165,6 +214,40 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             ),
           ),
         );
+        return;
+      }
+
+      if (data['type'] == 'pairings_generated') {
+        final pairings = Map<String, dynamic>.from(
+          data['pairings'] as Map,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _isGeneratingPairings = false;
+
+          if (_selectedEvent != null &&
+              _selectedEvent!.id == data['event_id']) {
+            
+            _selectedEvent = _selectedEvent!.copyWithPairings(pairings);
+
+            final index = _events.indexWhere(
+              (event) => event.id == _selectedEvent!.id,
+            );
+
+            if (index != -1) {
+              _events[index] = _selectedEvent!;
+            }
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pairings generated successfully'),
+          ),
+        );
+
         return;
       }
 
@@ -331,10 +414,36 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
     if (playerName == null || _selectedEvent == null) return;
 
+    _clearDisplayedPairings();
+
     _socket.send({
       'type': 'add_event_player',
       'event_id': _selectedEvent!.id,
       'player_name': playerName,
+    });
+  }
+
+  void _generatePairings() {
+    if (_selectedEvent == null) return;
+
+    if (_registeredPlayers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Register players before genetaring pairings.'),
+        ),
+      );
+      return;
+    }
+
+    if (_isGeneratingPairings) return;
+
+    setState(() {
+      _isGeneratingPairings = true;
+    });
+
+    _socket.send({
+      'type': 'generate_event_pairings',
+      'event_id': _selectedEvent!.id,
     });
   }
 
@@ -484,6 +593,29 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       _isCreatingEvent = true;
     });
   }
+
+  void _clearDisplayedPairings() {
+  if (_selectedEvent == null) return;
+
+  final updatedEvent = _selectedEvent!.copyWithPairings({
+    'play_rec': _selectedEvent!.pairingPlayRec,
+    'groups': [],
+    'byes': [],
+    'unassigned': [],
+  });
+
+  setState(() {
+    _selectedEvent = updatedEvent;
+
+    final index = _events.indexWhere(
+      (event) => event.id == updatedEvent.id,
+    );
+
+    if (index != -1) {
+      _events[index] = updatedEvent;
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -648,7 +780,19 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
           const SizedBox(width: 20),
 
-          Expanded(flex: 2, child: _buildRegisteredPlayersPanel()),
+          Expanded(
+            flex: 2, 
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildRegisteredPlayersPanel(),
+                  const SizedBox(height: 16,),
+                  _buildPairingsPanel(),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -718,14 +862,16 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                           icon: const Icon(Icons.close, color: Colors.red),
                           tooltip: 'Remove player',
                           onPressed: () {
-                            setState(() {
-                              if (_selectedEvent == null) return;
+                            if (_selectedEvent == null) return;
 
-                              _socket.send({
-                                'type': 'remove_event_player',
-                                'event_id': _selectedEvent!.id,
-                                'player_name': _registeredPlayers[index],
-                              });
+                            final playerName = _registeredPlayers[index];
+
+                            _clearDisplayedPairings();
+
+                            _socket.send({
+                              'type': 'remove_event_player',
+                              'event_id': _selectedEvent!.id,
+                              'player_name': playerName,
                             });
                           },
                         ),
@@ -744,6 +890,165 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               label: const Text('Add Player'),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPairingsPanel() {
+    final event = _selectedEvent!;
+
+    final hasPairings = event.pairingGroups.isNotEmpty ||
+                        event.pairingByes.isNotEmpty ||
+                        event.pairingUnassigned.isNotEmpty;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Player pairings',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '${event.pairingGroups.length} Groups',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12,),
+
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isGeneratingPairings ||
+                         _registeredPlayers.isEmpty
+                  ? null
+                  : _generatePairings,
+              icon: _isGeneratingPairings
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.shuffle),
+              label: Text(
+                _isGeneratingPairings
+                    ? 'Generating...'
+                    : hasPairings
+                    ? 'Regenerate Pairings'
+                    : 'Generate Pairings',
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16,),
+          
+          if (!hasPairings)
+            const Padding(
+              padding: EdgeInsetsGeometry.symmetric(vertical: 16),
+              child: Center(
+                child: Text('No pairings generated yet.'),
+              ),
+            ),
+
+            for (int i = 0; i < event.pairingGroups.length; i++)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Group ${i + 1} '
+                      '(${event.pairingGroups[i].length} Players)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8,),
+
+                    for (final player in event.pairingGroups[i])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 3),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.person,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8,),
+                            Expanded(child: Text(player)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+            if (event.pairingByes.isNotEmpty) ...[
+              const SizedBox(height: 8,),
+              const Text(
+                'Byes',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              for (final player in event.pairingByes)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.coffee),
+                  title: Text(player),
+                  subtitle: const Text('Sitting out this round'),
+                ),
+            ],
+
+            if (event.pairingUnassigned.isNotEmpty) ...[
+              const SizedBox(height: 8,),
+              const Text(
+                'Unassigned Players',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              for (final player in event.pairingUnassigned)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.warning_amber,
+                  color: Colors.orange,
+                ),
+                title: Text(player),
+                subtitle: const Text(
+                  'Could not be placed into a valid group',
+                ),
+              ),
+            ],
         ],
       ),
     );

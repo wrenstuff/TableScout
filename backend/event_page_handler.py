@@ -1,4 +1,5 @@
 import json
+import random
 
 from contextlib import closing
 from database.Dbconnection import Dbconnect
@@ -101,7 +102,13 @@ def get_events_data(store_id):
     events = [dict(row) for row in events]
 
     for event in events:
-        for field in ("participants", "tables", "standings", "bracket"):
+        for field in (
+            "participants",
+            "tables",
+            "standings",
+            "bracket",
+            "pairings"
+        ):
             value = event.get(field)
             event[field] = json.loads(value) if value else []
 
@@ -253,7 +260,8 @@ def update_event_player(event_id, player_name, action, store_id):
         cursor.execute(
             """
             UPDATE events
-            SET participants = ?
+            SET participants = ?,
+                pairings = '[]'
             WHERE event_id = ? AND store_id = ?
             """,
             (json.dumps(participants), event_id, store_id)
@@ -262,6 +270,145 @@ def update_event_player(event_id, player_name, action, store_id):
         conn.commit()
     finally:
         conn.close()
+
+def generate_pairings(players, play_rec):
+    if type(play_rec) is not int or play_rec < 2:
+        raise ValueError("Recommenced players must be at least 2.")
+
+    players = list(players)
+    random.shuffle(players)
+
+    groups = []
+    byes = []
+    unassigned = []
+
+    total = len(players)
+
+    if play_rec == 2:
+        while len(players) >= 2:
+            groups.append(players[:2])
+            players = players[2:]
+
+        if players:
+            byes.append(players[0])
+
+        return {
+            "play_rec": play_rec,
+            "groups": groups,
+            "byes": byes,
+            "unassigned": []
+        }
+
+    if total == play_rec + 1:
+        return {
+            "play_rec": play_rec,
+            "groups": [players],
+            "byes": [],
+            "unassigned": []
+        }
+
+    smaller_group = play_rec - 1
+
+    best = (0, 0, 0)
+
+    for recommended_count in range(total // play_rec + 1):
+        for smaller_count in range(total // smaller_group + 1):
+
+            assigned = (
+                recommended_count * play_rec + smaller_count * smaller_group
+            )
+
+            if assigned > total:
+                continue
+
+            candidate = (
+                assigned,
+                recommended_count,
+                smaller_count,
+            )
+
+            if candidate[:2] > best[:2]:
+                best = candidate
+
+    recommended_count = best[1]
+    smaller_count = best[2]
+
+    for _ in range(recommended_count):
+        groups.append(players[:play_rec])
+        players = players[play_rec:]
+
+    for _ in range(smaller_count):
+        groups.append(players[:smaller_group])
+        players = players[smaller_group:]
+
+    unassigned = players
+
+    return {
+        "play_rec": play_rec,
+        "groups": groups,
+        "byes": byes,
+        "unassigned": unassigned
+    }
+
+def generate_event_pairings(event_id, store_id):
+
+    if type(event_id) is not int or event_id <= 0:
+        raise ValueError("Invalid event.")
+
+    if type(store_id) is not int or store_id <= 0:
+        raise ValueError("Invalid store.")
+
+    with closing(Dbconnect.connect()) as conn:
+
+        with conn:
+
+            event = conn.execute(
+                """
+                SELECT
+                    events.event_id,
+                    events.participants,
+                    formats.play_rec
+                FROM events
+                JOIN formats
+                    ON events.format_id = formats.id
+                WHERE events.event_id = ?
+                AND events.store_id = ?
+                """,
+                (event_id, store_id)
+            ).fetchone()
+
+            if event is None:
+                raise ValueError("Event not found")
+
+            participants = json.loads(event['participants'] or '[]')
+
+            if not isinstance(participants, list):
+                raise ValueError("Invalid participant data")
+
+            pairings = generate_pairings(
+                participants,
+                event["play_rec"]
+            )
+
+            conn.execute(
+                """
+                UPDATE events
+                SET pairings = ?
+                WHERE event_id = ?
+                AND store_id = ?
+                """,
+                (
+                    json.dumps(pairings),
+                    event_id,
+                    store_id
+                )
+            )
+
+    return {
+        "type": "pairings_generated",
+        "event_id": event_id,
+        "pairings": pairings
+    }
 
 if __name__ == "__main__":
     data = get_events_data()

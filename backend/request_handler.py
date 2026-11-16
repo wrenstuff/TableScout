@@ -15,6 +15,7 @@ from event_page_handler import (
     create_format,
     get_events_data,
     update_event_player,
+    generate_event_pairings,
 )
 
 def get_authenticated_user(token):
@@ -171,6 +172,20 @@ async def handle_request(message, session):
                 "type": "error",
                 "message": str(error),
             }
+
+    if request_type == "generate_event_pairings":
+
+        event_id = data.get("event_id")
+
+        if type(event_id) is not int:
+            raise ValueError("Invalid event ID")
+
+        result  = generate_event_pairings(
+            event_id,
+            store_id
+        )
+
+        return result
 
     if request_type not in (
         "get_events_data",
