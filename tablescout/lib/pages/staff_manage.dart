@@ -49,6 +49,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
                   final session = context.read<SessionManager>();
 
                   final canEdit =
+                      session.isAdmin ||
                       (session.isStore &&
                           (employee['role'] == 'MANAGER' ||
                               employee['role'] == 'SUPERVISOR' ||
