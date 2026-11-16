@@ -14,6 +14,7 @@ from event_page_handler import (
     create_game,
     create_format,
     get_events_data,
+    update_event_player,
 )
 
 def get_authenticated_user(token):
@@ -128,6 +129,48 @@ async def handle_request(message, session):
         return error_response(
             "Authentication required. Please log in again."
         )
+
+    if request_type in ("add_event_player", "remove_event_player"):
+        event_id = data.get("event_id")
+        player_name = data.get("player_name")
+
+        if not event_id:
+            return {
+                "type": "error",
+                "message": "Missing event ID",
+            }
+
+        if not player_name or not player_name.strip():
+            return {
+                "type": "error",
+                "message": "Player name cannot be empty",
+            }
+
+        action = (
+            "add"
+            if request_type == "add_event_player"
+            else "remove"
+        )
+
+        try:
+            await asyncio.to_thread(
+                update_event_player,
+                event_id,
+                player_name,
+                action,
+                store_id,
+            )
+
+            return await asyncio.to_thread(
+                get_events_data,
+                store_id,
+            )
+
+        except(ValueError, sqlite3.Error) as error:
+            return {
+                "type": "error",
+                "message": str(error),
+            }
 
     if request_type not in (
         "get_events_data",

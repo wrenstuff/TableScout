@@ -12,15 +12,11 @@ class Game {
   final String name;
   final String name_short;
 
-  const Game({
-    required this.id,
-    required this.name,
-    required this.name_short,
-  });
+  const Game({required this.id, required this.name, required this.name_short});
 
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
-      id: json['id'] as int, 
+      id: json['id'] as int,
       name: json['name'] as String,
       name_short: json['name_short'] as String,
     );
@@ -44,8 +40,8 @@ class Format {
 
   factory Format.fromJson(Map<String, dynamic> json) {
     return Format(
-      id: json['id'] as int, 
-      gameId: json['game_id'] as int, 
+      id: json['id'] as int,
+      gameId: json['game_id'] as int,
       name: json['name'] as String,
       name_short: json['name_short'] as String,
       playRec: json["play_rec"] as int? ?? 2,
@@ -81,19 +77,17 @@ class StoreEvent {
     required this.rounds,
     required this.currentRound,
     required this.status,
-    required this.participants
+    required this.participants,
   });
 
   factory StoreEvent.fromJson(Map<String, dynamic> json) {
     return StoreEvent(
-      id: json['event_id'] as int, 
+      id: json['event_id'] as int,
       gameId: json['game_id'] as int,
-      formatId: json['format_id'] as int, 
+      formatId: json['format_id'] as int,
       name: json['name'] as String? ?? 'Unnamed Event',
       description: json['description'] as String? ?? '',
-      tables: json['tables'] is List
-          ? List<int>.from(json['tables'])
-          : [],
+      tables: json['tables'] is List ? List<int>.from(json['tables']) : [],
       date: json['date'] as String? ?? 'Not Scheduled',
       startTime: json['start_time'] as String? ?? '',
       endTime: json['end_time'] as String? ?? '',
@@ -101,12 +95,10 @@ class StoreEvent {
       currentRound: json['current_round'] as int? ?? 0,
       status: json['status'] as String? ?? 'not_started',
       participants: json['participants'] is List
-        ? List<String>.from(json['participants'])
-        : json['participants'] is String
-            ? List<String>.from(
-              jsonDecode(json['participants']) as List,
-              )
-            : [],
+          ? List<String>.from(json['participants'])
+          : json['participants'] is String
+          ? List<String>.from(jsonDecode(json['participants']) as List)
+          : [],
     );
   }
 }
@@ -142,7 +134,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   Future<void> _loadEventsData() async {
     try {
-
       if (!mounted) return;
 
       _messageSubscription = _socket.messages.listen(
@@ -152,9 +143,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         },
       );
 
-      _socket.send({
-        'type': 'get_events_data',
-      });
+      _socket.send({'type': 'get_events_data'});
     } catch (error) {
       debugPrint('Unable to load events: $error');
     }
@@ -172,7 +161,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              data['message'] as String? ?? 'Unable to complete request'
+              data['message'] as String? ?? 'Unable to complete request',
             ),
           ),
         );
@@ -182,20 +171,22 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       if (data['type'] != 'events_data') return;
 
       final games = (data['games'] as List)
-        .map((item) => Game.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
+          .map((item) => Game.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList();
 
       final formats = (data['formats'] as List)
-        .map((item) => Format.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
+          .map(
+            (item) => Format.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
 
       final events = (data['events'] as List)
-        .map((item) => StoreEvent.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
-      
+          .map(
+            (item) =>
+                StoreEvent.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+
       if (!mounted) return;
 
       setState(() {
@@ -212,20 +203,22 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           ..addAll(events);
 
         if (_selectedEvent != null) {
-        final updatedEvents = _events.where(
-          (event) => event.id == _selectedEvent!.id,
-        );
+          final updatedEvents = _events.where(
+            (event) => event.id == _selectedEvent!.id,
+          );
 
-        _selectedEvent = updatedEvents.isEmpty
-            ? null
-            : updatedEvents.first;
-      }
+          _selectedEvent = updatedEvents.isEmpty ? null : updatedEvents.first;
+
+          _registeredPlayers = _selectedEvent == null
+              ? []
+              : List<String>.from(_selectedEvent!.participants);
+        }
       });
 
       debugPrint(
         'Loaded ${_games.length} games, '
         '${_formats.length} formats, '
-        '${_events.length} events'
+        '${_events.length} events',
       );
     } catch (error, stackTrace) {
       debugPrint('Unable to read server response: $error');
@@ -265,10 +258,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   void _sendEventAction(String action) {
     if (_selectedEvent == null) return;
 
-    _socket.send({
-      'type': action,
-      'event_id': _selectedEvent!.id,
-    });
+    _socket.send({'type': action, 'event_id': _selectedEvent!.id});
   }
 
   void _startEvent() {
@@ -302,7 +292,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   Future<void> _addPlayer() async {
     final controller = TextEditingController();
 
-    await showDialog<void>(
+    final playerName = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -314,21 +304,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               labelText: 'Player Name',
               border: OutlineInputBorder(),
             ),
-            onSubmitted: (_) {
-              final name = controller.text.trim();
-
-              if (name.isEmpty) return;
-
-              setState(() {
-                _registeredPlayers.add(name);
-              });
-
-              Navigator.of(dialogContext).pop();
-            },
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
@@ -337,13 +318,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
                 if (name.isEmpty) return;
 
-                setState(() {
-                  _registeredPlayers.add(name);
-                });
-
-                Navigator.of(dialogContext).pop();
+                Navigator.of(dialogContext).pop(name);
               },
-              child: const Text('Add Player'),
+              child: const Text('Add'),
             ),
           ],
         );
@@ -351,6 +328,14 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     );
 
     controller.dispose();
+
+    if (playerName == null || _selectedEvent == null) return;
+
+    _socket.send({
+      'type': 'add_event_player',
+      'event_id': _selectedEvent!.id,
+      'player_name': playerName,
+    });
   }
 
   Future<void> _openAddGameDialog() async {
@@ -438,7 +423,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     onSaved: (value) => shortName = value!.trim(),
                   ),
                   if (includeRecommendedPlayers) ...[
-                    const SizedBox(height: 16,),
+                    const SizedBox(height: 16),
                     TextFormField(
                       initialValue: '2',
                       decoration: const InputDecoration(
@@ -500,8 +485,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     });
   }
 
-
- @override
+  @override
   Widget build(BuildContext context) {
     if (_isCreatingEvent) {
       return EventCreationPage(
@@ -527,23 +511,14 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   Widget _buildEventDetails(double padWidth, double padHeight) {
     final event = _selectedEvent!;
 
-    final game = _games.where(
-      (game) => game.id == event.gameId,
-    );
+    final game = _games.where((game) => game.id == event.gameId);
 
-    final format = _formats.where(
-      (format) => format.id == event.formatId,
-    );
+    final format = _formats.where((format) => format.id == event.formatId);
 
     return Container(
       margin: !ScreenDimensions.isMobile(context)
-          ? EdgeInsets.fromLTRB(
-            padWidth, 
-            padHeight, 
-            padWidth, 
-            padHeight / 2
-            )
-            : const EdgeInsets.fromLTRB(55, 0, 0, 0),
+          ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
+          : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,12 +542,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                   ),
                 ),
 
-                const SizedBox(height: 16,),
+                const SizedBox(height: 16),
 
-                _detailRow(
-                  'Game',
-                  game.isEmpty ? 'Unknown' : game.first.name,
-                ),
+                _detailRow('Game', game.isEmpty ? 'Unknown' : game.first.name),
                 _detailRow(
                   'Format',
                   format.isEmpty ? 'Unknown' : format.first.name,
@@ -587,14 +559,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                 _detailRow('End Time', event.endTime),
                 _detailRow('Tables', event.tables.join(', ')),
 
-                const SizedBox(height: 24,),
+                const SizedBox(height: 24),
 
                 const Text(
                   'Event Management',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 12),
@@ -623,29 +592,26 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         onPressed: _stopEvent,
                         child: const Text('Stop'),
                       ),
-                    
+
                     OutlinedButton(
                       onPressed: _resetEvent,
                       child: const Text('Reset Event'),
-                    ),                
+                    ),
                   ],
                 ),
 
-                const SizedBox(height: 24,),
+                const SizedBox(height: 24),
 
                 const Text(
                   'Round Management',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
 
-                const SizedBox(height: 12,),
+                const SizedBox(height: 12),
 
                 Text('Round ${event.currentRound} / ${event.rounds}'),
 
-                const SizedBox(height: 8,),
+                const SizedBox(height: 8),
 
                 LinearProgressIndicator(
                   value: event.rounds > 0
@@ -653,20 +619,23 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       : 0,
                 ),
 
-                const SizedBox(height: 12,),
+                const SizedBox(height: 12),
 
                 Wrap(
                   spacing: 10,
                   children: [
                     ElevatedButton(
-                      onPressed: event.status == 'running' && event.currentRound < event.rounds
+                      onPressed:
+                          event.status == 'running' &&
+                              event.currentRound < event.rounds
                           ? _startRound
                           : null,
                       child: const Text('Start Next Round'),
                     ),
 
                     OutlinedButton(
-                      onPressed: event.status == 'running' && event.currentRound > 0
+                      onPressed:
+                          event.status == 'running' && event.currentRound > 0
                           ? _finishRound
                           : null,
                       child: const Text('Finish Round'),
@@ -677,12 +646,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             ),
           ),
 
-          const SizedBox(width: 20,),
+          const SizedBox(width: 20),
 
-          Expanded(
-            flex: 2,
-            child: _buildRegisteredPlayersPanel(),
-          ),
+          Expanded(flex: 2, child: _buildRegisteredPlayersPanel()),
         ],
       ),
     );
@@ -698,12 +664,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(child: Text(value))
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -715,7 +679,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(12)
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -726,10 +690,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             children: [
               const Text(
                 'Registered Players',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
                 '${_registeredPlayers.length}',
@@ -744,37 +705,36 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           SizedBox(
             height: 350,
             child: _registeredPlayers.isEmpty
-                ? const Center(
-                    child: Text('No players registered'),
-                  )
+                ? const Center(child: Text('No players registered'))
                 : ListView.separated(
                     itemCount: _registeredPlayers.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1,),
+                    separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          child: Text('${index + 1}'),
-                        ),
+                        leading: CircleAvatar(child: Text('${index + 1}')),
                         title: Text(_registeredPlayers[index]),
                         trailing: IconButton(
-                          icon: const Icon(
-                            Icons.close,
-                            color: Colors.red,
-                          ),
+                          icon: const Icon(Icons.close, color: Colors.red),
                           tooltip: 'Remove player',
                           onPressed: () {
                             setState(() {
-                              _registeredPlayers.removeAt(index);
+                              if (_selectedEvent == null) return;
+
+                              _socket.send({
+                                'type': 'remove_event_player',
+                                'event_id': _selectedEvent!.id,
+                                'player_name': _registeredPlayers[index],
+                              });
                             });
                           },
                         ),
                       );
                     },
-                  )
+                  ),
           ),
 
-          SizedBox(height: 12,),
+          SizedBox(height: 12),
 
           SizedBox(
             width: double.infinity,
@@ -783,40 +743,30 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               icon: const Icon(Icons.person_add),
               label: const Text('Add Player'),
             ),
-          )
+          ),
         ],
       ),
     );
   }
-  
+
   Widget _buildEventsOverview(double padWidth, double padHeight) {
     final visibleFormats = _formats
         .where((format) => format.gameId == _selectedGameId)
         .toList();
-        
 
     return Container(
       margin: !ScreenDimensions.isMobile(context)
-          ? EdgeInsets.fromLTRB(
-              padWidth,
-              padHeight,
-              padWidth,
-              padHeight / 2,
-            )
+          ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
           : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             _selectedGameId == null
-              ? 'Select Game'
-              : 'Selected Game: ${_games.firstWhere(
-                (game) => game.id == _selectedGameId,
-              ).name}',
+                ? 'Select Game'
+                : 'Selected Game: ${_games.firstWhere((game) => game.id == _selectedGameId).name}',
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -832,8 +782,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     InkWell(
                       onTap: () {
                         setState(() {
-                          _selectedGameId = 
-                            _selectedGameId == game.id ? null : game.id;
+                          _selectedGameId = _selectedGameId == game.id
+                              ? null
+                              : game.id;
                           _selectedFormatId = null;
                         });
                       },
@@ -846,8 +797,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: _selectedGameId == game.id
-                            ? Colors.blue.shade200
-                            : Colors.grey.shade300,
+                              ? Colors.blue.shade200
+                              : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -856,9 +807,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         ),
                       ),
                     ),
-
-
-                    
 
                   // add game
                   ElevatedButton(
@@ -870,13 +818,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: _openAddGameDialog, 
-                    child: const Icon(
-                      Icons.add,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
-                  )
+                    onPressed: _openAddGameDialog,
+                    child: const Icon(Icons.add, size: 50, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -885,10 +829,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           const SizedBox(height: 16),
           Text(
             _selectedFormatId == null
-              ? 'Select Format'
-              : 'Selected Format: ${_formats.firstWhere(
-                (format) => format.id == _selectedFormatId,
-              ).name}',
+                ? 'Select Format'
+                : 'Selected Format: ${_formats.firstWhere((format) => format.id == _selectedFormatId).name}',
             style: TextStyle(fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -901,36 +843,35 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               child: Row(
                 children: [
                   for (final format in visibleFormats)
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedFormatId = 
-                          _selectedFormatId == format.id ? null : format.id;
-                        
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      margin: const EdgeInsets.only(right: 12),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _selectedFormatId == format.id 
-                          ? Colors.blue.shade200
-                          : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        format.name_short,
-                        textAlign: TextAlign.center,
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedFormatId = _selectedFormatId == format.id
+                              ? null
+                              : format.id;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        margin: const EdgeInsets.only(right: 12),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _selectedFormatId == format.id
+                              ? Colors.blue.shade200
+                              : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          format.name_short,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                  ),
-                    
 
-                    // add format
+                  // add format
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(80, 80),
@@ -941,14 +882,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       ),
                     ),
                     onPressed: _selectedGameId == null
-                      ? null
-                      : _openAddFormatDialog, 
-                    child: const Icon(
-                      Icons.add,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
-                  )
+                        ? null
+                        : _openAddFormatDialog,
+                    child: const Icon(Icons.add, size: 50, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -956,10 +893,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
           const SizedBox(height: 14),
           const Center(
-            child: Text(
-              'Active Events',
-              style: TextStyle(fontSize: 18),
-            ),
+            child: Text('Active Events', style: TextStyle(fontSize: 18)),
           ),
           const SizedBox(height: 12),
 
@@ -978,18 +912,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
-                        const Expanded(
-                          flex: 5,
-                          child: Text('Sort by Game'),
-                        ),
-                        const Expanded(
-                          flex: 2,
-                          child: Text('Sort by Table/s'),
-                        ),
-                        const Expanded(
-                          flex: 2,
-                          child: Text('Sort by Time'),
-                        ),
+                        const Expanded(flex: 5, child: Text('Sort by Game')),
+                        const Expanded(flex: 2, child: Text('Sort by Table/s')),
+                        const Expanded(flex: 2, child: Text('Sort by Time')),
                       ],
                     ),
                   ),
