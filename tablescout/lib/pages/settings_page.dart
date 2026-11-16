@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:provider/provider.dart';
 import 'package:tablescout/session/session_manager.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class SettingsPage extends StatefulWidget {
   final Function(int) onNavigate;
@@ -24,9 +25,15 @@ class _SettingsPageState extends State<SettingsPage> {
       width: size,
       height: size,
       child: Material(
-        color: const Color(0xFFA8A9B3),
-        borderRadius: BorderRadius.circular(5),
+        color: AppColours.primary,
         clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: AppColours.accent,
+            width: 2,
+          ),
+          borderRadius: BorderRadiusGeometry.circular(8),
+        ),
         child: InkWell(
           onTap: onTap,
           child: Column(
@@ -35,15 +42,16 @@ class _SettingsPageState extends State<SettingsPage> {
               Icon(
                 icon,
                 size: 48,
-                color: Colors.black,
+                color: AppColours.accent,
               ),
               const SizedBox(height: 10),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColours.accent,
                 ),
               ),
             ],
@@ -56,6 +64,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColours.background,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

@@ -6,21 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/services/websocket_service.dart';
 import 'package:tablescout/pages/event_creation_page.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class Game {
   final int id;
   final String name;
   final String name_short;
 
-  const Game({
-    required this.id,
-    required this.name,
-    required this.name_short,
-  });
+  const Game({required this.id, required this.name, required this.name_short});
 
   factory Game.fromJson(Map<String, dynamic> json) {
     return Game(
-      id: json['id'] as int, 
+      id: json['id'] as int,
       name: json['name'] as String,
       name_short: json['name_short'] as String,
     );
@@ -42,8 +39,8 @@ class Format {
 
   factory Format.fromJson(Map<String, dynamic> json) {
     return Format(
-      id: json['id'] as int, 
-      gameId: json['game_id'] as int, 
+      id: json['id'] as int,
+      gameId: json['game_id'] as int,
       name: json['name'] as String,
       name_short: json['name_short'] as String,
     );
@@ -81,14 +78,12 @@ class StoreEvent {
 
   factory StoreEvent.fromJson(Map<String, dynamic> json) {
     return StoreEvent(
-      id: json['event_id'] as int, 
+      id: json['event_id'] as int,
       gameId: json['game_id'] as int,
-      formatId: json['format_id'] as int, 
+      formatId: json['format_id'] as int,
       name: json['name'] as String? ?? 'Unnamed Event',
       description: json['description'] as String? ?? '',
-      tables: json['tables'] is List
-          ? List<int>.from(json['tables'])
-          : [],
+      tables: json['tables'] is List ? List<int>.from(json['tables']) : [],
       date: json['date'] as String? ?? 'Not Scheduled',
       startTime: json['start_time'] as String? ?? '',
       endTime: json['end_time'] as String? ?? '',
@@ -129,7 +124,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   Future<void> _loadEventsData() async {
     try {
-
       if (!mounted) return;
 
       _messageSubscription = _socket.messages.listen(
@@ -139,9 +133,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         },
       );
 
-      _socket.send({
-        'type': 'get_events_data',
-      });
+      _socket.send({'type': 'get_events_data'});
     } catch (error) {
       debugPrint('Unable to load events: $error');
     }
@@ -159,7 +151,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              data['message'] as String? ?? 'Unable to complete request'
+              data['message'] as String? ?? 'Unable to complete request',
             ),
           ),
         );
@@ -169,20 +161,22 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       if (data['type'] != 'events_data') return;
 
       final games = (data['games'] as List)
-        .map((item) => Game.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
+          .map((item) => Game.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList();
 
       final formats = (data['formats'] as List)
-        .map((item) => Format.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
+          .map(
+            (item) => Format.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
 
       final events = (data['events'] as List)
-        .map((item) => StoreEvent.fromJson(
-          Map<String, dynamic>.from(item as Map),
-        )).toList();
-      
+          .map(
+            (item) =>
+                StoreEvent.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+
       if (!mounted) return;
 
       setState(() {
@@ -199,20 +193,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           ..addAll(events);
 
         if (_selectedEvent != null) {
-        final updatedEvents = _events.where(
-          (event) => event.id == _selectedEvent!.id,
-        );
+          final updatedEvents = _events.where(
+            (event) => event.id == _selectedEvent!.id,
+          );
 
-        _selectedEvent = updatedEvents.isEmpty
-            ? null
-            : updatedEvents.first;
-      }
+          _selectedEvent = updatedEvents.isEmpty ? null : updatedEvents.first;
+        }
       });
 
       debugPrint(
         'Loaded ${_games.length} games, '
         '${_formats.length} formats, '
-        '${_events.length} events'
+        '${_events.length} events',
       );
     } catch (error, stackTrace) {
       debugPrint('Unable to read server response: $error');
@@ -251,10 +243,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   void _sendEventAction(String action) {
     if (_selectedEvent == null) return;
 
-    _socket.send({
-      'type': action,
-      'event_id': _selectedEvent!.id,
-    });
+    _socket.send({'type': action, 'event_id': _selectedEvent!.id});
   }
 
   void _startEvent() {
@@ -407,8 +396,19 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     });
   }
 
+  ButtonStyle _eventButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: AppColours.accent,
+      foregroundColor: AppColours.textLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.circular(8),
+        side: const BorderSide(color: AppColours.accent, width: 2),
+      ),
+    );
+  }
 
- @override
+  @override
   Widget build(BuildContext context) {
     if (_isCreatingEvent) {
       return EventCreationPage(
@@ -434,31 +434,29 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
   Widget _buildEventDetails(double padWidth, double padHeight) {
     final event = _selectedEvent!;
 
-    final game = _games.where(
-      (game) => game.id == event.gameId,
-    );
+    final game = _games.where((game) => game.id == event.gameId);
 
-    final format = _formats.where(
-      (format) => format.id == event.formatId,
-    );
+    final format = _formats.where((format) => format.id == event.formatId);
 
     return Container(
+      decoration: const BoxDecoration(color: AppColours.background),
       margin: !ScreenDimensions.isMobile(context)
-          ? EdgeInsets.fromLTRB(
-            padWidth, 
-            padHeight, 
-            padWidth, 
-            padHeight / 2
-            )
-            : const EdgeInsets.fromLTRB(55, 0, 0, 0),
+          ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
+          : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextButton.icon(
             onPressed: _backToEvents,
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Back to Events'),
+            icon: const Icon(Icons.arrow_back, color: AppColours.accent),
+            label: const Text(
+              'Back to Events',
+              style: TextStyle(
+                color: AppColours.accent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
 
           Text(
@@ -466,110 +464,194 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
+              color: AppColours.accent,
             ),
           ),
 
-          const SizedBox(height: 16,),
+          const SizedBox(height: 16),
 
-          _detailRow(
-            'Game',
-            game.isEmpty ? 'Unknown' : game.first.name,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColours.primary,
+              border: Border.all(color: AppColours.accent, width: 2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _detailRow('Game', game.isEmpty ? 'Unknown' : game.first.name),
+                _detailRow(
+                  'Format',
+                  format.isEmpty ? 'Unknown' : format.first.name,
+                ),
+                _detailRow('Description', event.description),
+                _detailRow('Date', event.date),
+                _detailRow('Start Time', event.startTime),
+                _detailRow('End Time', event.endTime),
+                _detailRow('Tables', event.tables.join(', ')),
+              ],
+            ),
           ),
-          _detailRow(
-            'Format',
-            format.isEmpty ? 'Unknown' : format.first.name,
-          ),
-          _detailRow('Description', event.description),
-          _detailRow('Date', event.date),
-          _detailRow('Start Time', event.startTime),
-          _detailRow('End Time', event.endTime),
-          _detailRow('Tables', event.tables.join(', ')),
 
-          const SizedBox(height: 24,),
+          const SizedBox(height: 24),
 
           const Text(
             'Event Management',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
             ),
           ),
 
           const SizedBox(height: 12),
 
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              if (event.status == 'not_started')
-                ElevatedButton(
-                  onPressed: _startEvent,
-                  child: const Text('start'),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColours.primary,
+              border: Border.all(color: AppColours.accent, width: 2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (event.status == 'not_started')
+                  ElevatedButton(
+                    onPressed: _startEvent,
+                    style: _eventButtonStyle(),
+                    child: const Text('Start'),
+                  ),
+                if (event.status == 'running')
+                  ElevatedButton(
+                    onPressed: _pauseEvent,
+                    style: _eventButtonStyle(),
+                    child: const Text('Pause'),
+                  ),
+                if (event.status == 'paused')
+                  ElevatedButton(
+                    onPressed: _resumeEvent,
+                    style: _eventButtonStyle(),
+                    child: const Text('Resume'),
+                  ),
+                if (event.status == 'running' || event.status == 'paused')
+                  ElevatedButton(
+                    onPressed: _stopEvent,
+                    style: _eventButtonStyle(),
+                    child: const Text('Stop'),
+                  ),
+                OutlinedButton(
+                  onPressed: _resetEvent,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColours.accent,
+                    side: BorderSide(color: AppColours.accent, width: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadiusGeometry.circular(8),
+                    ),
+                  ),
+                  child: const Text('Reset Event'),
                 ),
-              if (event.status == 'running')
-                ElevatedButton(
-                  onPressed: _pauseEvent,
-                  child: const Text('Pause'),
-                ),
-              if (event.status == 'paused')
-                ElevatedButton(
-                  onPressed: _resumeEvent,
-                  child: const Text('Resume'),
-                ),
-              if (event.status == 'running' || event.status == 'paused')
-                ElevatedButton(
-                  onPressed: _stopEvent,
-                  child: const Text('Stop'),
-                ),
-              
-              OutlinedButton(
-                onPressed: _resetEvent,
-                child: const Text('Reset Event'),
-              ),                
-            ],
+              ],
+            ),
           ),
 
-          const SizedBox(height: 24,),
+          const SizedBox(height: 24),
 
           const Text(
             'Round Management',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
             ),
           ),
 
-          const SizedBox(height: 12,),
+          const SizedBox(height: 12),
 
-          Text('Round ${event.currentRound} / ${event.rounds}'),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColours.primary,
+              border: Border.all(color: AppColours.accent, width: 2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Round ${event.currentRound} / ${event.rounds}',
+                  style: const TextStyle(
+                    color: AppColours.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
 
-          const SizedBox(height: 8,),
+                const SizedBox(height: 12),
 
-          LinearProgressIndicator(
-            value: event.rounds > 0
-                ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
-                : 0,
-          ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: event.rounds > 0
+                        ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
+                        : 0,
+                    minHeight: 12,
+                    backgroundColor: AppColours.surface,
+                    color: AppColours.accent,
+                  ),
+                ),
 
-          const SizedBox(height: 12,),
+                const SizedBox(height: 16),
 
-          Wrap(
-            spacing: 10,
-            children: [
-              ElevatedButton(
-                onPressed: event.status == 'running' && event.currentRound < event.rounds
-                    ? _startRound
-                    : null,
-                child: const Text('Start Next Round'),
-              ),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    ElevatedButton(
+                      onPressed:
+                          event.status == 'running' &&
+                              event.currentRound < event.rounds
+                          ? _startRound
+                          : null,
+                      style: _eventButtonStyle(),
+                      child: const Text('Start Next Round'),
+                    ),
 
-              OutlinedButton(
-                onPressed: event.status == 'running' && event.currentRound > 0
-                    ? _finishRound
-                    : null,
-                child: const Text('Finish Round'),
-              ),
-            ],
+                    OutlinedButton(
+                      onPressed:
+                          event.status == 'running' && event.currentRound > 0
+                          ? _finishRound
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColours.accent,
+                        disabledForegroundColor: AppColours.disabled,
+                        side: const BorderSide(
+                          color: AppColours.accent,
+                          width: 2,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Finish Round'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -578,7 +660,7 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
   Widget _detailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -587,33 +669,39 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             child: Text(
               label,
               style: const TextStyle(
-                fontWeight: FontWeight.bold
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+                fontSize: 15,
               ),
             ),
           ),
-          Expanded(child: Text(value))
+          Expanded(
+            child: Text(
+              value.isEmpty ? 'Not Specified' : value,
+              style: const TextStyle(
+                color: AppColours.accent,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
-  
+
   Widget _buildEventsOverview(double padWidth, double padHeight) {
     final visibleFormats = _formats
         .where((format) => format.gameId == _selectedGameId)
         .toList();
-        
 
     return Container(
       margin: !ScreenDimensions.isMobile(context)
-          ? EdgeInsets.fromLTRB(
-              padWidth,
-              padHeight,
-              padWidth,
-              padHeight / 2,
-            )
+          ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
           : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        color: AppColours.background,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -621,11 +709,13 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         children: [
           Text(
             _selectedGameId == null
-              ? 'Select Game'
-              : 'Selected Game: ${_games.firstWhere(
-                (game) => game.id == _selectedGameId,
-              ).name}',
-            style: TextStyle(fontSize: 16),
+                ? 'Select Game'
+                : 'Selected Game: ${_games.firstWhere((game) => game.id == _selectedGameId).name}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -640,8 +730,9 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     InkWell(
                       onTap: () {
                         setState(() {
-                          _selectedGameId = 
-                            _selectedGameId == game.id ? null : game.id;
+                          _selectedGameId = _selectedGameId == game.id
+                              ? null
+                              : game.id;
                           _selectedFormatId = null;
                         });
                       },
@@ -654,37 +745,49 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: _selectedGameId == game.id
-                            ? Colors.blue.shade200
-                            : Colors.grey.shade300,
+                              ? AppColours.accent
+                              : AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           game.name_short,
                           textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedGameId == game.id
+                                ? AppColours.textLight
+                                : AppColours.accent,
+                          ),
                         ),
                       ),
                     ),
-
-
-                    
 
                   // add game
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(80, 80),
                       padding: EdgeInsets.zero,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColours.primary,
+                      foregroundColor: AppColours.accent,
+                      side: const BorderSide(
+                        color: AppColours.accent,
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: _openAddGameDialog, 
+                    onPressed: _openAddGameDialog,
                     child: const Icon(
                       Icons.add,
                       size: 50,
-                      color: Colors.grey,
+                      color: AppColours.accent,
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -693,11 +796,13 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           const SizedBox(height: 16),
           Text(
             _selectedFormatId == null
-              ? 'Select Format'
-              : 'Selected Format: ${_formats.firstWhere(
-                (format) => format.id == _selectedFormatId,
-              ).name}',
-            style: TextStyle(fontSize: 16),
+                ? 'Select Format'
+                : 'Selected Format: ${_formats.firstWhere((format) => format.id == _selectedFormatId).name}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -709,54 +814,68 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               child: Row(
                 children: [
                   for (final format in visibleFormats)
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedFormatId = 
-                          _selectedFormatId == format.id ? null : format.id;
-                        
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      margin: const EdgeInsets.only(right: 12),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _selectedFormatId == format.id 
-                          ? Colors.blue.shade200
-                          : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        format.name_short,
-                        textAlign: TextAlign.center,
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedFormatId = _selectedFormatId == format.id
+                              ? null
+                              : format.id;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        margin: const EdgeInsets.only(right: 12),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _selectedFormatId == format.id
+                              ? AppColours.accent
+                              : AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          format.name_short,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedFormatId == format.id
+                                ? AppColours.textLight
+                                : AppColours.accent,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                    
 
-                    // add format
+                  // add format
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(80, 80),
                       padding: EdgeInsets.zero,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColours.primary,
+                      foregroundColor: AppColours.accent,
+                      side: const BorderSide(
+                        color: AppColours.accent,
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: _selectedGameId == null
-                      ? null
-                      : _openAddFormatDialog, 
+                        ? null
+                        : _openAddFormatDialog,
                     child: const Icon(
                       Icons.add,
                       size: 50,
-                      color: Colors.grey,
+                      color: AppColours.accent,
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -766,7 +885,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           const Center(
             child: Text(
               'Active Events',
-              style: TextStyle(fontSize: 18),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -777,7 +900,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
+                color: AppColours.primary,
+                border: Border.all(color: AppColours.accent, width: 2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -788,15 +912,33 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       children: [
                         const Expanded(
                           flex: 5,
-                          child: Text('Sort by Game'),
+                          child: Text(
+                            'Sort by Game',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
                         ),
                         const Expanded(
                           flex: 2,
-                          child: Text('Sort by Table/s'),
+                          child: Text(
+                            'Sort by Table/s',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
                         ),
                         const Expanded(
                           flex: 2,
-                          child: Text('Sort by Time'),
+                          child: Text(
+                            'Sort by Time',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -816,8 +958,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: i % 2 == 0
-                                    ? Colors.grey.shade300
-                                    : Colors.grey.shade200,
+                                    ? AppColours.surface
+                                    : AppColours.background,
+                                border: Border.all(
+                                  color: AppColours.accent,
+                                  width: 1,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -827,6 +973,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                                     child: Text(
                                       _events[i].name,
                                       overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColours.accent,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
@@ -835,12 +985,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                                       _events[i].tables.isEmpty
                                           ? 'Not Assigned'
                                           : 'Table ${_events[i].tables.join(', ')}',
+                                      style: const TextStyle(
+                                        color: AppColours.textPrimary,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
                                       '${_events[i].startTime} - ${_events[i].endTime}',
+                                      style: const TextStyle(
+                                        color: AppColours.textPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -860,12 +1016,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       icon: const Icon(Icons.add),
                       label: const Text('Create Event'),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColours.accent,
+                        foregroundColor: AppColours.textLight,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
