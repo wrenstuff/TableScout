@@ -17,6 +17,8 @@ import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/pages/contact_us_page.dart';
 import 'package:tablescout/theme/app_colours.dart';
+import 'package:tablescout/widgets/construction_tooltip.dart';
+import 'package:tablescout/pages/floor_allocator_page.dart';
 
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
@@ -42,7 +44,7 @@ class _NavBarState extends State<NavBar> {
 
   late final List<Widget> _pages = [
     DashboardPage(),
-    const Center(child: Text('Floor Allocator')),
+    const FloorAllocatorPage(),
     FloorPlanner(),
     EventsOverviewPage(),
     ContactUsPage(),
