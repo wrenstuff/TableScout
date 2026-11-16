@@ -14,6 +14,8 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from argon2.exceptions import VerificationError, InvalidHashError
+from jwt_auth import token_verify
+import sqlite3
 
 
 backend_path =Path(__file__).resolve().parent.parent
@@ -148,6 +150,194 @@ def login():
             "storeName": user["store_name"]
         }
     }), 200
+
+def get_authenticated_user():
+    auth_header = request.headers.get("Authorization", "")
+
+    if not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.split(" ", 1)[1]
+    payload = token_verify(token)
+
+    if payload is None:
+        return None
+
+    userid = payload.get("sub")
+
+    if not userid:
+        return None
+
+    connection = Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+        SELECT userid, role, store_id
+        FROM users
+        WHERE userid = ?
+        AND accstatus = 'ACTIVE'""",(userid,))
+
+        user = cursor .fetchone()
+
+        if user is None:
+            return None
+        return dict(user)
+
+    finally: connection.close()
+
+@app.route("/tablescout/pages/staff_management", methods =["GET"])
+def staff_management():
+    user =get_authenticated_user()
+
+    if user is None:
+        return jsonify({
+            "error": "auth required."
+        }), 401
+
+    role = user ["role"].strip().lower().replace("_", " ")
+
+    allowed_roles = ["admin", "store", "manager"]
+
+    if role not in allowed_roles:
+        return jsonify ({
+            "error": "Invalid permissions"
+        }), 403
+    connection = Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+
+        if role == "admin":
+            cursor.execute("""
+            SELECT userid, username , email, role
+            FROM users
+            ORDER BY username""")
+            editable_roles = ["ADMIN", "STORE", "MANAGER", "SUPERVISOR", "STAFF" ]
+
+        else:
+
+            if user["store_id"] is None:
+                return jsonify({
+                    "error": "no store found please contact admins"
+                }),403
+
+            cursor.execute("""
+            SELECT userid, username, email, role
+            FROM users
+            WHERE store_id = ?
+            ORDER by username""",
+            (user["store_id"],))
+
+            editable_roles = ["MANAGER", "SUPERVISOR", "STAFF"]
+
+        staff = [dict(row) for row in cursor.fetchall()]
+
+        for member in staff:
+            target_role = member["role"].strip().upper().replace(" ", "_")
+
+            member["can_edit"] = (
+                role =="admin" or (
+                    role == "store"
+                    and target_role not in ["ADMIN", "STORE"]
+                )
+            )
+            member ["editable_roles"] = editable_roles
+
+        return jsonify({
+            "success": True,
+            "staff": staff
+        }), 200
+
+       
+
+    finally:
+        connection.close()
+
+@app.route("/tablescout/pages/staff_management/<int:staff_id>", methods = ["PUT"])
+def update_staff(staff_id):
+    user = get_authenticated_user()
+
+    if user is None:
+        return jsonify({"error" : " auth required" }), 401
+
+    role = user ["role"].strip().lower().replace("_", " ")
+
+    if role not in ["admin", "store"]:
+        return jsonify ({"error": "Invalid permissions"}), 403
+
+    data = request.get_json(silent=True) or {}
+
+    username = str(data.get("username", "")).strip()
+    email = str(data.get("email", "")).strip()
+    new_role = str(data.get("role", "")).strip().upper().replace(" ", "_")
+
+    if not username or not email or not new_role:
+        return jsonify({"error": "Username, email and role are required"}),400
+
+    if len(username) > 100 or len(email) > 254:
+        return jsonify ({"error": "username or email are too long"}), 400
+
+    if "@" not in email:
+        return jsonify({"error": "please enter a valid email address"}), 400
+
+    if role == "admin":
+        allowed_new_roles =["ADMIN", "STORE", "MANAGER", "SUPERVISOR", "STAFF"]
+
+    else:
+        allowed_new_roles = ["MANAGER", "SUPERVISOR", "STAFF"]
+
+    if new_role not in allowed_new_roles:
+        return jsonify({"error": "you cannot assign that role"}), 403
+
+    connection =Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+        SELECT userid, store_id, role
+        FROM users
+        WHERE userid =?""",
+        (staff_id,))
+
+        target = cursor.fetchone()
+
+        if target is None:
+            return jsonify({"error": "staf member not found"}), 404
+
+        if role == "store":
+            if user["store_id"] is None or target["store_id"] != user["store_id"]:
+                return jsonify ({"error": "You can only edit your own stores staff"}),403
+
+            target_role = target["role"].strip().upper().replace(" ", "_")
+
+            if target_role in ["ADMIN", "STORE"]:
+                return jsonify ({"error": "You cannot edit this account"}), 403
+
+        cursor.execute("""
+        UPDATE users
+        SET username = ?, email =?, role =?
+        WHERE userid =? """, (username, email, new_role, staff_id))
+
+        connection.commit()
+
+        return jsonify ({"success": True,
+                             "message": "staff member updated successfully"}), 200
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return jsonify({"error": "email already in use"}), 409
+    
+    finally: connection.close()
+        
+            
+
+    
+
+    
+    
+
 @app.route("/tablescout/pages/contact", methods=["POST"])
 def contact():
     info = request.get_json(silent=True) or {}
