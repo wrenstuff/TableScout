@@ -372,6 +372,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     _sendEventAction('finish_round');
   }
 
+  void _restartEvent() {
+    _sendEventAction('restart_event');
+  }
+
   Future<void> _addPlayer() async {
     final controller = TextEditingController();
 
@@ -723,6 +727,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       ElevatedButton(
                         onPressed: _stopEvent,
                         child: const Text('Stop'),
+                      ),
+                    if (event.status == 'stopped')
+                      ElevatedButton(
+                        onPressed: _restartEvent,
+                        child: const Text('Restart'),
                       ),
 
                     OutlinedButton(

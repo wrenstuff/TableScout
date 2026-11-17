@@ -16,6 +16,12 @@ from event_page_handler import (
     get_events_data,
     update_event_player,
     generate_event_pairings,
+    start_event,
+    pause_event,
+    resume_event,
+    stop_event,
+    restart_event,
+    reset_event,
 )
 
 def get_authenticated_user(token):
@@ -186,6 +192,54 @@ async def handle_request(message, session):
         )
 
         return result
+
+    if request_type in (
+        "start_event",
+        "pause_event",
+        "resume_event",
+        "stop_event",
+        "restart_event",
+        "reset_event",
+    ):
+        event_id = data.get("event_id")
+
+        if not isinstance(event_id, int):
+            return {
+                "type": "error",
+                "message": "Invalid event ID"
+            }
+
+        event_actions = {
+            "start_event": start_event,
+            "pause_event": pause_event,
+            "resume_event": resume_event,
+            "stop_event": stop_event,
+            "restart_event": restart_event,
+            "reset_event": reset_event,
+        }
+
+        try:
+            await asyncio.to_thread(
+                event_actions[request_type],
+                event_id,
+                store_id
+            )
+
+            return await asyncio.to_thread(get_events_data, store_id)
+
+        except ValueError as error:
+            return {
+                "type": "error",
+                "message": str(error)
+            }
+
+        except Exception as error:
+            print(f"Event action failed: {error}")
+
+            return {
+                "type": "error",
+                "message": "Unable to update event."
+            }
 
     if request_type not in (
         "get_events_data",
