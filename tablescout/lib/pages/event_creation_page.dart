@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/pages/events_page.dart';
 import 'package:tablescout/services/websocket_service.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class EventCreationPage extends StatefulWidget {
   final VoidCallback onBack;
@@ -50,9 +51,6 @@ class _EventCreationPageState extends State<EventCreationPage> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      border: const OutlineInputBorder(),
-      filled: true,
-      fillColor: Colors.white,
     );
   }
 
@@ -296,8 +294,12 @@ class _EventCreationPageState extends State<EventCreationPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
+                color: AppColours.primary,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColours.accent,
+                  width: 2,
+                ),
               ),
               child: Form(
                 key: _formKey,
