@@ -410,6 +410,115 @@ def generate_event_pairings(event_id, store_id):
         "pairings": pairings
     }
 
+def _update_event_status(event_id, store_id, allowed_statuses, new_status, reset_round=False):
+
+    if type(event_id) is not int or event_id <= 0:
+            raise ValueError("Invalid event.")
+    
+    if type(store_id) is not int or store_id <= 0:
+        raise ValueError("Invalid store.")
+
+    conn = Dbconnect.connect()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT status FROM events WHERE event_id = ? AND store_id = ?",
+            (event_id, store_id)
+        )
+
+        event = cursor.fetchone()
+
+        if event is None:
+            raise ValueError("Event not found.")
+
+        if event["status"] not in allowed_statuses:
+            raise ValueError(
+                f"Cannot perform this action while event is "
+                f"{event['status']}"
+            )
+
+        if reset_round:
+            cursor.execute(
+                """
+                UPDATE events
+                SET status = ?,
+                    current_round = 0,
+                    current_round_end_time = NULL
+                WHERE event_id = ? AND store_id = ?
+                """,
+                (new_status, event_id, store_id)
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE events
+                SET status = ?
+                WHERE event_id = ? AND store_id = ?
+                """,
+                (new_status, event_id, store_id)
+            )
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close
+
+def start_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ["not_started"],
+        "running"
+    )
+
+def pause_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ["running"],
+        "paused"
+    )
+
+def resume_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ["paused"],
+        "running"
+    )
+
+def stop_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ["running", "paused"],
+        "stopped"
+    )
+
+def restart_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ["stopped"],
+        "running",
+        reset_round=True
+    )
+
+def reset_event(event_id, store_id):
+    _update_event_status(
+        event_id,
+        store_id,
+        ['not_started', 'running', 'paused', 'stopped'],
+        "not_started",
+        reset_round=True
+    )
+
 if __name__ == "__main__":
     data = get_events_data()
 
