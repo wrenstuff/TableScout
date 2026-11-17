@@ -33,8 +33,10 @@ class DashboardEvent {
     Map<int, String> games,
     Map<int, String> formats,
   ) {
+    debugPrint("Dashboard event JSON: $json");
+
     return DashboardEvent(
-      id: json['evemt_id'] as int, 
+      id: json['event_id'] as int, 
       name: json['name'] as String? ?? 'Unnamed Event', 
       game: games[json['game_id']] ?? 'Unknown Game', 
       format: formats[json['format_id']] ?? 'Unknown Format', 
@@ -275,29 +277,32 @@ class _DashboardPageState extends State<DashboardPage> {
                                           size: 18,
                                         ),
 
-                                        const SizedBox(height: 12,),
+                                        const SizedBox(width: 8,),
 
                                         Text(
                                           'Round ${event.currentRound} / ${event.rounds}'
                                         ),
-
-                                        const SizedBox(height: 8,),
-
-                                        LinearProgressIndicator(
-                                          value: event.rounds > 0
-                                              ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
-                                              : 0,
-                                        ),
-
-                                        const Spacer(),
-
-                                        Text(
-                                          '${event.startTime} - ${event.endTime}',
-                                          style: const TextStyle(
-                                            fontSize: 12
-                                          ),
-                                        ),
                                       ],
+                                    ),
+
+                                    const SizedBox(width: 8,),
+
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: LinearProgressIndicator(
+                                        value: event.rounds > 0
+                                            ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
+                                            : 0.0,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 8,),
+
+                                    Text(
+                                      '${event.startTime} - ${event.endTime}',
+                                      style: const TextStyle(
+                                        fontSize: 12
+                                      ),
                                     ),
                                   ],
                                 ),
