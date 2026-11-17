@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:tablescout/session/session_manager.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class LoginWidget extends StatefulWidget {
   const LoginWidget({super.key});
@@ -98,32 +99,40 @@ class _LoginWidgetState extends State<LoginWidget> {
   }) {
     return InputDecoration(
       hintText: hintText,
-      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: Colors.white,
+
+      hintStyle: const TextStyle(
+        color: AppColours.textPrimary,
+        fontSize: 14,
+      ),
+
+      prefixIcon: Icon(icon, color: AppColours.accent),
       suffixIcon: suffixIcon,
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF54414E), width: 1),
+        borderSide: const BorderSide(color: AppColours.accent, width: 1),
       ),
 
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF54414E), width: 1),
+        borderSide: const BorderSide(color: AppColours.accent, width: 1),
       ),
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFF54414E), width: 2),
+        borderSide: const BorderSide(color: AppColours.accent, width: 2),
       ),
 
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red, width: 1),
+        borderSide: const BorderSide(color: AppColours.error, width: 1),
       ),
 
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.red, width: 2),
+        borderSide: const BorderSide(color: AppColours.error, width: 2),
       ),
     );
   }
@@ -134,7 +143,7 @@ class _LoginWidgetState extends State<LoginWidget> {
       padding: const EdgeInsets.all(32),
 
       decoration: BoxDecoration(
-        color: const Color(0xFFB5BAD0),
+        color: AppColours.primary,
         borderRadius: BorderRadius.circular(16),
       ),
 
@@ -146,7 +155,7 @@ class _LoginWidgetState extends State<LoginWidget> {
           thickness: 1,
           child: SingleChildScrollView(
             controller: _scrollController,
-            padding: const EdgeInsets.only(right:12),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -158,7 +167,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF282828),
+                    color: AppColours.accent,
                   ),
                 ),
 
@@ -171,7 +180,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF3A3A3A),
+                    color: AppColours.accent,
                   ),
                 ),
 
@@ -181,7 +190,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                 const Text(
                   'Log in to your TableScout account',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Colors.black),
+                  style: TextStyle(fontSize: 15, color: AppColours.textPrimary),
                 ),
 
                 const SizedBox(height: 40),
@@ -197,6 +206,10 @@ class _LoginWidgetState extends State<LoginWidget> {
                 // Email
                 TextFormField(
                   controller: _emailController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
                   focusNode: _emailFocusNode,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -229,6 +242,10 @@ class _LoginWidgetState extends State<LoginWidget> {
                 // Password
                 TextFormField(
                   controller: _passwordController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
                   obscureText: _obscurePassword,
                   focusNode: _passwordFocusNode,
                   textInputAction: TextInputAction.done,
@@ -269,7 +286,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                     },
                     child: const Text(
                       'Forgot password?',
-                      style: TextStyle(color: Color(0xFF54414E)),
+                      style: TextStyle(color: AppColours.accent),
                     ),
                   ),
                 ),
@@ -282,8 +299,8 @@ class _LoginWidgetState extends State<LoginWidget> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF54414E),
-                      foregroundColor: const Color(0xFFB5BAD0),
+                      backgroundColor: AppColours.secondary,
+                      foregroundColor: AppColours.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -295,7 +312,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey,
+                              color: AppColours.accent,
                             ),
                           )
                         : const Text(
@@ -304,6 +321,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
+                              color: AppColours.accent
                             ),
                           ),
                   ),
@@ -320,7 +338,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                   children: [
                     const Text(
                       "Don't have an account?",
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColours.textPrimary),
                     ),
 
                     TextButton(
@@ -330,7 +348,7 @@ class _LoginWidgetState extends State<LoginWidget> {
                       child: const Text(
                         'Sign up',
                         style: TextStyle(
-                          color: Color(0xFF54414E),
+                          color: AppColours.accent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

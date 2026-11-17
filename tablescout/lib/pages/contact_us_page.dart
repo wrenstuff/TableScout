@@ -144,10 +144,15 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                 children: [
                                   TextFormField(
                                     controller: _nameController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 100,
                                     decoration: InputDecoration(
                                       labelText: 'Name',
                                       labelStyle: const TextStyle(
+                                        fontSize: 13,
                                         color: AppColours.accent,
                                       ),
                                       filled: true,
@@ -183,12 +188,17 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _emailController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 254,
                                     keyboardType:
                                         TextInputType.emailAddress,
                                     decoration: InputDecoration(
                                       labelText: 'Email',
                                       labelStyle: const TextStyle(
+                                        fontSize: 13,
                                         color: AppColours.accent,
                                       ),
                                       filled: true,
@@ -232,10 +242,15 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _subjectController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 150,
                                     decoration: InputDecoration(
                                       labelText: 'Subject',
                                       labelStyle: const TextStyle(
+                                        fontSize: 13,
                                         color: AppColours.accent,
                                       ),
                                       filled: true,
@@ -271,11 +286,16 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _messageController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLines: 5,
                                     maxLength: 300,
                                     decoration: InputDecoration(
                                       labelText: 'Message',
                                       labelStyle: const TextStyle(
+                                        fontSize: 13,
                                         color: AppColours.accent,
                                       ),
                                       filled: true,

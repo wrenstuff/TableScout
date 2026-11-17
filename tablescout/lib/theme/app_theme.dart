@@ -44,7 +44,7 @@ class AppTheme {
       //App bars
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColours.background,
-        foregroundColor: AppColours.textLight,
+        foregroundColor: AppColours.textPrimary,
         elevation: 0,
         titleTextStyle: AppTextStyles.pageTitle,
       ),
@@ -139,21 +139,28 @@ class AppTheme {
       // Date Picker
       datePickerTheme: DatePickerThemeData(
         backgroundColor: AppColours.surface,
-        headerBackgroundColor: AppColours.accent,
-        headerForegroundColor: AppColours.textLight,
+
+        // Header
+        headerBackgroundColor: AppColours.primary,
+        headerForegroundColor: AppColours.textPrimary,
+
         headerHeadlineStyle: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColours.textLight,
         ),
+
         headerHelpStyle: const TextStyle(
           fontSize: 12,
           color: AppColours.textLight,
         ),
         
+        // Calendar Text
         weekdayStyle: AppTextStyles.bodySmall,
         dayStyle: AppTextStyles.body,
         yearStyle: AppTextStyles.body,
+
+        // Selected and Today's date
         dayForegroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return AppColours.textLight;
@@ -167,29 +174,44 @@ class AppTheme {
           return null;
         }),
         todayForegroundColor: WidgetStateProperty.all(AppColours.accent),
-        todayBorder: const BorderSide(color: AppColours.accent),
+        todayBackgroundColor: WidgetStateProperty.all(AppColours.primary),
+        todayBorder: const BorderSide(
+          color: AppColours.accent,
+          width: 1.5,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
 
       // Time Picker
       timePickerTheme: TimePickerThemeData(
         backgroundColor: AppColours.surface,
+
+        // Selected Hour and minute
         hourMinuteColor: AppColours.primary,
-        hourMinuteTextColor: AppColours.textPrimary,
-        dialHandColor: AppColours.accent,
+        hourMinuteTextColor: AppColours.accent,
+
+        // Clock dial
+        dialHandColor: AppColours.secondary,
         dialBackgroundColor: AppColours.primary,
-        dialTextColor: AppColours.textPrimary,
+        dialTextColor: AppColours.accent,
+
+        // AM / PM selection
         entryModeIconColor: AppColours.accent,
         dayPeriodColor: AppColours.primary,
-        dayPeriodTextColor: AppColours.textPrimary,
+        dayPeriodTextColor: AppColours.accent,
+
+
         helpTextStyle: AppTextStyles.label,
+
         hourMinuteTextStyle: const TextStyle(
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColours.textPrimary,
         ),
+
         dayPeriodTextStyle: AppTextStyles.label,
         dialTextStyle: AppTextStyles.body,
+        
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)
         ),
       ),

@@ -135,7 +135,13 @@ class _EventCreationPageState extends State<EventCreationPage> {
               suffixIcon: Icon(icon,),
               errorText: field.errorText,
             ),
-            child: Text(value ?? 'Select'),
+            child: Text(
+              value ?? 'Select',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
+            ),
           ),
         );
       },
@@ -309,6 +315,10 @@ class _EventCreationPageState extends State<EventCreationPage> {
                     children: [
                       TextFormField(
                         controller: _nameController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration('Event Name'),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -320,6 +330,10 @@ class _EventCreationPageState extends State<EventCreationPage> {
                       const SizedBox(height: 16,),
                       TextFormField(
                         controller: _descriptionController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration('Description (Optional)'),
                         minLines: 3,
                         maxLines: 3,
@@ -374,6 +388,10 @@ class _EventCreationPageState extends State<EventCreationPage> {
                       const SizedBox(height: 16,),
                       TextFormField(
                         controller: _capacityController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration(
                           'Maximum capacity',
                           hint: 'Leave blank for unlimited'
@@ -384,6 +402,10 @@ class _EventCreationPageState extends State<EventCreationPage> {
                       const SizedBox(height: 16,),
                       TextFormField(
                         controller: _roundsController,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration('Number of rounds'),
                         keyboardType: TextInputType.number,
                         validator: (value) => _positiveInteger(value),
@@ -392,12 +414,22 @@ class _EventCreationPageState extends State<EventCreationPage> {
                       DropdownButtonFormField<int>(
                         initialValue: _gameId,
                         isExpanded: true,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration('Game'),
                         items: [
                           for (final game in widget.games)
                             DropdownMenuItem(
                               value: game.id,
-                              child: Text(game.name),
+                              child: Text(
+                                game.name,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF1D1D1D),
+                                ),
+                              ),
                             ),
                         ],
                         onChanged: (value) {
@@ -413,12 +445,22 @@ class _EventCreationPageState extends State<EventCreationPage> {
                         key: ValueKey(_gameId),
                         initialValue: _formatId,
                         isExpanded: true,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF1D1D1D),
+                        ),
                         decoration: _decoration('Format'),
                         items: [
                           for (final format in visibleFormats)
                             DropdownMenuItem(
                               value: format.id,
-                              child: Text(format.name),
+                              child: Text(
+                                format.name,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF1D1D1D),
+                                ),
+                              ),
                             )
                         ],
                         onChanged: _gameId == null

@@ -6,7 +6,7 @@ class AppTextStyles {
   static const TextStyle pageTitle = TextStyle(
     fontSize: 26,
     fontWeight: FontWeight.bold,
-    color: AppColours.textPrimary,
+    color: AppColours.accent,
   );
 
   // Section Headings
@@ -39,8 +39,8 @@ class AppTextStyles {
   // Form Labels
   static const label = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColours.textPrimary
+    fontWeight: FontWeight.w600,
+    color: AppColours.accent,
   );
 
   // Text entered into form fields
@@ -52,7 +52,7 @@ class AppTextStyles {
   // Placeholder Text
   static const TextStyle hint = TextStyle(
     fontSize: 14,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.normal,
     color: AppColours.textSecondary,
   );
 

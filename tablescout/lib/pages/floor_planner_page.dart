@@ -1162,6 +1162,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             child: TextFormField(
                               key: ValueKey('nickname-${selected.id}'),
                               initialValue: selected.nickname,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColours.textPrimary,
+                              ),
                               decoration: InputDecoration(
                                 hintText: 'Enter a name',
                                 filled: true,
@@ -1240,6 +1244,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           TextFormField(
                             key: ValueKey('lenght-${selected.id}'),
                             initialValue: selected.lengthCm.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -1290,6 +1298,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                           TextFormField(
                             key: ValueKey('width-${selected.id}'),
                             initialValue: selected.widthCm.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -1342,6 +1354,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             key: ValueKey('rotation-${selected.id}'),
                             initialValue: selected.rotationDegrees
                                 .toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                               signed: true,
@@ -1409,6 +1425,10 @@ class _FloorPlannerState extends State<FloorPlanner> {
                               child: TextFormField(
                                 key: ValueKey('text-${selected.id}'),
                                 initialValue: selected.text ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColours.textPrimary,
+                                ),
                                 maxLines: 4,
                                 decoration: InputDecoration(
                                   hintText: 'Enter Text',
@@ -1445,7 +1465,7 @@ class _FloorPlannerState extends State<FloorPlanner> {
                             ),
                           ],
 
-                          const SizedBox(height: 350),
+                          const SizedBox(height: 300),
 
                           //Delete
                           const Text(

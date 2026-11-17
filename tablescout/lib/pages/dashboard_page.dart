@@ -37,14 +37,14 @@ class DashboardEvent {
     debugPrint("Dashboard event JSON: $json");
 
     return DashboardEvent(
-      id: json['event_id'] as int, 
-      name: json['name'] as String? ?? 'Unnamed Event', 
-      game: games[json['game_id']] ?? 'Unknown Game', 
-      format: formats[json['format_id']] ?? 'Unknown Format', 
-      status: json['status'] as String? ?? 'Not Started', 
-      currentRound: json['current_round'] as int? ?? 0, 
-      rounds: json['rounds'] as int? ?? 0, 
-      startTime: json['start_time'] as String? ?? '', 
+      id: json['event_id'] as int,
+      name: json['name'] as String? ?? 'Unnamed Event',
+      game: games[json['game_id']] ?? 'Unknown Game',
+      format: formats[json['format_id']] ?? 'Unknown Format',
+      status: json['status'] as String? ?? 'Not Started',
+      currentRound: json['current_round'] as int? ?? 0,
+      rounds: json['rounds'] as int? ?? 0,
+      startTime: json['start_time'] as String? ?? '',
       endTime: json['end_time'] as String? ?? '',
     );
   }
@@ -58,13 +58,15 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-
   final List<DashboardEvent> _ongoingEvents = [];
 
   final _socket = WebSocketService.instance;
   StreamSubscription<dynamic>? _messageSubscription;
 
   final ScrollController _eventsController = ScrollController();
+
+  bool _hoverLeftChevron = false;
+  bool _hoverRightChevron = false;
 
   @override
   void initState() {
@@ -80,14 +82,14 @@ class _DashboardPageState extends State<DashboardPage> {
       },
     );
 
-    _socket.send({
-      'type': 'get_events_data',
-    });
+    _socket.send({'type': 'get_events_data'});
   }
 
   void _handleMessage(dynamic message) {
     try {
-      final data = Map<String, dynamic>.from(jsonDecode(message as String) as Map,);
+      final data = Map<String, dynamic>.from(
+        jsonDecode(message as String) as Map,
+      );
 
       if (data['type'] == 'error') {
         debugPrint('Dashboard event loading error: ${data['message']}');
@@ -113,12 +115,12 @@ class _DashboardPageState extends State<DashboardPage> {
               games,
               formats,
             ),
-          ).where(
-            (event) =>
-                event.status == 'running' ||
-                event.status == 'paused',
-          ).toList();
-      
+          )
+          .where(
+            (event) => event.status == 'running' || event.status == 'paused',
+          )
+          .toList();
+
       if (!mounted) return;
 
       setState(() {
@@ -143,14 +145,14 @@ class _DashboardPageState extends State<DashboardPage> {
     final distance = cardWidth + gap;
 
     final target = (_eventsController.offset + direction * distance)
-      .clamp(0.0, _eventsController.position.maxScrollExtent)
-      .toDouble();
+        .clamp(0.0, _eventsController.position.maxScrollExtent)
+        .toDouble();
 
-      _eventsController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    _eventsController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -187,13 +189,11 @@ class _DashboardPageState extends State<DashboardPage> {
               : const EdgeInsets.fromLTRB(55, 0, 0, 0),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius:
-                isMobile ? BorderRadius.zero : BorderRadius.circular(10),
+            borderRadius: isMobile
+                ? BorderRadius.zero
+                : BorderRadius.circular(10),
             color: AppColours.primary,
-            border: Border.all(
-              color: AppColours.accent,
-              width: 2,
-            ),
+            border: Border.all(color: AppColours.accent, width: 2),
           ),
           child: Column(
             children: [
@@ -217,13 +217,35 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Row(
                   children: [
                     // CHEVRON LEFT BUTTON
-                    if (eventCount > (ScreenDimensions.isMobile(context) ? 1 : 3))
-                      IconButton(
-                        icon: const Icon(
-                          Icons.chevron_left,
-                          color: AppColours.accent,
+                    if (eventCount >
+                        (ScreenDimensions.isMobile(context) ? 1 : 3))
+                      MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _hoverLeftChevron = true),
+                        onExit: (_) =>
+                            setState(() => _hoverLeftChevron = false),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _hoverLeftChevron
+                                  ? AppColours.secondary
+                                  : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.chevron_left,
+                              color: AppColours.accent,
+                            ),
+                            onPressed: () => _scrollEvents(-1),
+                          ),
                         ),
-                        onPressed: () => _scrollEvents(-1),
                       ),
 
                     Expanded(
@@ -235,10 +257,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
                           final cardWidth =
                               (constraints.maxWidth -
-                                      gap * (visibleCards - 1)) /
-                                  visibleCards;
+                                  gap * (visibleCards - 1)) /
+                              visibleCards;
 
-                          if (_ongoingEvents.isEmpty)  {
+                          if (_ongoingEvents.isEmpty) {
                             return const Center(
                               child: Text('No ongoing events'),
                             );
@@ -277,14 +299,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                       ),
                                     ),
 
-                                    const SizedBox(height: 12,),
+                                    const SizedBox(height: 12),
 
                                     Text(
                                       '${event.game} - ${event.format}',
                                       overflow: TextOverflow.ellipsis,
                                     ),
 
-                                    const SizedBox(height: 12,),
+                                    const SizedBox(height: 12),
 
                                     Row(
                                       children: [
@@ -295,32 +317,32 @@ class _DashboardPageState extends State<DashboardPage> {
                                           size: 18,
                                         ),
 
-                                        const SizedBox(width: 8,),
+                                        const SizedBox(width: 8),
 
                                         Text(
-                                          'Round ${event.currentRound} / ${event.rounds}'
+                                          'Round ${event.currentRound} / ${event.rounds}',
                                         ),
                                       ],
                                     ),
 
-                                    const SizedBox(width: 8,),
+                                    const SizedBox(width: 8),
 
                                     SizedBox(
                                       width: double.infinity,
                                       child: LinearProgressIndicator(
                                         value: event.rounds > 0
-                                            ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
+                                            ? (event.currentRound /
+                                                      event.rounds)
+                                                  .clamp(0.0, 1.0)
                                             : 0.0,
                                       ),
                                     ),
 
-                                    const SizedBox(height: 8,),
+                                    const SizedBox(height: 8),
 
                                     Text(
                                       '${event.startTime} - ${event.endTime}',
-                                      style: const TextStyle(
-                                        fontSize: 12
-                                      ),
+                                      style: const TextStyle(fontSize: 12),
                                     ),
                                   ],
                                 ),
@@ -331,13 +353,35 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     // CHEVRON RIGHT BUTTON
-                    if (eventCount > (ScreenDimensions.isMobile(context) ? 1 : 3))
-                      IconButton(
-                        icon: const Icon(
-                          Icons.chevron_right,
-                          color: AppColours.accent,
+                    if (eventCount >
+                        (ScreenDimensions.isMobile(context) ? 1 : 3))
+                      MouseRegion(
+                        onEnter: (_) =>
+                            setState(() => _hoverRightChevron = true),
+                        onExit: (_) =>
+                            setState(() => _hoverRightChevron = false),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _hoverRightChevron
+                                  ? AppColours.secondary
+                                  : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.chevron_right,
+                              color: AppColours.accent,
+                            ),
+                            onPressed: () => _scrollEvents(1),
+                          ),
                         ),
-                        onPressed: () => _scrollEvents(1),
                       ),
                   ],
                 ),
@@ -348,9 +392,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
         // FLOOR VIEW PANEL
         Container(
-          height: !isMobile
-              ? screenSize.height * 0.4
-              : screenSize.height * 0.6,
+          height: !isMobile ? screenSize.height * 0.4 : screenSize.height * 0.6,
           width: !isMobile ? double.infinity : screenWidth - 55,
           margin: !isMobile
               ? EdgeInsets.fromLTRB(
@@ -361,13 +403,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 )
               : const EdgeInsets.fromLTRB(55, 0, 0, 0),
           decoration: BoxDecoration(
-            borderRadius:
-                isMobile ? BorderRadius.zero : BorderRadius.circular(10),
+            borderRadius: isMobile
+                ? BorderRadius.zero
+                : BorderRadius.circular(10),
             color: AppColours.primary,
-            border: Border.all(
-              color: AppColours.accent,
-              width: 2,
-            ),
+            border: Border.all(color: AppColours.accent, width: 2),
           ),
           child: const Center(
             child: Text(

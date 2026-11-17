@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS events (
     standings TEXT DEFAULT '[]',
     bracket TEXT DEFAULT '[]',
     capacity INTEGER CHECK (capacity IS NULL OR capacity > 0),
-    pairings TEXT NOT NULL DEFAULT '[]',
+    pairings TEXT NOT NULL DEFAULT '[]'
 );
     """)
 

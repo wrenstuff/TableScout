@@ -303,6 +303,7 @@ class _AccountPageState extends State<AccountPage> {
                   style: TextStyle(
                     color: AppColours.accent,
                     fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
                 ),
                 subtitle: const Text(
@@ -586,6 +587,10 @@ class _EditPersonalInformationDialogState
               children: [
                 TextFormField(
                   controller: _usernameController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Username',
                     prefixIcon: Icon(Icons.person_outline),
@@ -600,6 +605,10 @@ class _EditPersonalInformationDialogState
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email address',
@@ -619,6 +628,10 @@ class _EditPersonalInformationDialogState
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _phoneController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
                     labelText: 'Phone number (optional)',

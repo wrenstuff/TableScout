@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
@@ -37,6 +38,7 @@ class _NavBarState extends State<NavBar> {
 
   bool _navOpen = true;
   bool _navInitialised = false;
+  bool _logoHovered = false;
 
   final GlobalKey _logoSectionKey = GlobalKey();
 
@@ -70,7 +72,6 @@ class _NavBarState extends State<NavBar> {
     const CloudPage(),
     const CustomisePage(),
     const NotificationsPage(),
-    
   ];
 
   String _getInitials(String? username) {
@@ -360,67 +361,80 @@ class _NavBarState extends State<NavBar> {
   }
 
   //logos
-
- Widget _buildLogoSection({
-  Key? key,
-}) {
-  return Column(
-    key: key,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      // TableScout logo
-      Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(
-          vertical: _navOpen ? 16 : 8,
-          horizontal: _navOpen ? 12 : 5,
-        ),
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColours.accent,
-              width: 2,
+  Widget _buildLogoSection({Key? key}) {
+    return Column(
+      key: key,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // TableScout logo
+        MouseRegion(
+          onEnter: (_) => setState(() => _logoHovered = true),
+          onExit: (_) => setState(() => _logoHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(0, _logoHovered ? -3 : 0, 0),
+            decoration: BoxDecoration(
+              color: _logoHovered
+                  ? AppColours.secondary.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _logoHovered ? AppColours.secondary : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 0;
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: _navOpen ? 10 : 5,
+                  horizontal: _navOpen ? 12 : 5,
+                ),
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColours.accent, width: 2),
+                  ),
+                ),
+                child: SvgPicture.asset(
+                  'assets/images/Tablescout_Logo_Flutter.svg',
+                  fit: BoxFit.contain,
+                  width: _navOpen ? 230 : 45,
+                ),
+              ),
             ),
           ),
         ),
-        child: Image.asset(
-          _navOpen
-              ? 'assets/images/Tablescout_Logo_PNG_V1.png'
-              : 'assets/images/Tablescout_Logo_PNG_V2.png',
-          fit: BoxFit.contain,
-          width: _navOpen ? 230 : 45,
-        ),
-      ),
 
-      // Store logo placeholder
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          vertical: 20,
-          horizontal: 12,
-        ),
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: AppColours.accent,
-              width: 2,
+        // Fake Store Logo / Bindle & Balm
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            vertical: _navOpen ? 10 : 5,
+            horizontal: _navOpen ? 12 : 5,
+          ),
+          alignment: Alignment.center,
+          decoration: const BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: AppColours.accent, width: 2),
             ),
           ),
-        ),
-        child: const Text(
-          'Store Logo',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColours.accent,
+          child: Image.asset(
+            'assets/images/Bindle_&_Balm.png',
+            fit: BoxFit.contain,
+            width: _navOpen ? 150 : 35,
           ),
         ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   // nav items
   Widget _buildNavItem({
@@ -431,14 +445,9 @@ class _NavBarState extends State<NavBar> {
     final isSelected = _selectedIndex == index;
 
     return Padding(
-      padding: const EdgeInsetsGeometry.symmetric(
-        horizontal: 8,
-        vertical: 3,
-      ),
+      padding: const EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 3),
       child: Material(
-        color: isSelected
-            ? AppColours.accent
-            : Colors.transparent,
+        color: isSelected ? AppColours.accent : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         child: InkWell(
           borderRadius: BorderRadius.circular(6),
@@ -449,10 +458,7 @@ class _NavBarState extends State<NavBar> {
             });
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 11,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
             decoration: BoxDecoration(
               border: Border.all(
                 color: AppColours.accent,
@@ -464,9 +470,7 @@ class _NavBarState extends State<NavBar> {
               children: [
                 Icon(
                   icon,
-                  color: isSelected
-                      ? AppColours.textLight
-                      : AppColours.accent,
+                  color: isSelected ? AppColours.textLight : AppColours.accent,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

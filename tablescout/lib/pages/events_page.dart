@@ -1008,8 +1008,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: AppColours.primary,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColours.accent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1043,7 +1047,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(child: Text('${index + 1}')),
-                        title: Text(_registeredPlayers[index]),
+                        title: Text(
+                          _registeredPlayers[index],
+                          style: const TextStyle(fontSize: 20),
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.close, color: Colors.red),
                           tooltip: 'Remove player',
@@ -1092,8 +1099,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: AppColours.primary,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColours.accent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
