@@ -656,246 +656,321 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         : _buildEventDetails(padWidth, padHeight);
   }
 
+
   Widget _buildEventDetails(double padWidth, double padHeight) {
     final event = _selectedEvent!;
 
     final game = _games.where((game) => game.id == event.gameId);
-
     final format = _formats.where((format) => format.id == event.formatId);
 
     return Container(
-      decoration: const BoxDecoration(color: AppColours.background),
+      decoration: const BoxDecoration(
+        color: AppColours.background,
+      ),
       margin: !ScreenDimensions.isMobile(context)
           ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
           : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          TextButton.icon(
+            onPressed: _backToEvents,
+            icon: const Icon(Icons.arrow_back, color: AppColours.accent),
+            label: const Text(
+              'Back to Events',
+              style: TextStyle(
+                color: AppColours.accent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          Text(
+            event.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
           Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextButton.icon(
-                  onPressed: _backToEvents,
-                  icon: const Icon(Icons.arrow_back, color: AppColours.accent),
-                  label: const Text(
-                    'Back to Events',
-                    style: TextStyle(
-                      color: AppColours.accent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = ScreenDimensions.isMobile(context);
 
-                Text(
-                  event.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColours.accent,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-                
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColours.primary,
-                    border: Border.all(color: AppColours.accent, width: 2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-
-                _detailRow('Game', game.isEmpty ? 'Unknown' : game.first.name),
-                _detailRow(
-                  'Format',
-                  format.isEmpty ? 'Unknown' : format.first.name,
-                ),
-                _detailRow(
-                  'Recommended Players',
-                  format.isEmpty ? 'Unknown' : format.first.playRec.toString(),
-                ),
-                _detailRow('Description', event.description),
-                _detailRow('Date', event.date),
-                _detailRow('Start Time', event.startTime),
-                _detailRow('End Time', event.endTime),
-                _detailRow('Tables', event.tables.join(', ')),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          const Text(
-            'Event Management',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColours.accent,
-            ),
-          ),
-
-                const SizedBox(height: 24),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColours.primary,
-              border: Border.all(color: AppColours.accent, width: 2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (event.status == 'not_started')
-                  ElevatedButton(
-                    onPressed: _startEvent,
-                    style: _eventButtonStyle(),
-                    child: const Text('Start'),
-                  ),
-                if (event.status == 'running')
-                  ElevatedButton(
-                    onPressed: _pauseEvent,
-                    style: _eventButtonStyle(),
-                    child: const Text('Pause'),
-                  ),
-                if (event.status == 'paused')
-                  ElevatedButton(
-                    onPressed: _resumeEvent,
-                    style: _eventButtonStyle(),
-                    child: const Text('Resume'),
-                  ),
-                if (event.status == 'running' || event.status == 'paused')
-                  ElevatedButton(
-                    onPressed: _stopEvent,
-                    style: _eventButtonStyle(),
-                    child: const Text('Stop'),
-                  ),
-                if (event.status == 'stopped')
-                    ElevatedButton(
-                      onPressed: _restartEvent,
-                      style: _eventButtonStyle(),
-                      child: const Text('Restart'),
-                    ),
-                OutlinedButton(
-                  onPressed: _resetEvent,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColours.accent,
-                    side: BorderSide(color: AppColours.accent, width: 2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(8),
-                    ),
-                  ),
-                  child: const Text('Reset Event'),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          const Text(
-            'Round Management',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColours.accent,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColours.primary,
-              border: Border.all(color: AppColours.accent, width: 2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Round ${event.currentRound} / ${event.rounds}',
-                  style: const TextStyle(
-                    color: AppColours.accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: event.rounds > 0
-                        ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
-                        : 0,
-                    minHeight: 12,
-                    backgroundColor: AppColours.surface,
-                    color: AppColours.accent,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    ElevatedButton(
-                      onPressed:
-                          event.status == 'running' &&
-                              event.currentRound < event.rounds
-                          ? _startRound
-                          : null,
-                      style: _eventButtonStyle(),
-                      child: const Text('Start Next Round'),
-                    ),
-
-                    OutlinedButton(
-                      onPressed:
-                          event.status == 'running' && event.currentRound > 0
-                          ? _finishRound
-                          : null,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColours.accent,
-                        disabledForegroundColor: AppColours.disabled,
-                        side: const BorderSide(
-                          color: AppColours.accent,
-                          width: 2,
+                final leftColumn = SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Event Details
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _detailRow(
+                              'Game',
+                              game.isEmpty ? 'Unknown' : game.first.name,
+                            ),
+                            _detailRow(
+                              'Format',
+                              format.isEmpty ? 'Unknown' : format.first.name,
+                            ),
+                            _detailRow('Description', event.description),
+                            _detailRow('Date', event.date),
+                            _detailRow('Start Time', event.startTime),
+                            _detailRow('End Time', event.endTime),
+                            _detailRow('Tables', event.tables.join(', ')),
+                          ],
                         ),
                       ),
-                      child: const Text('Finish Round'),
+
+                      const SizedBox(height: 24),
+
+                      // Event Management
+                      const Text(
+                        'Event Management',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColours.accent,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            if (event.status == 'not_started')
+                              ElevatedButton(
+                                onPressed: _startEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Start'),
+                              ),
+
+                            if (event.status == 'running')
+                              ElevatedButton(
+                                onPressed: _pauseEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Pause'),
+                              ),
+
+                            if (event.status == 'paused')
+                              ElevatedButton(
+                                onPressed: _resumeEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Resume'),
+                              ),
+
+                            if (event.status == 'running' ||
+                                event.status == 'paused')
+                              ElevatedButton(
+                                onPressed: _stopEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Stop'),
+                              ),
+
+                            if (event.status == 'stopped')
+                              ElevatedButton(
+                                onPressed: _restartEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Restart'),
+                              ),
+
+                            OutlinedButton(
+                              onPressed: _resetEvent,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColours.accent,
+                                side: const BorderSide(
+                                  color: AppColours.accent,
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Reset Event'),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Round Management
+                      const Text(
+                        'Round Management',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColours.accent,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Round ${event.currentRound} / ${event.rounds}',
+                              style: const TextStyle(
+                                color: AppColours.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: event.rounds > 0
+                                    ? (event.currentRound / event.rounds)
+                                        .clamp(0.0, 1.0)
+                                    : 0,
+                                minHeight: 12,
+                                backgroundColor: AppColours.surface,
+                                color: AppColours.accent,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                ElevatedButton(
+                                  onPressed:
+                                      event.status == 'running' &&
+                                              event.currentRound < event.rounds
+                                          ? _startRound
+                                          : null,
+                                  style: _eventButtonStyle(),
+                                  child: const Text('Start Next Round'),
+                                ),
+
+                                OutlinedButton(
+                                  onPressed:
+                                      event.status == 'running' &&
+                                              event.currentRound > 0
+                                          ? _finishRound
+                                          : null,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColours.accent,
+                                    disabledForegroundColor:
+                                        AppColours.disabled,
+                                    side: const BorderSide(
+                                      color: AppColours.accent,
+                                      width: 2,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('Finish Round'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                final rightColumn = SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildRegisteredPlayersPanel(),
+                      const SizedBox(height: 24),
+                      _buildPairingsPanel(),
+                    ],
+                  ),
+                );
+
+                if (isMobile) {
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        leftColumn,
+                        const SizedBox(height: 24),
+                        rightColumn,
+                      ],
+                    ),
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: leftColumn,
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 2,
+                      child: rightColumn,
                     ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
-
+ 
   Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),

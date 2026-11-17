@@ -218,10 +218,14 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     }
   }
   
+ 
   Widget _buildStaffContent() {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
+
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -235,7 +239,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadStaff,
-              child: const Text('Page failed to load'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -243,38 +247,92 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     }
 
     if (staffMembers.isEmpty) {
-      return const Center(child: Text('no staff were found.'));
+      return const Center(
+        child: Text('No staff were found.'),
+      );
     }
 
-    return SingleChildScrollView(
-      child: SizedBox(
-        width: double.infinity,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Username')),
-            DataColumn(label: Text('Email')),
-            DataColumn(label: Text('Role')),
-            DataColumn(label: Text('Actions')),
-          ],
-          rows: staffMembers.map((staff) {
-            return DataRow(
-              cells: [
-                DataCell(Text(staff['username']?.toString() ?? '')),
-                DataCell(Text(staff['email']?.toString() ?? '')),
-                DataCell(Text(staff['role']?.toString() ?? '')),
-                DataCell(staff['can_edit'] == true
-                ? IconButton(
-                  tooltip: 'Edit staff member',
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editStaff(staff),
-                )
-                : const SizedBox.shrink(),
+    final session = context.read<SessionManager>();
+
+    return ListView.builder(
+      itemCount: staffMembers.length,
+      itemBuilder: (context, index) {
+        final employee = staffMembers[index];
+
+        final username = employee['username']?.toString() ?? '';
+        final email = employee['email']?.toString() ?? '';
+        final role = employee['role']?.toString() ?? '';
+
+        final canEdit =
+            session.isAdmin ||
+            (session.isStore &&
+                (role == 'MANAGER' ||
+                    role == 'SUPERVISOR' ||
+                    role == 'STAFF')) ||
+            (session.isManager &&
+                (role == 'SUPERVISOR' ||
+                    role == 'STAFF'));
+
+        return Card(
+          color: AppColours.panel,
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(
+              color: AppColours.border,
+              width: 2,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+            leading: CircleAvatar(
+              backgroundColor: AppColours.accent,
+              child: Text(
+                username.isNotEmpty
+                    ? username[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  color: AppColours.textLight,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
+              ),
+            ),
+            title: Text(
+              username,
+              style: const TextStyle(
+                color: AppColours.accent,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+            subtitle: Text(
+              '$email\n$role',
+              style: const TextStyle(
+                color: AppColours.accent,
+                height: 1.5,
+              ),
+            ),
+            isThreeLine: true,
+            trailing: canEdit
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.edit,
+                      color: AppColours.accent,
+                    ),
+                    tooltip: 'Edit employee',
+                    onPressed: () => _editStaff(employee),
+                  )
+                : const Icon(
+                    Icons.lock_outline,
+                    color: AppColours.accent,
+                  ),
+          ),
+        );
+      },
     );
   }
 
@@ -320,85 +378,8 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
             const SizedBox(height: 20),
 
             Expanded(
-              child: ListView.builder(
-                itemCount: staffMembers.length,
-                itemBuilder: (context, index) {
-                  final employee = staffMembers[index];
-                  final session = context.read<SessionManager>();
-
-                  final canEdit =
-                      session.isAdmin ||
-                      (session.isStore &&
-                          (employee['role'] == 'MANAGER' ||
-                              employee['role'] == 'SUPERVISOR' ||
-                              employee['role'] == 'STAFF')) ||
-                      (session.isManager &&
-                          (employee['role'] == 'SUPERVISOR' ||
-                              employee['role'] == 'STAFF'));
-
-                  return Card(
-                    color: AppColours.panel,
-                    elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(12),
-                      side: const BorderSide(
-                        color: AppColours.border,
-                        width: 2,
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      leading: CircleAvatar(
-                        backgroundColor: AppColours.accent,
-                        child: Text(
-                          employee['username']![0].toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColours.textLight,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        employee['username']!,
-                        style: const TextStyle(
-                          color: AppColours.accent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '${employee['email']}\n${employee['role']}',
-                        style: const TextStyle(
-                          color: AppColours.accent,
-                          height: 1.5,
-                        ),
-                      ),
-                      isThreeLine: true,
-                      trailing: canEdit
-                          ? IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: AppColours.accent,
-                              ),
-                              tooltip: 'Edit employee',
-                              onPressed: () {
-                                // Editing functionality comes next
-                              },
-                            )
-                          : const Icon(
-                            Icons.lock_outline,
-                            color: AppColours.accent,
-                          ),
-                    ),
-                  );
-                },
-              ),
+              child: _buildStaffContent(),
             ),
-            Expanded(child: _buildStaffContent()),
           ],
         ),
       ),
