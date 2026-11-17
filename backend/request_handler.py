@@ -14,6 +14,14 @@ from event_page_handler import (
     create_game,
     create_format,
     get_events_data,
+    update_event_player,
+    generate_event_pairings,
+    start_event,
+    pause_event,
+    resume_event,
+    stop_event,
+    restart_event,
+    reset_event,
 )
 
 def get_authenticated_user(token):
@@ -129,6 +137,110 @@ async def handle_request(message, session):
             "Authentication required. Please log in again."
         )
 
+    if request_type in ("add_event_player", "remove_event_player"):
+        event_id = data.get("event_id")
+        player_name = data.get("player_name")
+
+        if not event_id:
+            return {
+                "type": "error",
+                "message": "Missing event ID",
+            }
+
+        if not player_name or not player_name.strip():
+            return {
+                "type": "error",
+                "message": "Player name cannot be empty",
+            }
+
+        action = (
+            "add"
+            if request_type == "add_event_player"
+            else "remove"
+        )
+
+        try:
+            await asyncio.to_thread(
+                update_event_player,
+                event_id,
+                player_name,
+                action,
+                store_id,
+            )
+
+            return await asyncio.to_thread(
+                get_events_data,
+                store_id,
+            )
+
+        except(ValueError, sqlite3.Error) as error:
+            return {
+                "type": "error",
+                "message": str(error),
+            }
+
+    if request_type == "generate_event_pairings":
+
+        event_id = data.get("event_id")
+
+        if type(event_id) is not int:
+            raise ValueError("Invalid event ID")
+
+        result  = generate_event_pairings(
+            event_id,
+            store_id
+        )
+
+        return result
+
+    if request_type in (
+        "start_event",
+        "pause_event",
+        "resume_event",
+        "stop_event",
+        "restart_event",
+        "reset_event",
+    ):
+        event_id = data.get("event_id")
+
+        if not isinstance(event_id, int):
+            return {
+                "type": "error",
+                "message": "Invalid event ID"
+            }
+
+        event_actions = {
+            "start_event": start_event,
+            "pause_event": pause_event,
+            "resume_event": resume_event,
+            "stop_event": stop_event,
+            "restart_event": restart_event,
+            "reset_event": reset_event,
+        }
+
+        try:
+            await asyncio.to_thread(
+                event_actions[request_type],
+                event_id,
+                store_id
+            )
+
+            return await asyncio.to_thread(get_events_data, store_id)
+
+        except ValueError as error:
+            return {
+                "type": "error",
+                "message": str(error)
+            }
+
+        except Exception as error:
+            print(f"Event action failed: {error}")
+
+            return {
+                "type": "error",
+                "message": "Unable to update event."
+            }
+
     if request_type not in (
         "get_events_data",
         "create_game",
@@ -177,15 +289,20 @@ async def handle_request(message, session):
 
             elif request_type == "create_format":
                 game_id = data.get("game_id")
+                play_rec = data.get("play_rec", 2)
 
                 if type(game_id) is not int or game_id <= 0:
                     raise ValueError("Select a valid game.")
+
+                if type(play_rec) is not int or play_rec <= 0:
+                    raise ValueError("Recommended players must be a positive integer.")
 
                 await asyncio.to_thread(
                     create_format,
                     game_id,
                     name,
                     name_short,
+                    play_rec,
                 )
 
         # Return event data for event-related requests
