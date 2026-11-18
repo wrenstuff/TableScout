@@ -5,9 +5,11 @@ import sqlite3
 
 from signup_handler import handle_signup
 from contact_handler import handle_contact
+from floor_plan_handler import get_floor_plan, save_floor_plan
 from database.jwt_auth import token_verify
 from contextlib import closing
 from database.Dbconnection import Dbconnect
+
 
 from event_page_handler import (
     create_event,
@@ -136,6 +138,44 @@ async def handle_request(message, session):
         return error_response(
             "Authentication required. Please log in again."
         )
+
+    # Floor plan requests
+    if request_type == "get_floor_plan":
+        try:
+            layout = await asyncio.to_thread(
+                get_floor_plan,
+                store_id,
+            )
+
+            return {
+                "type": "floor_plan_data",
+                "request_id": request_id,
+                "layout": layout,
+            }
+
+        except (ValueError, sqlite3.Error) as error:
+            return error_response(str(error))
+
+    if request_type == "save_floor_plan":
+        layout = data.get("layout")
+
+        try:
+            await asyncio.to_thread(
+                save_floor_plan,
+                store_id,
+                layout,
+            )
+
+            return {
+                "type": "floor_plan_saved",
+                "request_id": request_id,
+                "success": True,
+            }
+
+        except (ValueError, sqlite3.Error) as error:
+            return error_response(str(error))
+
+    # event requests    
 
     if request_type in ("add_event_player", "remove_event_player"):
         event_id = data.get("event_id")

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -8,17 +7,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 
 import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
+import 'package:tablescout/services/websocket_service.dart';
 
 class FloorPlanner extends StatefulWidget {
   const FloorPlanner({super.key});
 
   @override
-  State<FloorPlanner> createState() => _FloorPlannerState();
+  State<FloorPlanner> createState() => FloorPlannerState();
 }
 
 enum FloorPlannerTool { cursor, hand, wall, door, exit, window, texbox }
 
-class _FloorPlannerState extends State<FloorPlanner> {
+class FloorPlannerState extends State<FloorPlanner> {
   static const double outerPadding = 20;
   static const double toolbarWidth = 200;
   static const double bottomToolbarHeight = 80;
@@ -42,13 +42,23 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   bool get _canUndo => _undoStack.isNotEmpty;
   bool get _canRedo => _redoStack.isNotEmpty;
+  bool get hasUnsavedChanges {
+    if (_savedLayoutSnapshot == null) return false;
+
+    return _createLayoutSnapshot() != _savedLayoutSnapshot;
+  }
 
   // Stores the floor plan before an object is moved.
   _FloorPlanSnapshot? _moveStartSnapshot;
 
+  // Storing saved floor plan
+  String? _savedLayoutSnapshot;
+
   final GlobalKey _canvasKey = GlobalKey();
 
   final GlobalKey _interactiveViewerKey = GlobalKey();
+
+  final WebSocketService _socket = WebSocketService.instance;
 
   FloorObject? _selectedObject;
 
@@ -61,7 +71,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
 
   bool _fileBusy = false;
 
-  final File _layoutFile = File('floor_layout.json');
+  @override
+  void initState(){
+    super.initState();
+
+    // Automatically load the saved floor plan when the page opens.
+    _loadLayout();
+  }
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -215,21 +231,21 @@ class _FloorPlannerState extends State<FloorPlanner> {
         ],
       };
 
-      debugPrint('Starting JSON Conversion');
+      final response = await _socket.request({
+        'type': 'save_floor_plan',
+        'layout': data,
+      });
 
-      final json = const JsonEncoder.withIndent('  ').convert(data);
+      if (response['type'] != 'floor_plan_saved' ||
+          response['success'] != true) {
+        throw StateError('The server did not confirm the save.');
+      }
 
-      debugPrint('JSON conversion successful!');
+      _savedLayoutSnapshot = _createLayoutSnapshot();
 
-      debugPrint('Starting file write');
-
-      await _layoutFile.writeAsString(json, flush: true);
-
-      debugPrint('File write successful');
-
-      _showMessage('Layout saved to ${_layoutFile.absolute.path}');
+      _showMessage('Floor plan saved successfully.');
     } catch (error) {
-      _showMessage('Could not save layout: $error');
+      _showMessage('Could not save floor plan: $error');
     } finally {
       if (mounted) {
         setState(() => _fileBusy = false);
@@ -237,23 +253,120 @@ class _FloorPlannerState extends State<FloorPlanner> {
     }
   }
 
+  Future<void> saveLayout() async {
+  await _saveLayout();
+  }
+
+  Widget _buildFloorPlanPreview() {
+    if (_objects.isEmpty) {
+      return const Center(
+        child: Text('No floor plan has been created yet.'),
+      );
+    }
+
+    double minX = double.infinity;
+    double minY = double.infinity;
+    double maxX = double.negativeInfinity;
+    double maxY = double.negativeInfinity;
+
+    for (final object in _objects) {
+      final radians = object.rotationDegrees * math.pi / 180;
+
+      final rotatedWidth =
+          object.lengthCm * math.cos(radians).abs() +
+          object.widthCm * math.sin(radians).abs();
+
+      final rotatedHeight =
+          object.lengthCm * math.sin(radians).abs() +
+          object.widthCm * math.cos(radians).abs();
+
+      final centreX = object.position.dx + object.lengthCm / 2;
+      final centreY = object.position.dy + object.widthCm / 2;
+
+      minX = math.min(minX, centreX - rotatedWidth / 2);
+      minY = math.min(minY, centreY - rotatedHeight / 2);
+      maxX = math.max(maxX, centreX + rotatedWidth / 2);
+      maxY = math.max(maxY, centreY + rotatedHeight / 2);
+    }
+
+    const buffer = 40.0;
+
+    final contentWidth = maxX - minX + buffer * 2;
+    final contentHeight = maxY - minY + buffer * 2;
+
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: SizedBox(
+          width: contentWidth,
+          height: contentHeight,
+          child: Stack(
+            children: [
+              for (final object in _objects)
+                Positioned(
+                  left: object.position.dx - minX + buffer,
+                  top: object.position.dy - minY + buffer,
+                  child: Transform.rotate(
+                    angle: object.rotationDegrees * math.pi / 180,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: object.lengthCm,
+                      height: object.widthCm,
+                      decoration: BoxDecoration(
+                        color: object.type.objectColor,
+                        border: Border.all(
+                          color: Colors.black54,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      alignment: Alignment.center,
+                      child: object.type == FloorObjectType.textbox
+                          ? Text(
+                              object.text ?? '',
+                              textAlign: TextAlign.center,
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _loadLayout() async {
     if (_fileBusy) return;
 
-    setState(() => _fileBusy = true);
+    setState(() => _fileBusy =true);
 
     try {
-      if (!await _layoutFile.exists()) {
-        _showMessage('No saved layout found. Save a layout first.');
+      final response = await _socket.request({
+        'type': 'get_floor_plan',
+      });
+
+      if (response['type'] != 'floor_plan_data') {
+        throw StateError('Unexpected server response.');
+      }
+
+      final savedLayout = response['layout'];
+
+      if (savedLayout == null) {
+        _showMessage('No saved floor plan found.');
         return;
       }
 
-      final decoded = jsonDecode(await _layoutFile.readAsString());
+      if (savedLayout is! Map) {
+        throw const FormatException('Invalid saved layout.');
+      }
 
-      if (decoded is! Map<String, dynamic> ||
-          (decoded['version'] != 1 && decoded['version'] != 2) ||
+      final decoded = Map<String, dynamic>.from(savedLayout);
+
+      if ((decoded['version'] != 1 && decoded['version'] != 2) ||
           decoded['objects'] is! List) {
-        throw const FormatException('Invalid layout file.');
+        throw const FormatException('Invalid layout data.');
       }
 
       final loadedObjects = <FloorObject>[];
@@ -279,36 +392,47 @@ class _FloorPlannerState extends State<FloorPlanner> {
         return value.toDouble();
       }
 
-      // Validate everything before replacing the current layout.
+      // Validate everything before repalcing current layout.
       for (final entry in decoded['objects'] as List) {
-        if (entry is! Map<String, dynamic>) {
+        if (entry is! Map) {
           throw const FormatException('Invalid object.');
         }
 
-        final id = entry['id'];
+        final objectData = Map<String, dynamic>.from(entry);
+
+        final id = objectData['id'];
 
         if (id is! int || id < 1 || !ids.add(id)) {
           throw const FormatException('Invalid or duplicate object ID.');
         }
 
         final matchingTypes = FloorObjectType.values.where(
-          (type) => type.name == entry['type'],
+          (type) => type.name == objectData['type'],
         );
 
         if (matchingTypes.isEmpty) {
-          throw FormatException('Unknown object type: ${entry['type']}');
+          throw FormatException(
+            'Unknown object type: ${objectData['type']}',
+          );
         }
 
-        final x = readNumber(entry, 'x');
-        final y = readNumber(entry, 'y');
+        final x = readNumber(objectData, 'x');
+        final y = readNumber(objectData, 'y');
 
-        // Read the new dimension fields, or fall back to old width/height.
-        final lengthCm = readNumber(entry, 'lengthCm', oldKey: 'width');
+        final lengthCm = readNumber(
+          objectData,
+          'lengthCm',
+          oldKey: 'width',
+        );
 
-        final widthCm = readNumber(entry, 'widthCm', oldKey: 'height');
+        final widthCm = readNumber(
+          objectData,
+          'widthCm',
+          oldKey: 'height',
+        );
 
         final rotationDegrees = readNumber(
-          entry,
+          objectData,
           'rotationDegrees',
           defaultValue: 0,
         );
@@ -317,13 +441,13 @@ class _FloorPlannerState extends State<FloorPlanner> {
           throw const FormatException('Invalid position or size.');
         }
 
-        final nickname = entry['nickname'];
+        final nickname = objectData['nickname'];
 
         if (nickname != null && nickname is! String) {
-          throw const FormatException('Invalid object nickname');
+          throw const FormatException('Invalid object nickname.');
         }
 
-        final text = entry['text'];
+        final text = objectData['text'];
 
         if (text != null && text is! String) {
           throw const FormatException('Invalid object text.');
@@ -356,9 +480,15 @@ class _FloorPlannerState extends State<FloorPlanner> {
         _selectedObject = null;
       });
 
-      _showMessage('Layout loaded.');
+      // A loaded layout should not be treated as a new edit.
+      _undoStack.clear();
+      _redoStack.clear();
+
+      _savedLayoutSnapshot = _createLayoutSnapshot();
+
+      // Only update the canvas; don't show a message for automatic loading.
     } catch (error) {
-      _showMessage('Could not load layout: $error');
+      _showMessage('Could not load floor plan: $error');
     } finally {
       if (mounted) {
         setState(() => _fileBusy = false);
@@ -374,6 +504,27 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final objectNumber = sameTypeObjects.indexOf(object) + 1;
 
     return '${object.type.label} $objectNumber';
+  }
+
+  String _createLayoutSnapshot() {
+    final data = {
+      'objects': [
+        for (final object in _objects)
+          {
+            'id': object.id,
+            'type': object.type.name,
+            'x': object.position.dx,
+            'y': object.position.dy,
+            'lengthCm': object.lengthCm,
+            'widthCm': object.widthCm,
+            'rotationDegrees': object.rotationDegrees,
+            'nickname': object.nickname,
+            'text': object.text,
+          },
+      ],
+    };
+
+    return jsonEncode(data);
   }
 
   void _addObjectAt(FloorObjectType type, Offset dropPosition) {
@@ -449,8 +600,8 @@ class _FloorPlannerState extends State<FloorPlanner> {
     final angle = object.rotationDegrees * math.pi / 180;
 
     final canvasDelta = Offset(
-      delta.dx * math.cos(angle) - delta.dy * math.sin(angle),
-      delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
+      delta.dx * math.cos(angle) + delta.dy * math.sin(angle),
+      -delta.dx * math.sin(angle) + delta.dy * math.cos(angle),
     );
 
     final newPosition = object.position + (canvasDelta / scale);

@@ -37,28 +37,28 @@ class _NavBarState extends State<NavBar> {
 
   final GlobalKey _logoSectionKey = GlobalKey();
 
+  final GlobalKey<FloorPlannerState> _floorPlannerKey =
+    GlobalKey<FloorPlannerState>();
+
   double _logoSectionHeight = 0;
 
   late final List<Widget> _pages = [
-    DashboardPage(),
+    DashboardPage(
+      onNavigateToFloorAllocator: () => _navigateTo(1),
+    ),
     const Center(child: Text('Floor Allocator')),
-    FloorPlanner(),
+    FloorPlanner(key: _floorPlannerKey),
     EventsOverviewPage(),
     ContactUsPage(),
     //AccountPage(),
     SettingsPage(onNavigate: (index) {
-      setState(() {
-        _selectedIndex = index;
-        
-      });
+      _navigateTo(index);
     },
   ),
     
     AccountPage(
       onNavigateToPassword: () {
-        setState(() {
-          _selectedIndex =9;
-        });
+        _navigateTo(9);
       },
     ),
     const StaffManagementPage(),
@@ -71,6 +71,70 @@ class _NavBarState extends State<NavBar> {
 
   
   ];
+
+  Future<void> _navigateTo(int index) async {
+    // If we're already on the selected page, do nothing.
+    if (index == _selectedIndex) return;
+
+    // Check whether we're leaving the Floor Planner.
+    if (_selectedIndex == 2) {
+      final floorPlanner = _floorPlannerKey.currentState;
+
+      if (floorPlanner != null && floorPlanner.hasUnsavedChanges) {
+        final choice = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Unsaved Changes'),
+              content: const Text(
+                'You have made changes to your floor plan. '
+                'Would you like to save before leaving?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'cancel');
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'discard');
+                  },
+                  child: const Text('Discard'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'save');
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+
+        // Cancel: stay on the Floor Planner.
+        if (choice == 'cancel' || choice == null) return;
+
+        // Save: save the floor plan before leaving.
+        if (choice == 'save') {
+          await floorPlanner.saveLayout();
+
+          if (floorPlanner.hasUnsavedChanges) {
+            return;
+          }
+        }
+        
+        // Discard: continue navigating without saving.
+      }
+    }
+
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -422,9 +486,7 @@ class _NavBarState extends State<NavBar> {
         leading: Icon(icon),
         title: Text(label),
         onTap: () {
-          setState(() {
-            _selectedIndex = index;
-          });
+          _navigateTo(index);
         },
       )
     );
