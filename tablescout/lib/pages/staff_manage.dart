@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/services/staffmanage_service.dart';
 import 'package:provider/provider.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class StaffManagementPage extends StatefulWidget {
   const StaffManagementPage({super.key});
@@ -217,10 +218,14 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     }
   }
   
+ 
   Widget _buildStaffContent() {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
+
     if (errorMessage != null) {
       return Center(
         child: Column(
@@ -234,7 +239,7 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadStaff,
-              child: const Text('Page failed to load'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -242,45 +247,110 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
     }
 
     if (staffMembers.isEmpty) {
-      return const Center(child: Text('no staff were found.'));
+      return const Center(
+        child: Text('No staff were found.'),
+      );
     }
 
-    return SingleChildScrollView(
-      child: SizedBox(
-        width: double.infinity,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Username')),
-            DataColumn(label: Text('Email')),
-            DataColumn(label: Text('Role')),
-            DataColumn(label: Text('Actions')),
-          ],
-          rows: staffMembers.map((staff) {
-            return DataRow(
-              cells: [
-                DataCell(Text(staff['username']?.toString() ?? '')),
-                DataCell(Text(staff['email']?.toString() ?? '')),
-                DataCell(Text(staff['role']?.toString() ?? '')),
-                DataCell(staff['can_edit'] == true
-                ? IconButton(
-                  tooltip: 'Edit staff member',
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editStaff(staff),
-                )
-                : const SizedBox.shrink(),
+    final session = context.read<SessionManager>();
+
+    return ListView.builder(
+      itemCount: staffMembers.length,
+      itemBuilder: (context, index) {
+        final employee = staffMembers[index];
+
+        final username = employee['username']?.toString() ?? '';
+        final email = employee['email']?.toString() ?? '';
+        final role = employee['role']?.toString() ?? '';
+
+        final canEdit =
+            session.isAdmin ||
+            (session.isStore &&
+                (role == 'MANAGER' ||
+                    role == 'SUPERVISOR' ||
+                    role == 'STAFF')) ||
+            (session.isManager &&
+                (role == 'SUPERVISOR' ||
+                    role == 'STAFF'));
+
+        return Card(
+          color: AppColours.panel,
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(
+              color: AppColours.border,
+              width: 2,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+            leading: CircleAvatar(
+              backgroundColor: AppColours.accent,
+              child: Text(
+                username.isNotEmpty
+                    ? username[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                  color: AppColours.textLight,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
+              ),
+            ),
+            title: Text(
+              username,
+              style: const TextStyle(
+                color: AppColours.accent,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+            subtitle: Text(
+              '$email\n$role',
+              style: const TextStyle(
+                color: AppColours.accent,
+                height: 1.5,
+              ),
+            ),
+            isThreeLine: true,
+            trailing: canEdit
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.edit,
+                      color: AppColours.accent,
+                    ),
+                    tooltip: 'Edit employee',
+                    onPressed: () => _editStaff(employee),
+                  )
+                : const Icon(
+                    Icons.lock_outline,
+                    color: AppColours.accent,
+                  ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Staff Management')),
+      backgroundColor: AppColours.background,
+      appBar: AppBar(
+        backgroundColor: AppColours.panel,
+        foregroundColor: AppColours.accent,
+        elevation: 0,
+        title: const Text(
+          'Staff Management',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -288,19 +358,28 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
           children: [
             const Text(
               'Store Employees',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+              ),
             ),
 
             const SizedBox(height: 16),
 
             const Text(
               'Manage your store employees and their roles.',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColours.accent,
+              ),
             ),
 
             const SizedBox(height: 20),
 
-            Expanded(child: _buildStaffContent()),
+            Expanded(
+              child: _buildStaffContent(),
+            ),
           ],
         ),
       ),

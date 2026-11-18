@@ -7,6 +7,7 @@ import 'package:tablescout/services/websocket_service.dart';
 
 import 'session/session_manager.dart';
 import 'router/app_router.dart';
+import 'theme/app_theme.dart';
 
 
 Future<void> main() async {
@@ -38,6 +39,10 @@ class MainApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'TableScout',
       debugShowCheckedModeBanner: false,
+
+      // TableScout Application Theme
+      theme: AppTheme.lightTheme,
+
       routerConfig: appRouter.router,
     );
   }

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/services/websocket_service.dart';
 import 'package:tablescout/pages/event_creation_page.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class Game {
   final int id;
@@ -291,7 +292,6 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           );
 
           _selectedEvent = updatedEvents.isEmpty ? null : updatedEvents.first;
-
           _registeredPlayers = _selectedEvent == null
               ? []
               : List<String>.from(_selectedEvent!.participants);
@@ -598,6 +598,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
     });
   }
 
+  ButtonStyle _eventButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: AppColours.accent,
+      foregroundColor: AppColours.textLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadiusGeometry.circular(8),
+        side: const BorderSide(color: AppColours.accent, width: 2),
+      ),
+    );
+  }
+
   void _clearDisplayedPairings() {
   if (_selectedEvent == null) return;
 
@@ -644,172 +656,324 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
         : _buildEventDetails(padWidth, padHeight);
   }
 
+
   Widget _buildEventDetails(double padWidth, double padHeight) {
     final event = _selectedEvent!;
 
     final game = _games.where((game) => game.id == event.gameId);
-
     final format = _formats.where((format) => format.id == event.formatId);
 
     return Container(
+      decoration: const BoxDecoration(
+        color: AppColours.background,
+      ),
       margin: !ScreenDimensions.isMobile(context)
           ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
           : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextButton.icon(
-                  onPressed: _backToEvents,
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back to Events'),
-                ),
-
-                Text(
-                  event.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                _detailRow('Game', game.isEmpty ? 'Unknown' : game.first.name),
-                _detailRow(
-                  'Format',
-                  format.isEmpty ? 'Unknown' : format.first.name,
-                ),
-                _detailRow(
-                  'Recommended Players',
-                  format.isEmpty ? 'Unknown' : format.first.playRec.toString(),
-                ),
-                _detailRow('Description', event.description),
-                _detailRow('Date', event.date),
-                _detailRow('Start Time', event.startTime),
-                _detailRow('End Time', event.endTime),
-                _detailRow('Tables', event.tables.join(', ')),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Event Management',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    if (event.status == 'not_started')
-                      ElevatedButton(
-                        onPressed: _startEvent,
-                        child: const Text('start'),
-                      ),
-                    if (event.status == 'running')
-                      ElevatedButton(
-                        onPressed: _pauseEvent,
-                        child: const Text('Pause'),
-                      ),
-                    if (event.status == 'paused')
-                      ElevatedButton(
-                        onPressed: _resumeEvent,
-                        child: const Text('Resume'),
-                      ),
-                    if (event.status == 'running' || event.status == 'paused')
-                      ElevatedButton(
-                        onPressed: _stopEvent,
-                        child: const Text('Stop'),
-                      ),
-                    if (event.status == 'stopped')
-                      ElevatedButton(
-                        onPressed: _restartEvent,
-                        child: const Text('Restart'),
-                      ),
-
-                    OutlinedButton(
-                      onPressed: _resetEvent,
-                      child: const Text('Reset Event'),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                const Text(
-                  'Round Management',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                Text('Round ${event.currentRound} / ${event.rounds}'),
-
-                const SizedBox(height: 8),
-
-                LinearProgressIndicator(
-                  value: event.rounds > 0
-                      ? (event.currentRound / event.rounds).clamp(0.0, 1.0)
-                      : 0,
-                ),
-
-                const SizedBox(height: 12),
-
-                Wrap(
-                  spacing: 10,
-                  children: [
-                    ElevatedButton(
-                      onPressed:
-                          event.status == 'running' &&
-                              event.currentRound < event.rounds
-                          ? _startRound
-                          : null,
-                      child: const Text('Start Next Round'),
-                    ),
-
-                    OutlinedButton(
-                      onPressed:
-                          event.status == 'running' && event.currentRound > 0
-                          ? _finishRound
-                          : null,
-                      child: const Text('Finish Round'),
-                    ),
-                  ],
-                ),
-              ],
+          TextButton.icon(
+            onPressed: _backToEvents,
+            icon: const Icon(Icons.arrow_back, color: AppColours.accent),
+            label: const Text(
+              'Back to Events',
+              style: TextStyle(
+                color: AppColours.accent,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
 
-          const SizedBox(width: 20),
+          Text(
+            event.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           Expanded(
-            flex: 2, 
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildRegisteredPlayersPanel(),
-                  const SizedBox(height: 16,),
-                  _buildPairingsPanel(),
-                ],
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = ScreenDimensions.isMobile(context);
+
+                final leftColumn = SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Event Details
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _detailRow(
+                              'Game',
+                              game.isEmpty ? 'Unknown' : game.first.name,
+                            ),
+                            _detailRow(
+                              'Format',
+                              format.isEmpty ? 'Unknown' : format.first.name,
+                            ),
+                            _detailRow('Description', event.description),
+                            _detailRow('Date', event.date),
+                            _detailRow('Start Time', event.startTime),
+                            _detailRow('End Time', event.endTime),
+                            _detailRow('Tables', event.tables.join(', ')),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Event Management
+                      const Text(
+                        'Event Management',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColours.accent,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            if (event.status == 'not_started')
+                              ElevatedButton(
+                                onPressed: _startEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Start'),
+                              ),
+
+                            if (event.status == 'running')
+                              ElevatedButton(
+                                onPressed: _pauseEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Pause'),
+                              ),
+
+                            if (event.status == 'paused')
+                              ElevatedButton(
+                                onPressed: _resumeEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Resume'),
+                              ),
+
+                            if (event.status == 'running' ||
+                                event.status == 'paused')
+                              ElevatedButton(
+                                onPressed: _stopEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Stop'),
+                              ),
+
+                            if (event.status == 'stopped')
+                              ElevatedButton(
+                                onPressed: _restartEvent,
+                                style: _eventButtonStyle(),
+                                child: const Text('Restart'),
+                              ),
+
+                            OutlinedButton(
+                              onPressed: _resetEvent,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColours.accent,
+                                side: const BorderSide(
+                                  color: AppColours.accent,
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Reset Event'),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Round Management
+                      const Text(
+                        'Round Management',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColours.accent,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Round ${event.currentRound} / ${event.rounds}',
+                              style: const TextStyle(
+                                color: AppColours.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: event.rounds > 0
+                                    ? (event.currentRound / event.rounds)
+                                        .clamp(0.0, 1.0)
+                                    : 0,
+                                minHeight: 12,
+                                backgroundColor: AppColours.surface,
+                                color: AppColours.accent,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                ElevatedButton(
+                                  onPressed:
+                                      event.status == 'running' &&
+                                              event.currentRound < event.rounds
+                                          ? _startRound
+                                          : null,
+                                  style: _eventButtonStyle(),
+                                  child: const Text('Start Next Round'),
+                                ),
+
+                                OutlinedButton(
+                                  onPressed:
+                                      event.status == 'running' &&
+                                              event.currentRound > 0
+                                          ? _finishRound
+                                          : null,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColours.accent,
+                                    disabledForegroundColor:
+                                        AppColours.disabled,
+                                    side: const BorderSide(
+                                      color: AppColours.accent,
+                                      width: 2,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('Finish Round'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                final rightColumn = SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildRegisteredPlayersPanel(),
+                      const SizedBox(height: 24),
+                      _buildPairingsPanel(),
+                    ],
+                  ),
+                );
+
+                if (isMobile) {
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        leftColumn,
+                        const SizedBox(height: 24),
+                        rightColumn,
+                      ],
+                    ),
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: leftColumn,
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      flex: 2,
+                      child: rightColumn,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
-
+ 
   Widget _detailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -817,10 +981,23 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+                fontSize: 15,
+              ),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value.isEmpty ? 'Not Specified' : value,
+              style: const TextStyle(
+                color: AppColours.accent,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -831,8 +1008,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: AppColours.primary,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColours.accent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -866,7 +1047,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: CircleAvatar(child: Text('${index + 1}')),
-                        title: Text(_registeredPlayers[index]),
+                        title: Text(
+                          _registeredPlayers[index],
+                          style: const TextStyle(fontSize: 20),
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.close, color: Colors.red),
                           tooltip: 'Remove player',
@@ -915,8 +1099,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: AppColours.primary,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColours.accent,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1073,7 +1261,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
           ? EdgeInsets.fromLTRB(padWidth, padHeight, padWidth, padHeight / 2)
           : const EdgeInsets.fromLTRB(55, 0, 0, 0),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: AppColours.background,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1081,7 +1272,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             _selectedGameId == null
                 ? 'Select Game'
                 : 'Selected Game: ${_games.firstWhere((game) => game.id == _selectedGameId).name}',
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -1111,13 +1306,23 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: _selectedGameId == game.id
-                              ? Colors.blue.shade200
-                              : Colors.grey.shade300,
+                              ? AppColours.accent
+                              : AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           game.name_short,
                           textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedGameId == game.id
+                                ? AppColours.textLight
+                                : AppColours.accent,
+                          ),
                         ),
                       ),
                     ),
@@ -1127,13 +1332,22 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(80, 80),
                       padding: EdgeInsets.zero,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColours.primary,
+                      foregroundColor: AppColours.accent,
+                      side: const BorderSide(
+                        color: AppColours.accent,
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: _openAddGameDialog,
-                    child: const Icon(Icons.add, size: 50, color: Colors.grey),
+                    child: const Icon(
+                      Icons.add,
+                      size: 50,
+                      color: AppColours.accent,
+                    ),
                   ),
                 ],
               ),
@@ -1145,7 +1359,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
             _selectedFormatId == null
                 ? 'Select Format'
                 : 'Selected Format: ${_formats.firstWhere((format) => format.id == _selectedFormatId).name}',
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColours.accent,
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -1174,13 +1392,23 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: _selectedFormatId == format.id
-                              ? Colors.blue.shade200
-                              : Colors.grey.shade300,
+                              ? AppColours.accent
+                              : AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           format.name_short,
                           textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedFormatId == format.id
+                                ? AppColours.textLight
+                                : AppColours.accent,
+                          ),
                         ),
                       ),
                     ),
@@ -1190,7 +1418,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(80, 80),
                       padding: EdgeInsets.zero,
-                      backgroundColor: Colors.grey.shade200,
+                      backgroundColor: AppColours.primary,
+                      foregroundColor: AppColours.accent,
+                      side: const BorderSide(
+                        color: AppColours.accent,
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -1198,7 +1431,11 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     onPressed: _selectedGameId == null
                         ? null
                         : _openAddFormatDialog,
-                    child: const Icon(Icons.add, size: 50, color: Colors.grey),
+                    child: const Icon(
+                      Icons.add,
+                      size: 50,
+                      color: AppColours.accent,
+                    ),
                   ),
                 ],
               ),
@@ -1207,7 +1444,14 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
 
           const SizedBox(height: 14),
           const Center(
-            child: Text('Active Events', style: TextStyle(fontSize: 18)),
+            child: Text(
+              'Active Events',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColours.accent,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -1217,7 +1461,8 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade400,
+                color: AppColours.primary,
+                border: Border.all(color: AppColours.accent, width: 2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -1226,9 +1471,36 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
-                        const Expanded(flex: 5, child: Text('Sort by Game')),
-                        const Expanded(flex: 2, child: Text('Sort by Table/s')),
-                        const Expanded(flex: 2, child: Text('Sort by Time')),
+                        const Expanded(
+                          flex: 5,
+                          child: Text(
+                            'Sort by Game',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Sort by Table/s',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Sort by Time',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1247,8 +1519,12 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: i % 2 == 0
-                                    ? Colors.grey.shade300
-                                    : Colors.grey.shade200,
+                                    ? AppColours.surface
+                                    : AppColours.background,
+                                border: Border.all(
+                                  color: AppColours.accent,
+                                  width: 1,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
@@ -1258,6 +1534,10 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                                     child: Text(
                                       _events[i].name,
                                       overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColours.accent,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
@@ -1266,12 +1546,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                                       _events[i].tables.isEmpty
                                           ? 'Not Assigned'
                                           : 'Table ${_events[i].tables.join(', ')}',
+                                      style: const TextStyle(
+                                        color: AppColours.textPrimary,
+                                      ),
                                     ),
                                   ),
                                   Expanded(
                                     flex: 2,
                                     child: Text(
                                       '${_events[i].startTime} - ${_events[i].endTime}',
+                                      style: const TextStyle(
+                                        color: AppColours.textPrimary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1291,12 +1577,18 @@ class _EventsOverviewPageState extends State<EventsOverviewPage> {
                       icon: const Icon(Icons.add),
                       label: const Text('Create Event'),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColours.accent,
+                        foregroundColor: AppColours.textLight,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(
+                            color: AppColours.accent,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),

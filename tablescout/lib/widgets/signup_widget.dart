@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tablescout/services/signup_service.dart';
 import 'package:tablescout/widgets/auth_container.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class SignupWidget extends StatefulWidget {
   const SignupWidget({super.key});
@@ -70,7 +71,7 @@ class _SignupWidgetState extends State<SignupWidget> {
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFF54414E),
+          color: AppColours.accent,
           width: 1,
         ),
       ),
@@ -79,7 +80,7 @@ class _SignupWidgetState extends State<SignupWidget> {
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFF54414E),
+          color: AppColours.accent,
           width: 1,
         ),
       ),
@@ -88,7 +89,7 @@ class _SignupWidgetState extends State<SignupWidget> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Color(0xFF54414E),
+          color: AppColours.accent,
           width: 2,
         ),
       ),
@@ -97,7 +98,7 @@ class _SignupWidgetState extends State<SignupWidget> {
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Colors.red,
+          color: AppColours.error,
           width: 1,
         ),
       ),
@@ -106,7 +107,7 @@ class _SignupWidgetState extends State<SignupWidget> {
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(
-          color: Colors.red,
+          color: AppColours.error,
           width: 2,
         ),
       ),
@@ -175,8 +176,8 @@ class _SignupWidgetState extends State<SignupWidget> {
                   context.go('/login');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF54414E),
-                  foregroundColor: const Color(0xFFB5BAD0),
+                  backgroundColor: AppColours.secondary,
+                  foregroundColor: AppColours.accent,
                 ),
                 child: const Text('ACKNOWLEDGE'),
               ),
@@ -212,14 +213,13 @@ class _SignupWidgetState extends State<SignupWidget> {
   @override
   Widget build(BuildContext context) {
     return AuthContainer(
-      rightPadding: 12,
       child:Scrollbar(
         thumbVisibility: true,
         controller: _scrollController,
         child: SingleChildScrollView(
           controller: _scrollController,
           child:Padding(
-            padding:const EdgeInsets.only(right: 20),
+            padding:const EdgeInsets.symmetric(horizontal: 12),
             child:Form(
               key: _formKey,
               child: Column(
@@ -234,7 +234,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF282828),
+                color: AppColours.accent,
               ),
             ),
 
@@ -246,7 +246,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3A3A3A),
+                color: AppColours.accent,
               ),
             ),
 
@@ -257,7 +257,7 @@ class _SignupWidgetState extends State<SignupWidget> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.grey,
+                color: AppColours.textPrimary,
               ),
             ),
 
@@ -276,6 +276,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _usernameController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
               focusNode: _usernameFocusNode,
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
@@ -309,6 +313,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _storeController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
               focusNode: _storeFocusNode,
               onFieldSubmitted: (_) {
                 _emailFocusNode.requestFocus();
@@ -341,6 +349,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _emailController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
               focusNode: _emailFocusNode,
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
@@ -389,6 +401,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _passwordController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
               focusNode: _passwordFocusNode,
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
@@ -445,6 +461,10 @@ class _SignupWidgetState extends State<SignupWidget> {
 
             TextFormField(
               controller: _confirmPasswordController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
               focusNode: _confirmPasswordFocusNode,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _signup(),
@@ -487,8 +507,8 @@ class _SignupWidgetState extends State<SignupWidget> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null: _signup,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF54414E),
-                  foregroundColor: const Color(0xFFB5BAD0),
+                  backgroundColor: AppColours.secondary,
+                  foregroundColor: AppColours.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -500,7 +520,7 @@ class _SignupWidgetState extends State<SignupWidget> {
                   width: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Color(0xFFB5BAD0)
+                    color: AppColours.accent,
                   ),
                 )
               : const Text(
@@ -509,6 +529,7 @@ class _SignupWidgetState extends State<SignupWidget> {
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
+                    color: AppColours.accent,
                   ),
                 ),
               ),
@@ -523,7 +544,7 @@ class _SignupWidgetState extends State<SignupWidget> {
                 const Text(
                   'Already have an account?',
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: AppColours.textPrimary,
                   ),
                 ),
 

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:tablescout/widgets/auth_container.dart';
 import 'dart:convert';
 import 'package:tablescout/app_config.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class PasswordRecoveryWidget extends StatefulWidget {
   const PasswordRecoveryWidget({super.key});
@@ -124,6 +125,10 @@ class PasswordRecoveryWidget extends StatefulWidget {
 
           TextFormField(
             controller: _emailController,
+            style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF1D1D1D),
+              ),
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: 'Enter your email',
@@ -145,8 +150,8 @@ class PasswordRecoveryWidget extends StatefulWidget {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submitEmail,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF54414E),
-                foregroundColor: const Color(0xFFB5BAD0),
+                backgroundColor: AppColours.secondary,
+                foregroundColor: AppColours.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -159,7 +164,12 @@ class PasswordRecoveryWidget extends StatefulWidget {
                   strokeWidth: 2,
                 ),
               )
-              : const Text('SUBMIT EMAIL'),
+              : const Text(
+                'SUBMIT EMAIL',
+                style: TextStyle(
+                  color: AppColours.accent,
+                ),
+              ),
             ),
           ),
 
@@ -170,7 +180,7 @@ class PasswordRecoveryWidget extends StatefulWidget {
             child: const Text(
               'Back to Login',
               style: TextStyle(
-                color: Color(0xFF54414E),
+                color: AppColours.accent,
               ),
             ),
           ),
