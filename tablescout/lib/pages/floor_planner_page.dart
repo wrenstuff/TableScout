@@ -8,6 +8,7 @@ import 'package:flutter/gestures.dart';
 
 import 'package:tablescout/pages/floor_planner_assets/fpa_object.dart';
 import 'package:tablescout/services/websocket_service.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class FloorPlanner extends StatefulWidget {
   const FloorPlanner({super.key});
@@ -727,16 +728,14 @@ class FloorPlannerState extends State<FloorPlanner> {
     );
 
     // Calculate the rotation based on the mouse movement.
-    final newRotation = 
+    final newRotation =
         _rotationStartDegrees + (angleDifference * 180 / math.pi);
 
     // Find the nearest 90-degree angle.
-    final nearestRightAngle = 
-        (newRotation / 90).round() * 90.0;
+    final nearestRightAngle = (newRotation / 90).round() * 90.0;
 
     // Only snapping when within 5 degrees of that angle.
-    final rotationDifference = 
-        (newRotation - nearestRightAngle).abs();
+    final rotationDifference = (newRotation - nearestRightAngle).abs();
 
     final snappedRotation = rotationDifference <= 5.0
         ? nearestRightAngle
@@ -794,7 +793,7 @@ class FloorPlannerState extends State<FloorPlanner> {
     return Tooltip(
       message: tooltip,
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         onTap: () {
           setState(() {
             _activeTool = tool;
@@ -805,17 +804,18 @@ class FloorPlannerState extends State<FloorPlanner> {
           height: 44,
           decoration: BoxDecoration(
             color: isActive
-                ? Colors.blue.withValues(alpha: 0.2)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+                ? AppColours.accent.withValues(alpha: 0.2)
+                : AppColours.primary,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isActive ? Colors.blue : Colors.grey.shade400,
+              color: AppColours.accent,
+              width: isActive ? 2 : 1,
             ),
           ),
           child: Icon(
             icon,
             size: 22,
-            color: isActive ? Colors.blue : Colors.grey.shade800,
+            color: isActive ? AppColours.textLight : AppColours.accent,
           ),
         ),
       ),
@@ -828,15 +828,23 @@ class FloorPlannerState extends State<FloorPlanner> {
         width: 150,
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
+          color: AppColours.primary,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.shade400),
+          border: Border.all(color: AppColours.accent, width: 1),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22),
+            Icon(icon, size: 22, color: AppColours.accent),
             const SizedBox(width: 10),
-            Expanded(child: Text(label)),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: AppColours.accent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       );
@@ -875,20 +883,21 @@ class FloorPlannerState extends State<FloorPlanner> {
     if (length < 0.001) return end;
 
     // Calculating the current wall angle.
-    final currentAngle = 
-        math.atan2(difference.dy, difference.dx);
+    final currentAngle = math.atan2(difference.dy, difference.dx);
 
     final currentDegrees = currentAngle * 180 / math.pi;
 
     // Find the nearest 90-degree angle.
-    final snappedDegrees = 
-        (currentDegrees / 90).round() * 90.0;
+    final snappedDegrees = (currentDegrees / 90).round() * 90.0;
 
     // Calculate the difference between these angles.
-    final angleDifference = math.atan2(
-      math.sin((currentDegrees - snappedDegrees) * math.pi / 180),
-      math.cos((currentDegrees - snappedDegrees) * math.pi / 180),
-    ) * 180 / math.pi;
+    final angleDifference =
+        math.atan2(
+          math.sin((currentDegrees - snappedDegrees) * math.pi / 180),
+          math.cos((currentDegrees - snappedDegrees) * math.pi / 180),
+        ) *
+        180 /
+        math.pi;
 
     // Only snap when sufficiently close.
     if (angleDifference.abs() > snapThresholdDegrees) {
@@ -898,10 +907,11 @@ class FloorPlannerState extends State<FloorPlanner> {
     final snappedRadians = snappedDegrees * math.pi / 180;
 
     // Keep the original wall length.
-    return start + Offset(
-      math.cos(snappedRadians) * length,
-      math.sin(snappedRadians) * length,
-    );
+    return start +
+        Offset(
+          math.cos(snappedRadians) * length,
+          math.sin(snappedRadians) * length,
+        );
   }
 
   Widget _buildWallPreview() {
@@ -975,25 +985,20 @@ class FloorPlannerState extends State<FloorPlanner> {
     const overlap = thickness / 2;
 
     // Calculate the direction the wall is being drawn.
-    final direction = (originalEnd - originalStart) /
-        (originalEnd - originalStart).distance;
+    final direction =
+        (originalEnd - originalStart) / (originalEnd - originalStart).distance;
 
     // Extend snapped endpoints into the existing walls.
     final start = startIsSnapped
         ? originalStart - direction * overlap
         : originalStart;
 
-    final end = endIsSnapped
-        ? originalEnd + direction * overlap
-        : originalEnd;
+    final end = endIsSnapped ? originalEnd + direction * overlap : originalEnd;
 
     final difference = end - start;
     final length = difference.distance;
 
-    final midpoint = Offset(
-      (start.dx + end.dx) / 2,
-      (start.dy + end.dy) / 2,
-    );
+    final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
 
     final rotationDegrees =
         math.atan2(difference.dy, difference.dx) * 180 / math.pi;
@@ -1045,7 +1050,7 @@ class FloorPlannerState extends State<FloorPlanner> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.grey.shade200,
+      color: AppColours.background,
       child: Stack(
         children: [
           // Canvas
@@ -1094,8 +1099,8 @@ class FloorPlannerState extends State<FloorPlanner> {
                     builder: (context, candidateData, rejectedData) {
                       return Container(
                         color: candidateData.isNotEmpty
-                            ? Colors.blue.withValues(alpha: 0.08)
-                            : Colors.grey.shade200,
+                            ? AppColours.secondary.withValues(alpha: 0.15)
+                            : AppColours.background,
 
                         child: IgnorePointer(
                           ignoring: _activeTool == FloorPlannerTool.hand,
@@ -1118,7 +1123,9 @@ class FloorPlannerState extends State<FloorPlanner> {
                                     .toDouble(),
                               );
 
-                              final snappedPosition = _getSnappedWallPoint(canvasPosition);
+                              final snappedPosition = _getSnappedWallPoint(
+                                canvasPosition,
+                              );
 
                               setState(() {
                                 _wallDrawStart = snappedPosition;
@@ -1128,17 +1135,21 @@ class FloorPlannerState extends State<FloorPlanner> {
                             onPanUpdate: (details) {
                               if (_wallDrawStart == null) return;
 
-                              final renderObject = 
-                                  _canvasKey.currentContext?.findRenderObject();
+                              final renderObject = _canvasKey.currentContext
+                                  ?.findRenderObject();
 
                               if (renderObject is! RenderBox) return;
 
-                              final canvasPosition = 
-                                  renderObject.globalToLocal(details.globalPosition);
+                              final canvasPosition = renderObject.globalToLocal(
+                                details.globalPosition,
+                              );
 
                               // First, apply the existing 90-degree angle snapping.
-                              final angleSnappedPosition = 
-                                  _snapWallToRightAngle(_wallDrawStart!, canvasPosition);
+                              final angleSnappedPosition =
+                                  _snapWallToRightAngle(
+                                    _wallDrawStart!,
+                                    canvasPosition,
+                                  );
 
                               // Check whether a nearby perpendicular wall can be adjusted.
                               final pendingSnap = _findWallIntersectionSnap(
@@ -1148,8 +1159,9 @@ class FloorPlannerState extends State<FloorPlanner> {
                               );
 
                               // Use the intersection when one is found.
-                              final snappedPosition = 
-                              pendingSnap?.intersection ?? angleSnappedPosition;
+                              final snappedPosition =
+                                  pendingSnap?.intersection ??
+                                  angleSnappedPosition;
 
                               setState(() {
                                 _pendingWallSnap = pendingSnap;
@@ -1245,7 +1257,11 @@ class FloorPlannerState extends State<FloorPlanner> {
             bottom: outerPadding,
             width: toolbarWidth,
             child: Container(
-              color: Colors.grey.shade400,
+              decoration: BoxDecoration(
+                color: AppColours.primary,
+                border: Border.all(color: AppColours.accent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
               padding: const EdgeInsets.all(16),
               child: selected == null
                   ? const Center(child: Text('Select an object'))
@@ -1258,6 +1274,7 @@ class FloorPlannerState extends State<FloorPlanner> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
                             ),
                           ),
 
@@ -1268,6 +1285,7 @@ class FloorPlannerState extends State<FloorPlanner> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
                             ),
                           ),
 
@@ -1276,7 +1294,10 @@ class FloorPlannerState extends State<FloorPlanner> {
                           //Nickname
                           const Text(
                             'Table Nickname',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Focus(
@@ -1292,9 +1313,35 @@ class FloorPlannerState extends State<FloorPlanner> {
                             child: TextFormField(
                               key: ValueKey('nickname-${selected.id}'),
                               initialValue: selected.nickname,
-                              decoration: const InputDecoration(
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColours.textPrimary,
+                              ),
+                              decoration: InputDecoration(
                                 hintText: 'Enter a name',
-                                border: OutlineInputBorder(),
+                                filled: true,
+                                fillColor: AppColours.surface,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: AppColours.accent,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                    color: AppColours.accent.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: AppColours.accent,
+                                    width: 2,
+                                  ),
+                                ),
                                 isDense: true,
                               ),
                               onChanged: (value) {
@@ -1310,29 +1357,76 @@ class FloorPlannerState extends State<FloorPlanner> {
                           //Position
                           const Text(
                             'Position',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text('X: ${selected.position.dx.toStringAsFixed(1)}'),
-                          Text('Y: ${selected.position.dy.toStringAsFixed(1)}'),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _positionValue(
+                                  'X',
+                                  selected.position.dx,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _positionValue(
+                                  'Y',
+                                  selected.position.dy,
+                                ),
+                              ),
+                            ],
+                          ),
 
                           const SizedBox(height: 24),
 
                           //Dimensions
                           const Text(
                             'Dimensions (cm)',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           TextFormField(
                             key: ValueKey('lenght-${selected.id}'),
                             initialValue: selected.lengthCm.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Length',
-                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: AppColours.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AppColours.accent.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                  width: 2,
+                                ),
+                              ),
                               isDense: true,
                             ),
                             onFieldSubmitted: (value) {
@@ -1355,12 +1449,38 @@ class FloorPlannerState extends State<FloorPlanner> {
                           TextFormField(
                             key: ValueKey('width-${selected.id}'),
                             initialValue: selected.widthCm.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Width',
-                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: AppColours.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AppColours.accent.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                  width: 2,
+                                ),
+                              ),
                               isDense: true,
                             ),
                             onFieldSubmitted: (value) {
@@ -1385,13 +1505,39 @@ class FloorPlannerState extends State<FloorPlanner> {
                             key: ValueKey('rotation-${selected.id}'),
                             initialValue: selected.rotationDegrees
                                 .toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColours.textPrimary,
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                               signed: true,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Rotation (degrees)',
-                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: AppColours.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AppColours.accent.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: AppColours.accent,
+                                  width: 2,
+                                ),
+                              ),
                               isDense: true,
                             ),
                             onFieldSubmitted: (value) {
@@ -1414,7 +1560,10 @@ class FloorPlannerState extends State<FloorPlanner> {
                             const SizedBox(height: 16),
                             const Text(
                               'Text Content',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColours.accent,
+                              ),
                             ),
                             Focus(
                               onFocusChange: (hasFocus) {
@@ -1427,10 +1576,36 @@ class FloorPlannerState extends State<FloorPlanner> {
                               child: TextFormField(
                                 key: ValueKey('text-${selected.id}'),
                                 initialValue: selected.text ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColours.textPrimary,
+                                ),
                                 maxLines: 4,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Enter Text',
-                                  border: OutlineInputBorder(),
+                                  filled: true,
+                                  fillColor: AppColours.surface,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: AppColours.accent,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                      color: AppColours.accent.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: AppColours.accent,
+                                      width: 2,
+                                    ),
+                                  ),
                                 ),
                                 onChanged: (value) {
                                   setState(() {
@@ -1441,7 +1616,17 @@ class FloorPlannerState extends State<FloorPlanner> {
                             ),
                           ],
 
-                          const SizedBox(height: 425),
+                          const SizedBox(height: 300),
+
+                          //Delete
+                          const Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColours.accent,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
 
                           //Delete Object
                           SizedBox(
@@ -1451,8 +1636,18 @@ class FloorPlannerState extends State<FloorPlanner> {
                               icon: const Icon(Icons.delete),
                               label: const Text('Delete Object'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppColours.error,
+                                foregroundColor: AppColours.textLight,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(
+                                    color: AppColours.accent,
+                                    width: 1,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -1469,7 +1664,11 @@ class FloorPlannerState extends State<FloorPlanner> {
             bottom: outerPadding,
             width: toolbarWidth,
             child: Container(
-              color: Colors.grey.shade400,
+              decoration: BoxDecoration(
+                color: AppColours.primary,
+                border: Border.all(color: AppColours.accent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Column(
                 children: [
                   const Padding(
@@ -1479,6 +1678,7 @@ class FloorPlannerState extends State<FloorPlanner> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: AppColours.accent,
                       ),
                     ),
                   ),
@@ -1488,7 +1688,7 @@ class FloorPlannerState extends State<FloorPlanner> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          //Tables
+                          // Tables
                           const _LibraryHeading(title: 'Tables'),
 
                           _buildLibraryItem(
@@ -1496,18 +1696,20 @@ class FloorPlannerState extends State<FloorPlanner> {
                             FloorObjectType.table,
                             Icons.table_restaurant,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Long Table',
                             FloorObjectType.tableLong,
                             Icons.table_restaurant,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Square Table',
                             FloorObjectType.tableSquare,
                             Icons.table_restaurant,
                           ),
 
-                          //Seating
+                          // Seating
                           const _LibraryHeading(title: 'Seating'),
 
                           _buildLibraryItem(
@@ -1515,18 +1717,20 @@ class FloorPlannerState extends State<FloorPlanner> {
                             FloorObjectType.chair,
                             Icons.chair,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Couch',
                             FloorObjectType.couch,
                             Icons.weekend,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Corner Couch',
                             FloorObjectType.cornerCouch,
                             Icons.weekend,
                           ),
 
-                          //Desks
+                          // Desks
                           const _LibraryHeading(title: 'Desks'),
 
                           _buildLibraryItem(
@@ -1534,13 +1738,14 @@ class FloorPlannerState extends State<FloorPlanner> {
                             FloorObjectType.deskStraight,
                             Icons.desk,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Corner Desk',
                             FloorObjectType.deskCorner,
                             Icons.desk,
                           ),
 
-                          //Shelving
+                          // Shelving
                           const _LibraryHeading(title: 'Shelving'),
 
                           _buildLibraryItem(
@@ -1548,13 +1753,14 @@ class FloorPlannerState extends State<FloorPlanner> {
                             FloorObjectType.shelfOneSide,
                             Icons.view_agenda,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             '2-Sided Shelves',
                             FloorObjectType.shelfTwoSide,
                             Icons.view_agenda,
                           ),
 
-                          //Vending Machines
+                          // Vending Machines
                           const _LibraryHeading(title: 'Vending Machines'),
 
                           _buildLibraryItem(
@@ -1562,6 +1768,7 @@ class FloorPlannerState extends State<FloorPlanner> {
                             FloorObjectType.vendingCard,
                             Icons.credit_card,
                           ),
+                          const SizedBox(height: 6),
                           _buildLibraryItem(
                             'Drinks Vending',
                             FloorObjectType.vendingDrinks,
@@ -1583,7 +1790,11 @@ class FloorPlannerState extends State<FloorPlanner> {
             bottom: outerPadding,
             height: bottomToolbarHeight,
             child: Container(
-              color: Colors.grey.shade400,
+              decoration: BoxDecoration(
+                color: AppColours.primary,
+                border: Border.all(color: AppColours.accent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
               padding: const EdgeInsets.all(10),
               child: Center(
                 child: Wrap(
@@ -1650,14 +1861,23 @@ class FloorPlannerState extends State<FloorPlanner> {
                     // Undo
                     Tooltip(
                       message: 'Undo',
-                      child: IconButton(
-                        onPressed: _canUndo ? _undo : null,
-                        icon: const Icon(Icons.undo),
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size(44, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(
+                            color: AppColours.accent,
+                            width: 1,
                           ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          onPressed: _canUndo ? _undo : null,
+                          icon: const Icon(Icons.undo),
+                          color: AppColours.accent,
+                          disabledColor: AppColours.disabled,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ),
@@ -1665,14 +1885,20 @@ class FloorPlannerState extends State<FloorPlanner> {
                     // Redo
                     Tooltip(
                       message: 'Redo',
-                      child: IconButton(
-                        onPressed: _canRedo ? _redo : null,
-                        icon: const Icon(Icons.redo),
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size(44, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(color: AppColours.accent),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          onPressed: _canRedo ? _redo : null,
+                          icon: const Icon(Icons.redo),
+                          color: AppColours.accent,
+                          disabledColor: AppColours.disabled,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ),
@@ -1680,14 +1906,19 @@ class FloorPlannerState extends State<FloorPlanner> {
                     //Delete
                     Tooltip(
                       message: 'Delete selected object',
-                      child: IconButton(
-                        onPressed: _deleteSelectedObject,
-                        icon: const Icon(Icons.delete_outline),
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size(44, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColours.error,
+                          border: Border.all(color: AppColours.accent),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          onPressed: _deleteSelectedObject,
+                          icon: const Icon(Icons.delete_outline),
+                          color: AppColours.textLight,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ),
@@ -1695,14 +1926,20 @@ class FloorPlannerState extends State<FloorPlanner> {
                     //Save
                     Tooltip(
                       message: 'Save Floor Plan',
-                      child: IconButton(
-                        onPressed: _fileBusy ? null : _saveLayout,
-                        icon: const Icon(Icons.save_alt_outlined),
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size(44, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(color: AppColours.accent),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          onPressed: _fileBusy ? null : _saveLayout,
+                          icon: const Icon(Icons.save_alt_outlined),
+                          color: AppColours.accent,
+                          disabledColor: AppColours.disabled,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ),
@@ -1710,14 +1947,20 @@ class FloorPlannerState extends State<FloorPlanner> {
                     //Load
                     Tooltip(
                       message: 'Load Floor Plan',
-                      child: IconButton(
-                        onPressed: _fileBusy ? null : _loadLayout,
-                        icon: const Icon(Icons.folder_open_outlined),
-                        style: IconButton.styleFrom(
-                          fixedSize: const Size(44, 44),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColours.primary,
+                          border: Border.all(color: AppColours.accent),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          onPressed: _fileBusy ? null : _loadLayout,
+                          icon: const Icon(Icons.folder_open_outlined),
+                          color: AppColours.accent,
+                          disabledColor: AppColours.disabled,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ),
@@ -1730,6 +1973,41 @@ class FloorPlannerState extends State<FloorPlanner> {
       ),
     );
   }
+
+  Widget _positionValue(String label, double value) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 10,
+      vertical: 12,
+    ),
+    decoration: BoxDecoration(
+      color: AppColours.surface,
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(
+        color: AppColours.accent.withValues(alpha: 0.5),
+      ),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColours.accent,
+          ),
+        ),
+        Text(
+          value.toStringAsFixed(1),
+          style: const TextStyle(
+            color: AppColours.accent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Offset _getWallStartPoint(FloorObject wall) {
     final centre = _getWallCentrePoint(wall);
@@ -1755,15 +2033,9 @@ class FloorPlannerState extends State<FloorPlanner> {
     final angle = wall.rotationDegrees * math.pi / 180;
 
     return Offset(
-      wall.position.dx +
-        wall.lengthCm / 2 +
-        10 -
-        15 * math.sin(angle),
+      wall.position.dx + wall.lengthCm / 2 + 10 - 15 * math.sin(angle),
 
-      wall.position.dy +
-        wall.widthCm / 2 +
-        25 +
-        15 * math.cos(angle),
+      wall.position.dy + wall.widthCm / 2 + 25 + 15 * math.cos(angle),
     );
   }
 
@@ -1849,17 +2121,17 @@ class FloorPlannerState extends State<FloorPlanner> {
 
       if (existingLength < 0.001) continue;
 
-      final normalizedExistingDirection = 
-          existingDirection / existingLength;
+      final normalizedExistingDirection = existingDirection / existingLength;
 
       // Check whether the walls are appropriately perpendiclular.
-      final dotProduct = (
-        normalizedNewDirection.dx * normalizedExistingDirection.dx +
-        normalizedNewDirection.dy * normalizedExistingDirection.dy
-      ).abs();
+      final dotProduct =
+          (normalizedNewDirection.dx * normalizedExistingDirection.dx +
+                  normalizedNewDirection.dy * normalizedExistingDirection.dy)
+              .abs();
 
-      final perpendicularLimit = 
-          math.sin(perpendicularToleranceDegrees * math.pi / 180);
+      final perpendicularLimit = math.sin(
+        perpendicularToleranceDegrees * math.pi / 180,
+      );
 
       if (dotProduct > perpendicularLimit) continue;
 
@@ -1868,8 +2140,7 @@ class FloorPlannerState extends State<FloorPlanner> {
       final endDistance = (mousePostion - wallEnd).distance;
 
       final moveStartEndpoint = startDistance <= endDistance;
-      final endpointDistance =
-          moveStartEndpoint ? startDistance : endDistance;
+      final endpointDistance = moveStartEndpoint ? startDistance : endDistance;
 
       if (endpointDistance >= closestDistance) continue;
 
@@ -1881,20 +2152,16 @@ class FloorPlannerState extends State<FloorPlanner> {
 
       if (denominator.abs() < 0.001) continue;
 
-      final distanceAlongNewWall = _crossProduct(
-        wallStart - start,
-        existingDirection,
-      ) / denominator;
+      final distanceAlongNewWall =
+          _crossProduct(wallStart - start, existingDirection) / denominator;
 
-      final intersection = 
+      final intersection =
           start + normalizedNewDirection * distanceAlongNewWall;
 
       // Only adjust the existing wall if the intersectinon
       // is within the allowed adjustment distance.
-      final distanceToEndpoint = (
-        intersection -
-        (moveStartEndpoint ? wallStart : wallEnd)
-      ).distance;
+      final distanceToEndpoint =
+          (intersection - (moveStartEndpoint ? wallStart : wallEnd)).distance;
 
       if (distanceToEndpoint > snapDistance) continue;
 
@@ -1921,13 +2188,9 @@ class FloorPlannerState extends State<FloorPlanner> {
     final oldStart = _getWallStartPoint(wall);
     final oldEnd = _getWallEndPoint(wall);
 
-    final newStart = snap.moveStartEndpoint
-        ? snap.intersection
-        : oldStart;
+    final newStart = snap.moveStartEndpoint ? snap.intersection : oldStart;
 
-    final newEnd = snap.moveStartEndpoint
-        ? oldEnd
-        : snap.intersection;
+    final newEnd = snap.moveStartEndpoint ? oldEnd : snap.intersection;
 
     final difference = newEnd - newStart;
     final length = difference.distance;
@@ -1939,7 +2202,7 @@ class FloorPlannerState extends State<FloorPlanner> {
       (newStart.dy + newEnd.dy) / 2,
     );
 
-    final rotationDegrees = 
+    final rotationDegrees =
         math.atan2(difference.dy, difference.dx) * 180 / math.pi;
 
     final angleRadians = rotationDegrees * math.pi / 180;
@@ -1953,12 +2216,12 @@ class FloorPlannerState extends State<FloorPlanner> {
     );
 
     wall
-        ..lengthCm = length
-        ..rotationDegrees = rotationDegrees
-        ..position = Offset(
-          midpoint.dx - length / 2 - 10 - rotatedHandleOffset.dx,
-          midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
-        );
+      ..lengthCm = length
+      ..rotationDegrees = rotationDegrees
+      ..position = Offset(
+        midpoint.dx - length / 2 - 10 - rotatedHandleOffset.dx,
+        midpoint.dy - thickness / 2 - 25 - rotatedHandleOffset.dy,
+      );
   }
 }
 
@@ -1968,12 +2231,16 @@ class _LibraryHeading extends StatelessWidget {
   const _LibraryHeading({required this.title});
 
   @override
-  Widget build(BuildContext conext) {
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsetsGeometry.fromLTRB(12, 14, 12, 6),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: AppColours.accent,
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:tablescout/session/session_manager.dart';
 import 'package:tablescout/pages/settings_page.dart';
@@ -16,6 +17,9 @@ import 'package:tablescout/pages/customise_page.dart';
 import 'package:tablescout/pages/notifications_page.dart';
 import 'package:tablescout/screen_dimensions.dart';
 import 'package:tablescout/pages/contact_us_page.dart';
+import 'package:tablescout/theme/app_colours.dart';
+import 'package:tablescout/widgets/construction_tooltip.dart';
+import 'package:tablescout/pages/floor_allocator_page.dart';
 
 final GlobalKey _visibleLogoSectionKey = GlobalKey();
 
@@ -34,6 +38,7 @@ class _NavBarState extends State<NavBar> {
 
   bool _navOpen = true;
   bool _navInitialised = false;
+  bool _logoHovered = false;
 
   final GlobalKey _logoSectionKey = GlobalKey();
 
@@ -67,10 +72,25 @@ class _NavBarState extends State<NavBar> {
     const CloudPage(),
     const CustomisePage(),
     const NotificationsPage(),
-
-
-  
   ];
+
+  String _getInitials(String? username) {
+    if (username == null || username.trim().isEmpty) {
+      return '?';
+    }
+
+    final parts = username.trim().split(RegExp(r'\s+'));
+
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+
+    final name = parts.first;
+
+    return name.length >= 2
+        ? name.substring(0, 2).toUpperCase()
+        : name.toUpperCase();
+  }
 
   Future<void> _navigateTo(int index) async {
     // If we're already on the selected page, do nothing.
@@ -141,7 +161,6 @@ class _NavBarState extends State<NavBar> {
     super.didChangeDependencies();
 
     if (!_navInitialised) {
-
       // starts open on desktop
       //starts closed on mobile
       _navOpen = !ScreenDimensions.isMobile(context);
@@ -204,7 +223,6 @@ class _NavBarState extends State<NavBar> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: ScreenDimensions.isMobile(context)
           ? _buildMobileLayout()
@@ -212,39 +230,32 @@ class _NavBarState extends State<NavBar> {
     );
   }
 
-//desktop specific
+  //desktop specific
 
   Widget _buildDesktopLayout() {
     return Row(
       children: [
         _buildNavBar(),
 
-        Expanded(
-          child: _buildPageContent(),
-        ),
+        Expanded(child: _buildPageContent()),
       ],
     );
   }
 
- 
-//mobile specific
+  //mobile specific
 
   Widget _buildMobileLayout() {
     return Stack(
       children: [
         // page content uses full screen
-        Positioned.fill(
-          child: _buildPageContent(),
-        ),
+        Positioned.fill(child: _buildPageContent()),
 
         //hidden logos so that maths can be done fo rthe hamburger
         Positioned(
           left: -_navExpandedWidth,
           top: 0,
           width: _navExpandedWidth,
-          child: _buildLogoSection(
-            key: _logoSectionKey,
-          ),
+          child: _buildLogoSection(key: _logoSectionKey),
         ),
 
         // tap outside nav to close when nav open
@@ -253,104 +264,86 @@ class _NavBarState extends State<NavBar> {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: _closeNav,
-              child: Container(
-                color: Colors.black.withValues(
-                  alpha: 0.25,
-                ),
-              ),
+              child: Container(color: Colors.black.withValues(alpha: 0.25)),
             ),
           ),
 
-        Positioned(
-          top: 0,
-          bottom: 0,
-          left: 0,
-          child: _buildNavBar(),
-        ),
+        Positioned(top: 0, bottom: 0, left: 0, child: _buildNavBar()),
       ],
     );
   }
 
-// nav bar
+  // nav bar
 
   Widget _buildNavBar() {
     final sessionManager = context.watch<SessionManager>();
 
     return Container(
-      width: _navOpen
-          ? _navExpandedWidth
-          : _navCollapsedWidth,
-      color: const Color.fromARGB(255, 167, 167, 179),
+      width: _navOpen ? _navExpandedWidth : _navCollapsedWidth,
+      decoration: const BoxDecoration(
+        color: AppColours.primary,
+        border: Border(right: BorderSide(color: AppColours.accent, width: 2)),
+      ),
       child: Column(
         children: [
-          // logo section
+          //Logo Section
           if (_navOpen)
-            _buildLogoSection(
-              key: _visibleLogoSectionKey,
-            )
+            _buildLogoSection(key: _visibleLogoSectionKey)
           else
-            SizedBox(
-              height: _logoSectionHeight,
-            ),
+            SizedBox(height: _logoSectionHeight),
 
-          // hamburbur
+          // Hamburger Menu
           SizedBox(
-            height: 40,
+            height: 45,
             child: Align(
-              alignment: _navOpen
-                  ? Alignment.centerRight
-                  : Alignment.center,
+              alignment: _navOpen ? Alignment.centerRight : Alignment.center,
               child: IconButton(
-                icon: const Icon(Icons.menu),
+                tooltip: _navOpen ? 'Collapse navigation' : 'Expand navigation',
+                icon: const Icon(Icons.menu, color: AppColours.accent),
                 onPressed: _toggleNav,
               ),
             ),
           ),
 
-          // nav items
+          // Navigation items
           if (_navOpen) ...[
             _buildNavItem(
               index: 0,
-              icon: Icons.home,
+              icon: Icons.dashboard_outlined,
               label: 'Dashboard',
             ),
             _buildNavItem(
               index: 1,
-              icon: Icons.home,
+              icon: Icons.table_restaurant_outlined,
               label: 'Floor Allocator',
             ),
             _buildNavItem(
               index: 2,
-              icon: Icons.home,
+              icon: Icons.grid_view_rounded,
               label: 'Floor Designer',
             ),
             _buildNavItem(
               index: 3,
-              icon: Icons.home,
+              icon: Icons.event_outlined,
               label: 'Events',
             ),
             _buildNavItem(
               index: 4,
-              icon: Icons.home,
+              icon: Icons.contact_support_outlined,
               label: 'Contact Us',
             ),
           ],
 
           const Spacer(),
 
-          // bottom bar
+          // Bottom account and settings section
           if (_navOpen)
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 124, 127, 137),
+                color: AppColours.secondary,
                 border: Border(
-                  top: BorderSide(
-                    color: Colors.black26,
-                  ),
+                  top: BorderSide(color: AppColours.accent, width: 2),
                 ),
               ),
               child: Row(
@@ -363,25 +356,50 @@ class _NavBarState extends State<NavBar> {
                         );
 
                         if (accountIndex == -1) {
-                          debugPrint('AccountPage not found in _pages');
+                          debugPrint('Account page not found in _pages');
                         }
+
                         setState(() {
                           _selectedIndex = accountIndex;
                         });
                       },
-                      child: Text(
-                        sessionManager.username?.isNotEmpty == true
-                          ? sessionManager.username!
-                          : 'Account',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.black87,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
                         ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColours.accent,
+                            child: Text(
+                              _getInitials(sessionManager.username),
+                              style: const TextStyle(
+                                color: AppColours.textLight,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              sessionManager.username?.isNotEmpty == true
+                                  ? sessionManager.username!
+                                  : 'Account',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColours.accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
-                  const SizedBox(width: 4),
 
                   IconButton(
                     tooltip: 'Settings',
@@ -390,19 +408,13 @@ class _NavBarState extends State<NavBar> {
                         _selectedIndex = 5;
                       });
                     },
-                    icon: const Icon(
-                      Icons.settings,
-                      color: Colors.black87,
-                    ),
+                    icon: const Icon(Icons.settings, color: AppColours.accent),
                   ),
 
                   IconButton(
-                    tooltip: 'Sign out',
+                    tooltip: 'Sign Out',
                     onPressed: _signOut,
-                    icon: const Icon(
-                      Icons.logout,
-                      color: Colors.black87,
-                    ),
+                    icon: const Icon(Icons.logout, color: AppColours.accent),
                   ),
                 ],
               ),
@@ -412,60 +424,76 @@ class _NavBarState extends State<NavBar> {
     );
   }
 
-//logos
-
-  Widget _buildLogoSection({
-    Key? key,
-  }) {
+  //logos
+  Widget _buildLogoSection({Key? key}) {
     return Column(
       key: key,
       mainAxisSize: MainAxisSize.min,
       children: [
         // TableScout logo
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            vertical: 30,
-            horizontal: 16,
-          ),
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black54,
+        MouseRegion(
+          onEnter: (_) => setState(() => _logoHovered = true),
+          onExit: (_) => setState(() => _logoHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(0, _logoHovered ? -3 : 0, 0),
+            decoration: BoxDecoration(
+              color: _logoHovered
+                  ? AppColours.secondary.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _logoHovered ? AppColours.secondary : Colors.transparent,
+                width: 1.5,
               ),
             ),
-          ),
-          child: const Text(
-            'TableScout Logo',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 0;
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: _navOpen ? 10 : 5,
+                  horizontal: _navOpen ? 12 : 5,
+                ),
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColours.accent, width: 2),
+                  ),
+                ),
+                child: SvgPicture.asset(
+                  'assets/images/Tablescout_Logo_Flutter.svg',
+                  fit: BoxFit.contain,
+                  width: _navOpen ? 230 : 45,
+                ),
+              ),
             ),
           ),
         ),
 
-        // store logo
+        // Fake Store Logo / Bindle & Balm
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            vertical: 30,
-            horizontal: 16,
+          padding: EdgeInsets.symmetric(
+            vertical: _navOpen ? 10 : 5,
+            horizontal: _navOpen ? 12 : 5,
           ),
           alignment: Alignment.center,
           decoration: const BoxDecoration(
             border: Border(
-              bottom: BorderSide(
-                color: Colors.black54,
-              ),
+              bottom: BorderSide(color: AppColours.accent, width: 2),
             ),
           ),
-          child: const Text(
-            'Store Logo',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+          child: Image.asset(
+            'assets/images/Bindle_&_Balm.png',
+            fit: BoxFit.contain,
+            width: _navOpen ? 150 : 35,
           ),
         ),
       ],
@@ -473,7 +501,6 @@ class _NavBarState extends State<NavBar> {
   }
 
   // nav items
-
   Widget _buildNavItem({
     required int index,
     required IconData icon,
@@ -492,11 +519,11 @@ class _NavBarState extends State<NavBar> {
     );
   }
 
-//page content
+  //page content
 
   Widget _buildPageContent() {
     return Container(
-      color: Colors.white,
+      color: AppColours.background,
       child: _pages[_selectedIndex],
     );
   }

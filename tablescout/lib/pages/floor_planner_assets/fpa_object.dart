@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:tablescout/theme/app_colours.dart';
 
 enum FloorObjectType{
 
@@ -123,43 +126,50 @@ extension FloorObjectTypeDetails on FloorObjectType {
 
   Color get objectColor {
     switch (this) {
+      // Tables
       case FloorObjectType.table:
       case FloorObjectType.tableLong:
       case FloorObjectType.tableSquare:
-        return Colors.brown.shade400;
+        return const Color(0xFF397FAF);
 
+      // Seating
       case FloorObjectType.chair:
       case FloorObjectType.couch:
       case FloorObjectType.cornerCouch:
-        return Colors.blueGrey.shade400;
+        return const Color(0xFF365B78);
 
+      // Structues
       case FloorObjectType.pillar:
-        return Colors.grey.shade700;
+        return const Color(0xFF596775);
 
       case FloorObjectType.wall:
-        return Colors.grey.shade800;
+        return const Color(0xFF29245F);
 
       case FloorObjectType.door:
-        return Colors.orange.shade300;
+        return const Color(0xFFC47B32);
 
       case FloorObjectType.exit:
-        return Colors.green.shade600;
+        return const Color(0xFF32834F);
 
       case FloorObjectType.window:
-        return Colors.lightBlue.shade300;
+        return const Color(0xFF168DB5);
 
+      // Desks
       case FloorObjectType.deskStraight:
       case FloorObjectType.deskCorner:
-        return Colors.brown.shade300;
+        return const Color(0xFF456B9B);
 
+      // Shelves
       case FloorObjectType.shelfOneSide:
       case FloorObjectType.shelfTwoSide:
-        return Colors.teal.shade300;
+        return const Color(0xFF287F78);
 
+      // Vending
       case FloorObjectType.vendingCard:
       case FloorObjectType.vendingDrinks:
-        return Colors.indigo.shade300;
+        return const Color(0xFF4C559E);
 
+      // Textboxes
       case FloorObjectType.textbox:
         return Colors.transparent;
     }

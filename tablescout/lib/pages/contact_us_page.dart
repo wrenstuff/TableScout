@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:tablescout/services/contact_service.dart';
+import 'package:tablescout/theme/app_colours.dart';
 
 class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
@@ -52,7 +53,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           content: Text(
             response['message'] ?? 'Your message was submitted.',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColours.success,
         ),
       );
 
@@ -69,7 +70,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
           content: Text(
             error.toString().replaceFirst('Exception: ', ''),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColours.error,
         ),
       );
     } finally {
@@ -84,7 +85,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: AppColours.background,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -107,6 +108,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
+                            color: AppColours.accent,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -116,12 +118,22 @@ class _ContactUsPageState extends State<ContactUsPage> {
                             'If you have any questions or feedback, '
                             'send us a message:',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColours.accent,
+                            ),
                           ),
                         ),
                         Card(
-                          elevation: 1,
-                          color: Colors.grey[200],
+                          elevation: 0,
+                          color: AppColours.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadiusGeometry.circular(8),
+                            side: const BorderSide(
+                              color: AppColours.accent,
+                              width: 2,
+                            ),
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.all(20),
                             child: Form(
@@ -132,10 +144,38 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                 children: [
                                   TextFormField(
                                     controller: _nameController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 100,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       labelText: 'Name',
-                                      border: OutlineInputBorder(),
+                                      labelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColours.accent,
+                                      ),
+                                      filled: true,
+                                      fillColor: AppColours.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AppColours.accent.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                          width: 2,
+                                        ),
+                                      ),
                                     ),
                                     validator: (value) {
                                       if (value == null ||
@@ -148,12 +188,40 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _emailController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 254,
                                     keyboardType:
                                         TextInputType.emailAddress,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       labelText: 'Email',
-                                      border: OutlineInputBorder(),
+                                      labelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColours.accent,
+                                      ),
+                                      filled: true,
+                                      fillColor: AppColours.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AppColours.accent.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                          width: 2,
+                                        ),
+                                      ),
                                     ),
                                     validator: (value) {
                                       final email = value?.trim() ?? '';
@@ -174,10 +242,38 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _subjectController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLength: 150,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       labelText: 'Subject',
-                                      border: OutlineInputBorder(),
+                                      labelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColours.accent,
+                                      ),
+                                      filled: true,
+                                      fillColor: AppColours.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AppColours.accent.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                          width: 2,
+                                        )
+                                      )
                                     ),
                                     validator: (value) {
                                       if (value == null ||
@@ -190,12 +286,40 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                   const SizedBox(height: 12),
                                   TextFormField(
                                     controller: _messageController,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: AppColours.textPrimary,
+                                    ),
                                     maxLines: 5,
                                     maxLength: 300,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       labelText: 'Message',
+                                      labelStyle: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppColours.accent,
+                                      ),
+                                      filled: true,
+                                      fillColor: AppColours.surface,
                                       alignLabelWithHint: true,
-                                      border: OutlineInputBorder(),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          color: AppColours.accent.withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: const BorderSide(
+                                          color: AppColours.accent,
+                                          width: 2,
+                                        )
+                                      )
                                     ),
                                     validator: (value) {
                                       if (value == null ||
@@ -212,6 +336,22 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                       width: 200,
                                       height: 45,
                                       child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColours.accent,
+                                          foregroundColor: AppColours.textLight,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadiusGeometry.circular(8),
+                                            side: const BorderSide(
+                                              color: AppColours.accent,
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                         onPressed: _isSending
                                             ? null
                                             : _submitForm,
@@ -222,6 +362,7 @@ class _ContactUsPageState extends State<ContactUsPage> {
                                                 child:
                                                     CircularProgressIndicator(
                                                   strokeWidth: 2,
+                                                  color: AppColours.textLight,
                                                 ),
                                               )
                                             : const Text('Submit'),
