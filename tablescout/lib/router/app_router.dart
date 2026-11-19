@@ -7,7 +7,7 @@ import 'package:tablescout/pages/signup_page.dart';
 import 'package:tablescout/widgets/nav_bar.dart';
 import 'package:tablescout/pages/password_recovery_page.dart';
 import 'package:tablescout/pages/recover_code_page.dart';
-import 'package:tablescout/pages/new_password.dart';
+import 'package:tablescout/pages/reset_password.dart';
 
 class AppRouter {
   final SessionManager sessionManager;
@@ -82,8 +82,10 @@ class AppRouter {
         ),
         GoRoute(
           path: '/new-password',
-          pageBuilder:(context, state) => const NoTransitionPage(
-            child: NewPasswordPage(),
+          pageBuilder:(context, state) =>  MaterialPage(
+            child: NewPasswordPage(
+              resetToken: state.extra as String,
+            ),
           ),
         )
       ],

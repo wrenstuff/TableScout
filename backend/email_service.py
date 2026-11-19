@@ -52,6 +52,9 @@ def contact_email(name: str, email: str, subject: str,  message: str):
         return False
 
 def recovery_email(email: str, recovery_code:str):
+    print("Recovery email recipient:", email)
+    print("Recovery code generated:", bool(recovery_code))
+    print("Recovery code length:", len(recovery_code))   
     gmail_address =os.getenv("TBS_EMAIL")
     gmail_password = os.getenv("TBS_EMAIL_API")
     
