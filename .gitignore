@@ -1,4 +1,5 @@
-# Please add any temporary, sensitive, or unnecessary
-# files to be ignored by git here
-
-.env
+*.pyc
+*.db
+*.cc
+/tablescout/linux
+backend/api.env

@@ -1,0 +1,365 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import 'package:tablescout/session/session_manager.dart';
+import 'package:tablescout/theme/app_colours.dart';
+
+class LoginWidget extends StatefulWidget {
+  const LoginWidget({super.key});
+
+  @override
+  State<LoginWidget> createState() => _LoginWidgetState();
+}
+
+class _LoginWidgetState extends State<LoginWidget> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _passwordController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _emailController = TextEditingController();
+
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+
+
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+  
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _emailController.dispose();
+    _passwordFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_isLoading) return;
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      //asking backend to auth user
+      final sessionManager = context.read<SessionManager>();
+
+      final success = await sessionManager.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        //SessionManager notifies GoROuter
+        //The router redirects to /app
+        return;
+      }
+
+      final message = sessionManager.lastError ?? 'Login failed.';
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Something went wrong. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  //border styling
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: Colors.white,
+
+      hintStyle: const TextStyle(
+        color: AppColours.textPrimary,
+        fontSize: 14,
+      ),
+
+      prefixIcon: Icon(icon, color: AppColours.accent),
+      suffixIcon: suffixIcon,
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColours.accent, width: 1),
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColours.accent, width: 1),
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColours.accent, width: 2),
+      ),
+
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColours.error, width: 1),
+      ),
+
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColours.error, width: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+
+      decoration: BoxDecoration(
+        color: AppColours.primary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+
+      child: Form(
+        key: _formKey,
+        child:Scrollbar(
+          controller: _scrollController,
+          thumbVisibility: true,
+          thickness: 1,
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // TableScout title
+                const Text(
+                  'TableScout',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColours.accent,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Welcome message
+                const Text(
+                  'Welcome back',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: AppColours.accent,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle
+                const Text(
+                  'Log in to your TableScout account',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, color: AppColours.textPrimary),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Email label
+                const Text(
+                  'Email',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
+                  focusNode: _emailFocusNode,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) {
+                    _passwordFocusNode.requestFocus();
+                  },
+                  decoration: _inputDecoration(
+                    hintText: 'Enter your email',
+                    icon: Icons.person_outline,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // Password label
+                const Text(
+                  'Password',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Password
+                TextFormField(
+                  controller: _passwordController,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1D1D1D),
+                  ),
+                  obscureText: _obscurePassword,
+                  focusNode: _passwordFocusNode,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _login(),
+                  decoration: _inputDecoration(
+                    hintText: 'Enter your password',
+                    icon: Icons.lock_outline,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Forgot password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      context.go('/password-recovery');
+                    },
+                    child: const Text(
+                      'Forgot password?',
+                      style: TextStyle(color: AppColours.accent),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Login button
+                SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColours.secondary,
+                      foregroundColor: AppColours.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColours.accent,
+                            ),
+                          )
+                        : const Text(
+                            'LOGIN',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                              color: AppColours.accent
+                            ),
+                          ),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                // Sign up
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  runSpacing: 12,
+                  children: [
+                    const Text(
+                      "Don't have an account?",
+                      style: TextStyle(color: AppColours.textPrimary),
+                    ),
+
+                    TextButton(
+                      onPressed: () {
+                        context.go('/signup');
+                      },
+                      child: const Text(
+                        'Sign up',
+                        style: TextStyle(
+                          color: AppColours.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
