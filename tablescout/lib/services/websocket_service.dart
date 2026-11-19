@@ -12,6 +12,8 @@ class WebSocketService {
   Stream<dynamic>? _messages;
   bool _authenticated = false;
 
+  int _nextRequestId = 0;
+
   bool get isAuthenticated => _authenticated;
 
   Stream<dynamic> get messages {
@@ -133,6 +135,71 @@ class WebSocketService {
     channel.sink.add(encodedMessage);
 
     debugPrint('Message queued: $encodedMessage');
+  }
+
+  Future<Map<String, dynamic>> request(
+    Map<String, dynamic> message,
+  ) async {
+    // Generate a unique ID for this request.
+    final requestId = ++_nextRequestId;
+
+    // Create something we can wait for.
+    final completer = Completer<Map<String, dynamic>>();
+
+    // Listen for the response before sending the request.
+    late StreamSubscription<dynamic> subscription;
+
+    subscription = messages.listen(
+      (message) {
+        try {
+          final response = Map<String, dynamic>.from(
+            jsonDecode(message.toString()) as Map,
+          );
+
+          // Ignore messsages belonging to other requests.
+          if (response['request_id'] != requestId) return;
+
+          if (response['type'] == 'error') {
+            if (!completer.isCompleted) {
+              completer.completeError(
+                StateError(
+                  response['message'] ?? 'Request failed.',
+                ),
+              );
+            }
+            return;
+          }
+          if (!completer.isCompleted) {
+            completer.complete(response);
+          }
+        } catch (error) {
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
+        }
+      },
+      onError: (error) {
+        if (!completer.isCompleted) {
+          completer.completeError(error);
+        }
+      },
+    );
+
+    try {
+      // Send the original message with its request ID.
+      send({
+        ...message,
+        'request_id': requestId,
+      });
+
+      // Wait for the matching response.
+      return await completer.future.timeout(
+        const Duration(seconds: 15),
+      );
+    } finally {
+      // Stop listening once the request finishes.
+      await subscription.cancel();
+    }
   }
 
   Future<void> disconnect() async {

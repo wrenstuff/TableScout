@@ -76,7 +76,22 @@ CREATE TABLE IF NOT EXISTS events (
     capacity INTEGER CHECK (capacity IS NULL OR capacity > 0),
     pairings TEXT NOT NULL DEFAULT '[]'
 );
-    """)
+""")
+
+#floor plans
+connection.execute(
+    """
+    CREATE TABLE IF NOT EXISTS floor_plans (
+        floor_plan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        store_id INTEGER NOT NULL UNIQUE,
+        layout_json TEXT NOT NULL DEFAULT '{}',
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+        FOREIGN KEY (store_id)
+            REFERENCES stores(store_id)
+    )
+    """
+)
 
 #tables
 connection.execute(

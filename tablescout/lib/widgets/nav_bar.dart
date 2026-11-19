@@ -42,28 +42,28 @@ class _NavBarState extends State<NavBar> {
 
   final GlobalKey _logoSectionKey = GlobalKey();
 
+  final GlobalKey<FloorPlannerState> _floorPlannerKey =
+    GlobalKey<FloorPlannerState>();
+
   double _logoSectionHeight = 0;
 
   late final List<Widget> _pages = [
-    DashboardPage(),
-    const FloorAllocatorPage(),
-    FloorPlanner(),
+    DashboardPage(
+      onNavigateToFloorAllocator: () => _navigateTo(1),
+    ),
+    const Center(child: Text('Floor Allocator')),
+    FloorPlanner(key: _floorPlannerKey),
     EventsOverviewPage(),
     ContactUsPage(),
     //AccountPage(),
-    SettingsPage(
-      onNavigate: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      },
-    ),
-
+    SettingsPage(onNavigate: (index) {
+      _navigateTo(index);
+    },
+  ),
+    
     AccountPage(
       onNavigateToPassword: () {
-        setState(() {
-          _selectedIndex = 9;
-        });
+        _navigateTo(9);
       },
     ),
     const StaffManagementPage(),
@@ -90,6 +90,70 @@ class _NavBarState extends State<NavBar> {
     return name.length >= 2
         ? name.substring(0, 2).toUpperCase()
         : name.toUpperCase();
+  }
+
+  Future<void> _navigateTo(int index) async {
+    // If we're already on the selected page, do nothing.
+    if (index == _selectedIndex) return;
+
+    // Check whether we're leaving the Floor Planner.
+    if (_selectedIndex == 2) {
+      final floorPlanner = _floorPlannerKey.currentState;
+
+      if (floorPlanner != null && floorPlanner.hasUnsavedChanges) {
+        final choice = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Unsaved Changes'),
+              content: const Text(
+                'You have made changes to your floor plan. '
+                'Would you like to save before leaving?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'cancel');
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'discard');
+                  },
+                  child: const Text('Discard'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, 'save');
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+
+        // Cancel: stay on the Floor Planner.
+        if (choice == 'cancel' || choice == null) return;
+
+        // Save: save the floor plan before leaving.
+        if (choice == 'save') {
+          await floorPlanner.saveLayout();
+
+          if (floorPlanner.hasUnsavedChanges) {
+            return;
+          }
+        }
+        
+        // Discard: continue navigating without saving.
+      }
+    }
+
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
@@ -442,55 +506,16 @@ class _NavBarState extends State<NavBar> {
     required IconData icon,
     required String label,
   }) {
-    final isSelected = _selectedIndex == index;
-
-    return Padding(
-      padding: const EdgeInsetsGeometry.symmetric(horizontal: 8, vertical: 3),
-      child: Material(
-        color: isSelected ? AppColours.accent : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(6),
-          hoverColor: AppColours.secondary.withValues(alpha: 0.35),
-          onTap: () {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: AppColours.accent,
-                width: isSelected ? 2 : 1,
-              ),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  color: isSelected ? AppColours.textLight : AppColours.accent,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: isSelected
-                          ? AppColours.textLight
-                          : AppColours.accent,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        selected: _selectedIndex == index,
+        leading: Icon(icon),
+        title: Text(label),
+        onTap: () {
+          _navigateTo(index);
+        },
+      )
     );
   }
 
