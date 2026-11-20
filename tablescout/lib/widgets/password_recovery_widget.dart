@@ -59,9 +59,7 @@ class PasswordRecoveryWidget extends StatefulWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-          result['message'] ??
-          result['error'] ??
-          'Request not processed',
+            result['error'] ?? 'Request not processed'
           ),
         ),
       );
