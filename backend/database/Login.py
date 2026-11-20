@@ -4,6 +4,7 @@ import jwt
 import os
 import secrets
 import time
+import re
 
 
 from flask import Flask, request, jsonify
@@ -574,7 +575,153 @@ def verify_recovery_code():
 
     finally: 
         connection.close()
+@app.route('/tablescout/pages/reset-password', methods =['POST'])
+def reset_password():
+    info = request.get_json(silent=True) or {}
+
+    reset_token = info.get("reset_token")
+    new_password = info.get("new_password")
+
+    #validation
+    if not isinstance(reset_token, str) or not reset_token:
         
+        return jsonify({
+                   "success": False,
+                    "message": "missing reset token",
+                }), 400
+    if not isinstance(new_password, str):
+        return jsonify({
+            "success": False,
+            "message": "please enter a valid password"
+        }),400
+
+
+    if len(new_password) <8:
+        return jsonify({
+            "success": False,
+            "message": "password must be 8 characters length"
+        }),400
+
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=]', new_password):
+        return jsonify({
+        "success": False,
+        "message": "Password must contain at least 1 symbol"
+    }), 400
+
+    #verifying the jwt token
+    try:
+        payload = jwt.decode(
+            reset_token,
+            SECRET_KEY,
+            algorithms=["HS256"]
+        )
+
+        if payload.get("purpose") != "password_reset":
+            return jsonify({
+                "success": False,
+                "message": "Invalid token"
+            }), 401
+        
+        userid = int(payload["sub"])
+        reset_id = int(payload["reset_id"])
+
+    except (jwt.InvalidTokenError, ValueError, KeyError, TypeError):
+        return jsonify({
+            "success": False,
+            "message": "Invalid or expired reset token"
+        }), 401
+
+    connection = Dbconnect.connect()
+
+    try:
+        cursor = connection.cursor()
+        connection.execute("BEGIN IMMEDIATE")
+
+        cursor.execute("""
+        SELECT
+            password_resets.reset_id,
+            password_resets.userid,
+            password_resets.expires_at
+        FROM password_resets
+        INNER JOIN users
+            ON password_resets.userid = users.userid
+        WHERE password_resets.reset_id = ?
+        AND password_resets.userid = ?
+        AND password_resets.used = 0
+        AND users.accstatus = 'ACTIVE'
+        """, (reset_id, userid) 
+        )
+
+        reset =cursor.fetchone()
+
+        if reset is None:
+            connection.rollback()
+            return jsonify({
+                "success": False,
+                "message": "Reset request is invalid or has already been used"
+            }), 400
+
+        current_time = int(datetime.now(timezone.utc).timestamp())
+
+        if reset["expires_at"] <= current_time:
+            cursor.execute("""
+            UPDATE password_resets
+            SET used =1
+            WHERE reset_id =?""",(reset_id,))
+
+            connection.commit()
+
+            return jsonify({
+                "success": False,
+                "message": "Alloted recovery time has expired"
+
+            }),400
+
+        new_password_hash = hasher.hash(new_password)
+
+        cursor.execute("""
+        UPDATE users
+        SET pwhash =?
+        WHERE userid =?
+        AND accstatus = 'ACTIVE' 
+        """, (new_password_hash, userid))
+
+        if cursor.rowcount !=1:
+            connection.rollback()
+            return jsonify({
+                "success": False,
+                "message": "Unable to update password. Please contact admins."
+
+            }), 400
+        cursor.execute("""
+            UPDATE password_resets
+            SET used =1
+            WHERE reset_id =?
+            AND used = 0""", (reset_id,))
+
+        if cursor.rowcount !=1:
+            connection.rollback()
+            return jsonify({
+                "success": False,
+                "message": "Reset request used."
+            }), 400
+        connection.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Password has been reset successfully"
+        }), 200
+    except Exception as error:
+        connection.rollback()
+        print(f"Password reset error: {error}")
+
+        return jsonify({
+            "success": False,
+            "message": "Unable to reset password. Please try again later."
+        }), 500
+
+    finally:
+        connection.close() 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
