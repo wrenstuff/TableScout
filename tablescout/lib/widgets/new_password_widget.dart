@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tablescout/widgets/auth_container.dart';
-import 'package:tablescout/app_config.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class NewPasswordWidget extends StatefulWidget {
-  final String resetToken;
-
-  const NewPasswordWidget({
-    super.key,
-    required this.resetToken,
-  });
+  const NewPasswordWidget({super.key});
 
   @override
   State<NewPasswordWidget> createState() => _NewPasswordWidgetState();
@@ -37,68 +29,31 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
     super.dispose();
   }
    Future<void> _submitPassword() async {
-    print('Submit password button clicked');
     if (!_formkey.currentState!.validate()) {
-      print('Password validation failed');
       return;
     }
-    print('Password validation passed');
+
     setState((){
       _loading = true;
       _errorMessage = null;
     });
 
-    try {
-       print('Sending password reset request...');
-      final response = await http.post(
-        Uri.parse(
-          '${AppConfig.httpBaseUrl}/tablescout/pages/reset-password',
-        ),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'reset_token': widget.resetToken,
-          'new_password': _passwordcontrol.text,
-        }),
-      );
-      final data =jsonDecode(response.body);
-      print('Reset password status: ${response.statusCode}');
-      print('Reset password response: ${response.body}');
+    await Future.delayed(const Duration(seconds: 1));
 
-      if (!mounted) return;
-      if (response.statusCode == 200 && data['success'] == true){
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password updated!'),
-          ),
-        );
-        context.go('/login');
-      }else {
-        setState(() {
-          _errorMessage = data['message'] ?? 'Password reset failed';
-        });
-      }
-    }
-    catch (e) {
-      if (!mounted) return;
+    if(!mounted) return;
 
-      setState(() {
-        _errorMessage = "Cannot connect to login server";
-      });
-    } finally{
-      if (mounted){
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
+     setState((){
+      _loading = false;
+    });
+
+    context.go('/login');
   }
+
   @override
 
   Widget build(BuildContext context) {
     return AuthContainer(
-      boxHeight: 460,
+      boxHeight: 450,
       child: Form(
         key: _formkey,
           child: Column(
@@ -138,7 +93,7 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
           ),
 
           const SizedBox(height: 12),
-            // first pass
+
            TextFormField(
             controller: _passwordcontrol,
             obscureText: _hidePassword,
@@ -157,22 +112,10 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
               ),
               border: OutlineInputBorder(),
             ),
-            validator: (value){
-              if (value == null || value.isEmpty){
-                return 'Please enter a new password';
-              }
-              if (value.length < 8) {
-                return 'Must be 8 characters';
-              }
-              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=]').hasMatch(value)){
-                return 'password must have 1 symbol';
-              }
-              return null;
-            },
           ),
 
           const SizedBox(height: 15),
-          // confirm pass
+
           TextFormField(
             controller: _confirmpasswordcontrol,
             obscureText: _hideConfirmPassword,
@@ -192,16 +135,6 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
               border: OutlineInputBorder(),
               
             ),
-            validator: (value){
-              if (value == null || value.isEmpty){
-                return 'Please confirm the password';
-              }
-              if (value != _passwordcontrol.text) {
-                return ' Passwords do not match';
-              }
-              
-              return null;
-            },
           ),
 
           const SizedBox(height: 24),
@@ -209,7 +142,10 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
           SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: _loading ? null : _submitPassword,
+              onPressed: () {
+                // Handle password recovery logic here
+                context.go('/login');
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF54414E),
                 foregroundColor: const Color(0xFFB5BAD0),
@@ -218,11 +154,7 @@ class _NewPasswordWidgetState extends State<NewPasswordWidget> {
                 ),
                 elevation: 0,
               ),
-              child: _loading
-              ?const CircularProgressIndicator(
-                color: Color(0xFFB5BAD0),
-              )
-              : const Text('Submit New Password')
+              child: const Text('Submit new password'),
             ),
           ),
 

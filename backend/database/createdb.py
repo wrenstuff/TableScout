@@ -93,25 +93,6 @@ connection.execute(
     """
 )
 
-# password resets
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS password_resets (
-        reset_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userid INTEGER NOT NULL,
-        code_hash TEXT NOT NULL,
-        expires_at INTEGER NOT NULL,
-        used INTEGER NOT NULL DEFAULT 0,
-        FOREIGN KEY(userid)
-            REFERENCES users(userid)
-            ON DELETE CASCADE
-    )
-""")
-
-connection.execute("""
-    CREATE INDEX IF NOT EXISTS idx_password_resets_userid
-    ON password_resets(userid)
-""")
-
 #tables
 connection.execute(
     """

@@ -2,19 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:tablescout/widgets/new_password_widget.dart';
 
 class NewPasswordPage extends StatefulWidget {
-    final String resetToken;
-
-  const NewPasswordPage({
-    super.key,
-    required this.resetToken,
-  });
+  const NewPasswordPage({super.key});
 
   @override
   State<NewPasswordPage> createState() => _NewPasswordPageState();
 }
 
 class _NewPasswordPageState extends State<NewPasswordPage> {
-
   @override
   
   Widget build(BuildContext context) {
@@ -32,12 +26,10 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: SizedBox(
+              child: const SizedBox(
                 width: 500,
                 height: 570,
-                child: NewPasswordWidget(
-                  resetToken: widget.resetToken,
-                ),
+                child: NewPasswordWidget(),
               ),
             ),
           ),
