@@ -49,16 +49,29 @@ pip install -r requirements.txt
 
 ---
 
-### 3. Start the Backend
+### 3. Build and Run the Application
 
-Enter in the terminal "flutter build windows" command before launching the .bat file
+Navigate to the Flutter project directory:
 
-Once dependencies and environment variables are configured, navigate to the backend directory and run:
+cd ..\tablescout
 
-Launcher.bat
+Install the required Flutter dependencies:
+
+flutter pub get
+
+Build the Windows application:
+
+flutter build windows
+
+Once the build has completed, navigate back to the Root directory:
+
+cd..
+
+Ensure all required dependencies and environment variables are configured, then launch the application using:
+
+.\Launcher.bat
 
 Alternatively, double-click Launcher.bat in Windows File Explorer.
-
 The launcher is used to start the backend services without manually entering the individual startup commands.
 
 If you run unto any issues delete the "build" folder TableScout\tablescout\build then run the following commands.
