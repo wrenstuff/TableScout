@@ -218,6 +218,7 @@ class _EventCreationPageState extends State<EventCreationPage> {
         'end_time': _formatTime(_endTime!),
         'capacity': int.tryParse(_capacityController.text.trim()),
         'rounds': int.parse(_roundsController.text.trim()),
+        'description': _descriptionController.text.trim(),
       });
 
       final response = await completer.future.timeout(
